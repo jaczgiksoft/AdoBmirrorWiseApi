@@ -1,0 +1,8 @@
+© 2025 Giksoft Technology. Todos los derechos reservados.
+
+Este software, denominado "BWISE Dental", es propiedad exclusiva de Giksoft Technology.
+Su código fuente, documentación y componentes asociados son confidenciales y están destinados únicamente para uso interno dentro de la organización.
+
+Queda estrictamente prohibida su reproducción, distribución, modificación, venta o divulgación total o parcial sin autorización expresa y por escrito de Giksoft Technology.
+
+El acceso al repositorio o al código no otorga ningún derecho de uso comercial, sublicencia o propiedad intelectual.
