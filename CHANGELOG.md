@@ -10,6 +10,57 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.5.3] - 2025-11-12
+### Added
+- **Nuevo módulo clínico `Patient Conversations`** (`patient_conversations`):
+    - Modelo `patient_conversation.model.js` con soporte multi-tenant (`tenant_id`) y relaciones directas con:
+        - `Patient` (`patient_id`) → paciente asociado a la conversación.
+        - `User` (`user_id`) → usuario (empleado o doctor) que registró o participó en la conversación.
+    - Campos principales:
+        - `title` (string, obligatorio, máx. 150 caracteres) → título o asunto de la conversación.
+        - `content` (text, obligatorio) → detalle del intercambio o registro de comunicación.
+    - **Migración `create-patient-conversations.js`**:
+        - Crea la tabla `patient_conversations` con referencias a `tenants`, `patients` y `users`.
+        - Incluye índices optimizados (`tenant_id`, `patient_id`, `user_id`).
+        - Relaciones con `CASCADE` y timestamps (`created_at`, `updated_at`).
+    - **Asociaciones en `associations.js`:**
+        - `Tenant.hasMany(PatientConversation, { as: 'patient_conversations' })`
+        - `Patient.hasMany(PatientConversation, { as: 'conversations' })`
+        - `User.hasMany(PatientConversation, { as: 'authored_conversations' })`
+        - `PatientConversation.belongsTo(Tenant, { as: 'tenant' })`
+        - `PatientConversation.belongsTo(Patient, { as: 'patient' })`
+        - `PatientConversation.belongsTo(User, { as: 'author' })`
+    - **Estructura completa del módulo:**
+        - `patient_conversation.repository.js` → métodos CRUD (`createConversation`, `updateConversation`, `deleteConversation`, `findById`, `findByPatientId`) con `Sequelize`.
+        - `patient_conversation.service.js` → lógica de negocio con:
+            - Transacciones (`sequelize.transaction()`).
+            - Auditoría (`createLog`, `logApiError`).
+            - Notificaciones automáticas (`notifyUser`).
+            - Control de permisos: solo el autor puede editar o eliminar su conversación.
+        - `patient_conversation.controller.js` → endpoints REST:
+            - `POST /patient-conversations` → crear conversación.
+            - `PUT /patient-conversations/:id` → actualizar conversación.
+            - `DELETE /patient-conversations/:id` → eliminar conversación.
+            - `GET /patient-conversations/patient/:patient_id` → listar conversaciones por paciente.
+            - `GET /patient-conversations/:id` → obtener una conversación específica.
+        - `patient_conversation.validator.js` → validaciones con `express-validator` (campos obligatorios, límites de longitud).
+        - `patient_conversation.routes.js` → rutas protegidas con middlewares (`validateToken`, `loadPermissions`, `checkPermissions`, `validateRequest`).
+    - **Integración lista para router principal:**
+      ```js
+      const patientConversationRoutes = require('../modules/patient_conversation/patient_conversation.routes');
+      app.use('/api/patient-conversations', patientConversationRoutes);
+      ```
+
+### Notes
+- Este módulo permite registrar y consultar **conversaciones o registros de comunicación** entre el personal clínico y los pacientes.
+- Compatible con auditoría, permisos y sistema de notificaciones internas.
+- Solo los autores de cada conversación pueden modificar o eliminar sus registros.
+- Requiere ejecutar:
+  ```bash
+  npx sequelize-cli db:migrate
+
+---
+
 ## [0.5.2] - 2025-11-12
 ### Added
 - **Nuevo módulo clínico `Patient Notes`** (`patient_notes`):
