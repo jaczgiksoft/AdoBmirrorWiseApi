@@ -9,6 +9,34 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ---
+## [0.4.0] - 2025-11-11
+### Added
+- **Nuevo módulo clínico `Bracket Types`** (`bracket_types`):
+    - Estructura completa del módulo:
+        - `bracket_type.model.js` → Modelo Sequelize con soporte multi-tenant (`tenant_id`) y `paranoid: true`.
+        - `bracket_type.repository.js` → Métodos CRUD (`findAll`, `findById`, `findByName`, `createBracketType`, `updateBracketType`, `softDeleteBracketType`) y soporte DataTable.
+        - `bracket_type.service.js` → Lógica de negocio con validación de duplicados, transacciones Sequelize, logs de auditoría (`createLog`, `logApiError`) y notificaciones (`notifyUser`).
+        - `bracket_type.controller.js` → Endpoints REST (`getAll`, `getOne`, `create`, `update`, `softDelete`, `getDatatable`).
+        - `bracket_type.validator.js` → Validaciones con `express-validator` (sin `tenant_id` explícito, se obtiene del JWT).
+        - `bracket_type.routes.js` → Rutas protegidas bajo `/api/bracket-types` con middlewares (`validateToken`, `loadPermissions`, `checkPermissions`, `validateRequest`).
+    - **Migración `create-bracket-types.js`**:
+        - Crea la tabla `bracket_types` con índices (`tenant_id`, `name`, `material`).
+        - Relaciones definidas con `Tenant` y `Patient` en `associations.js`.
+        - Incluye `deletedAt` para soft delete.
+    - **Integración en el router principal (`index.js`)**:
+        - `router.use('/bracket-types', bracketTypeRoutes);`
+    - **Permisos estandarizados**:
+        - `read:bracket_types`, `write:bracket_types`, `edit:bracket_types`, `delete:bracket_types`.
+
+### Notes
+- Permite administrar los tipos de brackets disponibles por clínica (`tenant`), con atributos personalizados como material, fabricante y color.
+- Integrado con el expediente clínico del paciente a través de la relación `Patient.belongsTo(BracketType)`.
+- Mantiene la misma estructura de logs, auditoría y permisos que los módulos `Patient`, `PatientType` y `Occupation`.
+- Requiere ejecutar:
+  ```bash
+  npx sequelize-cli db:migrate
+
+---
 
 ## [0.3.3] - 2025-11-11
 ### Changed
