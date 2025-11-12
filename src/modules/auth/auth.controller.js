@@ -4,11 +4,12 @@ const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
 
 // =====================
-// LOGIN
+// 🔐 LOGIN
 // =====================
 const login = async (req, res) => {
     try {
-        const { tenant, username, password } = req.body; // 👈 incluir tenant
+        const { tenant, username, password } = req.body;
+
         const result = await authService.login({
             tenant,
             username,
@@ -17,16 +18,22 @@ const login = async (req, res) => {
             userAgent: req.headers['user-agent']
         });
 
-        res.json({ message: 'Login exitoso', ...result });
+        res.status(200).json({
+            success: true,
+            message: 'Login exitoso',
+            token: result.token,
+            roles: result.roles,
+            permissions: result.permissions
+        });
     } catch (err) {
-        logger.error(`Error en login: ${err.message}`);
+        logger.error(`❌ Error en login: ${err.message}`);
         await logApiError(req, err);
-        res.status(400).json({ message: err.message });
+        res.status(401).json({ success: false, message: err.message });
     }
 };
 
 // =====================
-// UNBLOCK USER
+// 🔓 DESBLOQUEAR USUARIO
 // =====================
 const unblockUser = async (req, res) => {
     try {
@@ -34,54 +41,70 @@ const unblockUser = async (req, res) => {
             ip: req.ip,
             userAgent: req.headers['user-agent']
         });
-        res.json({ message: `Usuario '${req.params.username}' desbloqueado.` });
+
+        res.status(200).json({
+            success: true,
+            message: `Usuario '${req.params.username}' desbloqueado correctamente.`
+        });
     } catch (err) {
         logger.error(`Error al desbloquear usuario: ${err.message}`);
         await logApiError(req, err);
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 
 // =====================
-// ME
+// 👤 ME (DATOS DEL USUARIO)
 // =====================
 const me = async (req, res) => {
     try {
         const user = await authService.me(req.user);
-        res.json(user);
+        res.status(200).json({ success: true, data: user });
     } catch (err) {
         logger.error(`Error en /auth/me: ${err.message}`);
         await logApiError(req, err);
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 
 // =====================
-// FORGOT PASSWORD
+// 🔑 OLVIDÉ CONTRASEÑA
 // =====================
 const forgotPassword = async (req, res) => {
     try {
         await authService.forgotPassword(req.body.email);
-        res.json({ message: 'Se ha enviado un correo con instrucciones para restablecer tu contraseña.' });
+        res.status(200).json({
+            success: true,
+            message: 'Se ha enviado un correo con instrucciones para restablecer tu contraseña.'
+        });
     } catch (err) {
         logger.error(`Error en forgotPassword: ${err.message}`);
         await logApiError(req, err);
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 
 // =====================
-// RESET PASSWORD
+// 🔒 RESETEAR CONTRASEÑA
 // =====================
 const resetPassword = async (req, res) => {
     try {
         await authService.resetPassword(req.body);
-        res.json({ message: 'Contraseña actualizada correctamente.' });
+        res.status(200).json({
+            success: true,
+            message: 'Contraseña actualizada correctamente.'
+        });
     } catch (err) {
         logger.error(`Error en resetPassword: ${err.message}`);
         await logApiError(req, err);
-        res.status(400).json({ message: err.message });
+        res.status(400).json({ success: false, message: err.message });
     }
 };
 
-module.exports = { login, unblockUser, me, forgotPassword, resetPassword };
+module.exports = {
+    login,
+    unblockUser,
+    me,
+    forgotPassword,
+    resetPassword
+};

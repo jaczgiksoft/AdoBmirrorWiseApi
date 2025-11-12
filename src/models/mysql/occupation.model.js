@@ -1,4 +1,3 @@
-// models/occupation.model.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
@@ -6,7 +5,13 @@ const Occupation = sequelize.define('Occupation', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 
     // 🏢 Multi-tenant
-    tenant_id: { type: DataTypes.INTEGER, allowNull: false },
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: { model: 'tenants', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+    },
 
     // 💼 Ocupación o profesión
     name: {
@@ -14,6 +19,7 @@ const Occupation = sequelize.define('Occupation', {
         allowNull: false,
         comment: 'Nombre de la ocupación o profesión del paciente'
     },
+
     description: {
         type: DataTypes.STRING(255),
         allowNull: true,
@@ -24,7 +30,18 @@ const Occupation = sequelize.define('Occupation', {
     tableName: 'occupations',
     timestamps: true,
     paranoid: true,
-    underscored: false
+    underscored: true,
+
+    // 📊 Índices documentados (solo informativos)
+    indexes: [
+        { fields: ['tenant_id'], name: 'idx_occupations_tenant' },
+        { fields: ['name'], name: 'idx_occupations_name' },
+        {
+            unique: true,
+            fields: ['tenant_id', 'name'],
+            name: 'uq_occupations_tenant_name'
+        }
+    ]
 });
 
 module.exports = Occupation;

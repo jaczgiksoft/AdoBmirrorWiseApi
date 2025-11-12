@@ -1,5 +1,7 @@
+// src/utils/seedPatientsClinic.js
 const { fakerES_MX: faker } = require('@faker-js/faker');
 const bcrypt = require('bcryptjs');
+
 const Tenant = require('../models/mysql/tenant.model');
 const Patient = require('../models/mysql/patient.model');
 const Referral = require('../models/mysql/referral.model');
@@ -8,12 +10,13 @@ const PatientType = require('../models/mysql/patient_type.model');
 const PatientStatus = require('../models/mysql/patient_status.model');
 const BracketType = require('../models/mysql/bracket_type.model');
 const PatientProfession = require('../models/mysql/patient_profession.model');
+const PatientPatientType = require('../models/mysql/patient_patient_type.model');
 const { logger } = require('./logger');
 
 const seedPatientsClinic = async () => {
     try {
         const tenants = await Tenant.findAll({ where: { status: 'active' } });
-        const hashed = await bcrypt.hash('1234', 10); // contraseña genérica
+        const hashed = await bcrypt.hash('1234', 10); // Contraseña genérica
 
         for (const tenant of tenants) {
             logger.info(`🦷 Creando pacientes de prueba para: ${tenant.name}`);
@@ -28,19 +31,21 @@ const seedPatientsClinic = async () => {
                 PatientProfession.findAll({ where: { tenant_id: tenant.id } })
             ]);
 
-            if (!referrals.length || !occupations.length) {
-                logger.warn(`⚠️ Catálogos vacíos para ${tenant.name}. Ejecuta seedPatientRelationsClinic primero.`);
+            if (!types.length) {
+                logger.warn(`⚠️ Tipos de paciente vacíos para ${tenant.name}. Ejecuta seedPatientRelationsClinic primero.`);
                 continue;
             }
 
-            // Generar 10 pacientes de ejemplo por clínica
+            // Generar pacientes de ejemplo
+            const patients = [];
+
             for (let i = 1; i <= 10; i++) {
                 const genre = faker.helpers.arrayElement(['male', 'female']);
                 const firstName = faker.person.firstName(genre === 'male' ? 'male' : 'female');
                 const lastName = faker.person.lastName();
                 const birthDate = faker.date.birthdate({ min: 15, max: 60, mode: 'age' });
 
-                await Patient.create({
+                patients.push({
                     tenant_id: tenant.id,
                     medical_record_number: `MRN-${tenant.id}-${1000 + i}`,
                     family_code: `FAM-${tenant.id}`,
@@ -54,12 +59,11 @@ const seedPatientsClinic = async () => {
                     phone_number: faker.phone.number('+52##########'),
                     email: faker.internet.email({ firstName, lastName }),
 
-                    referral_id: faker.helpers.arrayElement(referrals).id,
-                    occupation_id: faker.helpers.arrayElement(occupations).id,
-                    bracket_type_id: faker.helpers.arrayElement(brackets).id,
-                    patient_type_id: faker.helpers.arrayElement(types).id,
-                    patient_status_id: faker.helpers.arrayElement(statuses).id,
-                    patient_profession_id: faker.helpers.arrayElement(professions).id,
+                    referral_id: faker.helpers.arrayElement(referrals)?.id || null,
+                    occupation_id: faker.helpers.arrayElement(occupations)?.id || null,
+                    bracket_type_id: faker.helpers.arrayElement(brackets)?.id || null,
+                    patient_status_id: faker.helpers.arrayElement(statuses)?.id || null,
+                    patient_profession_id: faker.helpers.arrayElement(professions)?.id || null,
 
                     address_street_name: faker.location.street(),
                     address_neighborhood: faker.location.secondaryAddress(),
@@ -72,7 +76,6 @@ const seedPatientsClinic = async () => {
                     company: faker.company.name(),
                     company_address: faker.location.streetAddress(),
                     photo_url: faker.image.avatarGitHub(),
-                    medical_record_image_url: null,
 
                     is_under_medical_treatment: faker.datatype.boolean(),
                     current_treatment_description: faker.lorem.sentence(),
@@ -101,12 +104,33 @@ const seedPatientsClinic = async () => {
                 });
             }
 
-            logger.info(`✅ Pacientes de prueba generados para ${tenant.name}`);
+            // Crear pacientes en bloque
+            const createdPatients = await Patient.bulkCreate(patients, { returning: true });
+
+            // Asociar tipos de paciente (N:M)
+            const pivotRecords = [];
+            for (const patient of createdPatients) {
+                // Cada paciente puede tener 1–3 tipos aleatorios
+                const randomTypes = faker.helpers.arrayElements(types, faker.number.int({ min: 1, max: 3 }));
+                for (const type of randomTypes) {
+                    pivotRecords.push({
+                        tenant_id: tenant.id,
+                        patient_id: patient.id,
+                        patient_type_id: type.id
+                    });
+                }
+            }
+
+            await PatientPatientType.bulkCreate(pivotRecords, { ignoreDuplicates: true });
+
+            logger.info(`✅ Pacientes y tipos asociados creados para ${tenant.name}`);
         }
 
-        logger.info('🎯 Seed de pacientes completado.');
+        logger.info('🎯 Seed de pacientes completado correctamente.');
     } catch (err) {
-        logger.error(`❌ Error en seedPatientsClinic: ${err.message}`);
+        logger.error(`❌ Error en seedPatientsClinic: ${err.message}`, {
+            stack: err.stack
+        });
     }
 };
 

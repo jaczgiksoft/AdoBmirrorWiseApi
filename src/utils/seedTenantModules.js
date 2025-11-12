@@ -1,3 +1,4 @@
+// src/utils/seedTenantModules.js
 const Tenant = require('../models/mysql/tenant.model');
 const TenantModule = require('../models/mysql/tenant_module.model');
 const TenantFeature = require('../models/mysql/tenant_feature.model');
@@ -23,18 +24,8 @@ const coreModules = [
 // Módulos clínicos por plan
 // =========================
 const planModules = {
-    Basic: [
-        'patient_alerts',
-        'appointments',
-        'billing'
-    ],
-    Pro: [
-        'patient_alerts',
-        'appointments',
-        'billing',
-        'communications',
-        'inventory'
-    ],
+    Basic: ['patient_alerts', 'appointments', 'billing'],
+    Pro: ['patient_alerts', 'appointments', 'billing', 'communications', 'inventory'],
     Premium: [
         'patient_alerts',
         'appointments',
@@ -64,19 +55,25 @@ const coreFeatures = [
 const seedTenantModulesClinic = async () => {
     try {
         const tenants = await Tenant.findAll({ where: { status: 'active' } });
+        if (!tenants.length) {
+            logger.warn('⚠️ No hay tenants activos para inicializar módulos.');
+            return;
+        }
 
         for (const tenant of tenants) {
             const subscription = await Subscription.findOne({
                 where: { id: tenant.current_subscription_id }
             });
 
-            const planName = subscription ? subscription.plan_name : 'Basic';
-            const clinicModules = planModules[planName] || planModules.Basic;
+            const planName = subscription?.plan_name || 'Basic';
+            const planSet = planModules[planName] || planModules.Basic;
 
             // 🔹 Combinar los módulos base + clínicos del plan
-            const enabledModules = [...coreModules, ...clinicModules];
+            const enabledModules = [...new Set([...coreModules, ...planSet])];
 
-            // Crear módulos
+            // =====================
+            // Crear módulos habilitados
+            // =====================
             await TenantModule.bulkCreate(
                 enabledModules.map(moduleName => ({
                     tenant_id: tenant.id,
@@ -86,7 +83,9 @@ const seedTenantModulesClinic = async () => {
                 { ignoreDuplicates: true }
             );
 
-            // Crear funcionalidades base (features)
+            // =====================
+            // Crear funcionalidades base
+            // =====================
             await TenantFeature.bulkCreate(
                 coreFeatures.map(feature => ({
                     tenant_id: tenant.id,
@@ -97,9 +96,11 @@ const seedTenantModulesClinic = async () => {
             );
 
             logger.info(
-                `✅ Clínica ${tenant.name} (${planName}) inicializada con módulos: ${enabledModules.join(', ')}`
+                `✅ Clínica "${tenant.name}" (${planName}) inicializada con módulos: ${enabledModules.join(', ')}`
             );
         }
+
+        logger.info('🌱 Módulos y features de clínicas inicializados correctamente.');
     } catch (err) {
         logger.error(`❌ Error en seedTenantModulesClinic: ${err.message}`);
     }

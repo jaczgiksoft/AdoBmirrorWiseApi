@@ -2,6 +2,7 @@
 const Tenant = require('../models/mysql/tenant.model');
 const Subscription = require('../models/mysql/subscription.model');
 const crypto = require('crypto');
+const { logger } = require('./logger'); // opcional
 
 const seedTenants = async () => {
     const tenants = [
@@ -18,20 +19,13 @@ const seedTenants = async () => {
             state: 'CDMX',
             country: 'México',
             postal_code: '03020',
-
-            // Datos fiscales ficticios
             tax_id: 'SFL920315ABC',
             legal_name: 'Sonrisa Feliz S.A. de C.V.',
             regime: 'Régimen Simplificado de Confianza',
-
-            // COFEPRIS
             health_registration: 'COFEPRIS-DF-2025-01234',
             health_registration_expires_at: new Date('2026-12-31'),
-
-            // Configuración clínica
             specialties: ['Ortodoncia', 'Endodoncia', 'Odontopediatría'],
             number_of_rooms: 4,
-
             max_users: 10,
             current_users: 0
         },
@@ -48,17 +42,13 @@ const seedTenants = async () => {
             state: 'Jalisco',
             country: 'México',
             postal_code: '44630',
-
             tax_id: 'DCP850210XYZ',
             legal_name: 'Dental Care Premium S.A. de C.V.',
             regime: 'General de Ley Personas Morales',
-
             health_registration: 'COFEPRIS-JAL-2024-00456',
             health_registration_expires_at: new Date('2025-09-30'),
-
             specialties: ['Estética dental', 'Implantes', 'Blanqueamiento'],
             number_of_rooms: 6,
-
             max_users: 15,
             current_users: 0
         },
@@ -75,34 +65,30 @@ const seedTenants = async () => {
             state: 'Sonora',
             country: 'México',
             postal_code: '84000',
-
             tax_id: 'STN910715LMN',
             legal_name: 'Sonrisa Total Nogales S. de R.L.',
             regime: 'Régimen Simplificado de Confianza',
-
             health_registration: 'COFEPRIS-SON-2025-07890',
             health_registration_expires_at: new Date('2026-06-15'),
-
             specialties: ['Odontología general', 'Ortodoncia'],
             number_of_rooms: 3,
-
             max_users: 8,
             current_users: 0
         }
     ];
 
     for (const t of tenants) {
-        let tenant = await Tenant.findOne({ where: { name: t.name } });
-        if (!tenant) {
-            const tenantCode = crypto.randomBytes(4).toString('hex').toUpperCase();
-
-            tenant = await Tenant.create({
+        const existing = await Tenant.findOne({ where: { name: t.name } });
+        if (!existing) {
+            const code = crypto.randomBytes(4).toString('hex').toUpperCase();
+            const tenant = await Tenant.create({
                 ...t,
-                code: tenantCode
+                code,
+                currency: 'MXN',
+                timezone: 'America/Hermosillo',
+                status: 'active'
             });
-            console.log(`✅ Clínica creada: ${t.name} (code: ${tenantCode})`);
 
-            // Crear suscripción activa
             const sub = await Subscription.create({
                 tenant_id: tenant.id,
                 plan_name: 'Professional',
@@ -116,6 +102,8 @@ const seedTenants = async () => {
 
             tenant.current_subscription_id = sub.id;
             await tenant.save();
+
+            console.log(`✅ Clínica creada: ${tenant.name} (code: ${code})`);
         } else {
             console.log(`ℹ️ Clínica ya existe: ${t.name}`);
         }

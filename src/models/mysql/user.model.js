@@ -3,35 +3,55 @@ const sequelize = require('../../config/database');
 
 const User = sequelize.define('User', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    tenant_id: { type: DataTypes.INTEGER, allowNull: false },
-    user_code: { type: DataTypes.STRING, allowNull: false, unique: true },
-    username: { type: DataTypes.STRING, allowNull: false },
-    email: { type: DataTypes.STRING, allowNull: false },
+
+    tenant_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: { model: 'tenants', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+    },
+
+    employee_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: { model: 'employees', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+        comment: 'Null si el usuario no está asociado a un empleado'
+    },
+
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+        comment: 'Correo de acceso, único globalmente (o por tenant en producción multiinstancia)'
+    },
+
     password: { type: DataTypes.STRING, allowNull: false },
-    role_id: { type: DataTypes.INTEGER, allowNull: false },
+    username: { type: DataTypes.STRING, allowNull: false },
+    is_superadmin: { type: DataTypes.BOOLEAN, defaultValue: false },
 
-    // Nuevos campos para POS
-    store_id: { type: DataTypes.INTEGER, allowNull: true }, // sucursal/tienda
-    current_session_id: { type: DataTypes.INTEGER, allowNull: true }, // sesión de caja activa
-
-    // Datos de usuario
-    first_name: { type: DataTypes.STRING, allowNull: false },
-    last_name: { type: DataTypes.STRING, allowNull: false },
-    second_last_name: { type: DataTypes.STRING, allowNull: true },
-    phone: { type: DataTypes.STRING, allowNull: true },
-    profile_image: { type: DataTypes.STRING, allowNull: true },
     status: {
         type: DataTypes.ENUM('active', 'inactive', 'blocked'),
         allowNull: false,
         defaultValue: 'active'
     },
-    last_login_at: { type: DataTypes.DATE, allowNull: true },
-    is_superadmin: { type: DataTypes.BOOLEAN, defaultValue: false }
+
+    last_login_at: { type: DataTypes.DATE, allowNull: true }
 }, {
     tableName: 'users',
     timestamps: true,
     paranoid: true,
     underscored: true,
+
+    // 📊 Índices documentados (solo informativos para el ORM)
+    indexes: [
+        { fields: ['tenant_id'], name: 'idx_users_tenant' },
+        { fields: ['employee_id'], name: 'idx_users_employee' },
+        { fields: ['status'], name: 'idx_users_status' },
+        { unique: true, fields: ['email'], name: 'uq_users_email' }
+    ]
 });
 
 module.exports = User;

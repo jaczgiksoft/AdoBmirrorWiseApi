@@ -10,6 +10,90 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.5.0] - 2025-11-12
+### Added
+- **Nuevo esquema de usuarios y autenticación:**
+    - Creación de los modelos:
+        - `employee.model.js` → almacena datos personales y laborales del personal clínico.
+        - `user.model.js` → almacena credenciales de acceso, vinculado opcionalmente a un `employee`.
+        - `user_role.model.js` → tabla pivote N:M que conecta `users` y `roles`.
+    - Se añadió soporte para múltiples roles por usuario.
+    - Se incorporó la relación `User.belongsTo(Employee, { as: 'employee' })` y `User.belongsToMany(Role, { through: UserRole, as: 'roles' })`.
+    - Nuevas migraciones para `employees`, `users` y `user_roles` con índices optimizados y `underscored: true`.
+    - Campos auditables (`createdAt`, `updatedAt`, `deletedAt`) y soft delete activado con `paranoid: true`.
+
+- **Autenticación multirol y modular:**
+    - `auth.service.js`:
+        - Refactor completo de `login()` para admitir múltiples roles, validación de tenant, e incluir `roles` y `permissions` en la respuesta.
+        - `me()` reescrito para devolver datos consolidados del usuario con:
+            - Información del `employee`.
+            - Módulos activos del `tenant`.
+            - Permisos fusionados de todos los roles.
+            - `full_name` derivado dinámicamente desde `employee`.
+    - `auth.repository.js`:
+        - Reescrito con métodos optimizados:
+            - `findUserByTenantAndUsernameOrEmail()`
+            - `findUserWithRelations()`
+            - `findUserRoles()` y `findUserPermissions()` (para combinar permisos multirol).
+        - Inclusión de `Employee`, `Roles`, `Permissions`, `Tenant` y `TenantModules` en consultas.
+    - `auth.controller.js` actualizado para devolver respuestas uniformes (`success`, `data`, `message`).
+    - `auth.routes.js` modernizado con estructura clara y respuestas JSON estandarizadas.
+    - `loadPermissions.middleware.js` actualizado:
+        - Carga todos los permisos según los roles del usuario.
+        - Fusión inteligente de permisos repetidos entre roles.
+    - `checkPermissions.middleware.js` actualizado para trabajar con `req.user.permissions[module]`.
+
+- **Nuevos índices y buenas prácticas:**
+    - Índices únicos y de rendimiento agregados en:
+        - `users` (`email`, `tenant_id`)
+        - `user_roles` (`user_id`, `role_id`)
+        - `employees` (`tenant_id`)
+    - Uso uniforme de `underscored: true` y `paranoid: true` en todos los modelos.
+
+### Changed
+- **Reestructuración general del modelo de datos:**
+    - Eliminado `role_id` de `User` (ya no es un campo directo).
+    - `User` ahora contiene referencia opcional `employee_id`.
+    - Ajustadas relaciones en `associations.js` para reflejar la nueva jerarquía:
+        - `User ↔ Employee`
+        - `User ↔ Role (N:M)`
+        - `Role ↔ Permission`
+        - `Tenant ↔ User`, `Tenant ↔ Role`, `Tenant ↔ Permission`.
+    - Revisión completa de `associations.js` para mantener integridad referencial y consistencia de alias.
+
+- **Seeders revisados:**
+    - `seedTenants.js`: mantiene creación de tenants con suscripciones automáticas.
+    - `seedTenantModules.js`: inicializa módulos y features base por plan.
+    - `seedRolesAndPermissionsClinic.js`: redefine roles y permisos base según módulos activos.
+    - `seedAdminUsersClinic.js`:
+        - Crea registros en `employees`, `users` y `user_roles` de forma coordinada.
+        - Genera usuarios con sus respectivos roles (`Administrador General`, `Director Médico`, `Recepcionista`, `Odontólogo`).
+    - `seedPatientRelationsClinic.js`: se mantiene funcional con nuevas dependencias.
+    - `seedPatientsClinic.js`: ajustado para soportar relación N:M (`patient_patient_type`).
+
+- **Actualización de migraciones:**
+    - Migraciones recreadas para todos los modelos (`tenant`, `subscription`, `role`, `permission`, `tenant_module`, `tenant_feature`, `employee`, `user`, `user_role`, etc.).
+    - Agregados índices eficientes y relaciones en cascada (`CASCADE` / `SET NULL` según corresponda).
+
+### Fixed
+- Corrección del error en middleware de permisos:
+    - Se eliminó el uso de `req.user.role_id` (ya no existe).
+    - Se reemplazó por carga dinámica de permisos según todos los roles asociados.
+- `auth/me` ahora funciona correctamente y devuelve toda la información esperada (sin errores de Sequelize).
+
+### Notes
+- Esta versión introduce **autenticación multirol y modelo unificado para empleados y usuarios.**
+- Mejora la escalabilidad para gestión de acceso granular y auditorías futuras.
+- Después de esta actualización, **es obligatorio ejecutar nuevamente las migraciones y seeders:**
+  ```bash
+  npx sequelize-cli db:migrate
+  node src/utils/seedTenants.js
+  node src/utils/seedTenantModules.js
+  node src/utils/seedRolesAndPermissions.js
+  node src/utils/seedAdminUsersClinic.js
+
+---
+
 ## [0.4.1] - 2025-11-12
 ### Changed
 - **Actualización del seeder `seedTenantModulesClinic.js`:**

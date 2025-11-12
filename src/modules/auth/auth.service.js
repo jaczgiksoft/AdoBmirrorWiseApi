@@ -8,9 +8,8 @@ const ms = require('ms');
 const authRepository = require('./auth.repository');
 const { sendMail } = require('../../utils/mail.helper');
 const { createLog } = require('../../utils/log.helper');
-const { logApiError } = require('../../utils/logApiError');
-const { logger } = require('../../utils/logger');
 const { notifyUser } = require('../../utils/notify.helper');
+const { logger } = require('../../utils/logger');
 
 class AuthService {
     // =====================
@@ -19,14 +18,14 @@ class AuthService {
     async login({ tenant, username, password, ip, userAgent }) {
         const now = new Date();
 
+        // 1️⃣ Intentos fallidos
         const attempt = await authRepository.findLoginAttempt(username);
-
         if (attempt?.blocked_until && now < attempt.blocked_until) {
             throw new Error('Cuenta bloqueada temporalmente. Intenta más tarde.');
         }
 
-        // 🔹 Buscar usuario dentro del tenant (clínica)
-        const user = await authRepository.findUserByTenantAndUsername(tenant, username);
+        // 2️⃣ Buscar usuario dentro del tenant
+        const user = await authRepository.findUserByTenantAndUsernameOrEmail(tenant, username);
         if (!user || !(await bcrypt.compare(password, user.password))) {
             const maxAttempts = 5;
             const blockTimeMin = 10;
@@ -53,22 +52,24 @@ class AuthService {
 
         await authRepository.clearLoginAttempts(username);
 
+        // 3️⃣ Obtener roles y permisos (N:M)
+        const roles = await authRepository.findUserRoles(user.id);
+        const roleNames = roles.map(r => r.name);
+        const permissions = await authRepository.findUserPermissions(user.id);
+
+        // 4️⃣ Generar token JWT con múltiples roles
         const expiresIn = process.env.JWT_EXPIRES_IN || '1h';
-        const token = jwt.sign(
-            {
-                id: user.id,
-                user_code: user.user_code,
-                username: user.username,
-                tenant_id: user.tenant_id,
-                tenant_code: user.tenant?.code,
-                role: user.role.name,
-                role_id: user.role_id,
-                is_superadmin: !!user.is_superadmin,
-                jti: uuidv4()
-            },
-            process.env.JWT_SECRET,
-            { expiresIn }
-        );
+        const tokenPayload = {
+            id: user.id,
+            username: user.username,
+            tenant_id: user.tenant_id,
+            tenant_code: user.tenant?.code,
+            roles: roleNames,
+            is_superadmin: !!user.is_superadmin,
+            jti: uuidv4()
+        };
+
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn });
 
         await authRepository.createActiveToken({
             user_id: user.id,
@@ -88,8 +89,89 @@ class AuthService {
         return {
             message: 'Login exitoso',
             token,
-            role_id: user.role_id,
-            role: user.role.name
+            roles: roleNames,
+            permissions
+        };
+    }
+
+    // =====================
+    // ME
+    // =====================
+    async me(currentUser) {
+        const user = await authRepository.findUserWithRelations(currentUser.id);
+        if (!user) throw new Error('Usuario no encontrado');
+
+        // 🧩 Tomar el nombre completo desde employee si existe, si no, fallback al user
+        const fullName = user.employee
+            ? [
+                user.employee.first_name,
+                user.employee.last_name,
+                user.employee.second_last_name || ''
+            ].join(' ').trim()
+            : [
+                user.first_name,
+                user.last_name,
+                user.second_last_name || ''
+            ].join(' ').trim();
+
+        // 🔒 Combinar permisos de todos los roles (multirol)
+        const mergedPermissions = {};
+        user.roles?.forEach(role => {
+            role.permissions?.forEach(p => {
+                if (!mergedPermissions[p.module]) {
+                    mergedPermissions[p.module] = {
+                        read: p.can_read,
+                        write: p.can_write,
+                        edit: p.can_edit,
+                        delete: p.can_delete
+                    };
+                } else {
+                    mergedPermissions[p.module].read ||= p.can_read;
+                    mergedPermissions[p.module].write ||= p.can_write;
+                    mergedPermissions[p.module].edit ||= p.can_edit;
+                    mergedPermissions[p.module].delete ||= p.can_delete;
+                }
+            });
+        });
+
+        // ⚙️ Módulos habilitados del tenant
+        const modules = user.tenant?.modules
+            ?.filter(m => m.is_enabled)
+            .map(m => m.module) || [];
+
+        // 🏢 Información del tenant (clínica)
+        const tenantInfo = {
+            id: user.tenant.id,
+            name: user.tenant.name,
+            code: user.tenant.code,
+            logo_url: user.tenant.logo_url,
+            currency: user.tenant.currency,
+            timezone: user.tenant.timezone
+        };
+
+        // 👤 Información de empleado (si aplica)
+        const employee = user.employee
+            ? {
+                id: user.employee.id,
+                first_name: user.employee.first_name,
+                last_name: user.employee.last_name,
+                second_last_name: user.employee.second_last_name,
+                position: user.employee.position,
+                status: user.employee.status
+            }
+            : null;
+
+        return {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            full_name: fullName,
+            is_superadmin: !!user.is_superadmin,
+            roles: user.roles?.map(r => ({ id: r.id, name: r.name })) || [],
+            permissions: mergedPermissions,
+            tenant: tenantInfo,
+            modules,
+            employee
         };
     }
 
@@ -125,63 +207,6 @@ class AuthService {
     }
 
     // =====================
-    // ME
-    // =====================
-    async me(currentUser) {
-        const user = await authRepository.findUserById(currentUser.id);
-        if (!user) throw new Error('Usuario no encontrado');
-
-        const fullName = `${user.first_name} ${user.last_name}${
-            user.second_last_name ? ' ' + user.second_last_name : ''
-        }`;
-
-        // Permisos por módulo
-        const permissions = {};
-        user.role.permissions.forEach(p => {
-            permissions[p.module] = {
-                read: p.can_read,
-                write: p.can_write,
-                edit: p.can_edit,
-                delete: p.can_delete
-            };
-        });
-
-        // Módulos habilitados
-        const modules =
-            user.tenant?.modules?.filter(m => m.is_enabled).map(m => m.module) || [];
-
-        // Información de clínica (tenant)
-        const clinic = {
-            id: user.tenant?.id,
-            name: user.tenant?.name,
-            logo_url: user.tenant?.logo_url,
-            currency: user.tenant?.currency || 'MXN',
-            exchange_rate: user.tenant?.exchange_rate || null,
-            timezone: user.tenant?.timezone || 'America/Hermosillo'
-        };
-
-        return {
-            id: user.id,
-            user_code: user.user_code,
-            username: user.username,
-            full_name: fullName.trim(),
-            email: user.email,
-            profile_image: user.profile_image,
-            role: user.role.name,
-            role_id: user.role_id,
-            requires_cash_session: !!user.role.requires_cash_session,
-            tenant: clinic,
-            permissions,
-            modules,
-            config: {
-                currency: clinic.currency,
-                exchange_rate: clinic.exchange_rate,
-                timezone: clinic.timezone
-            }
-        };
-    }
-
-    // =====================
     // FORGOT PASSWORD
     // =====================
     async forgotPassword(email) {
@@ -189,7 +214,7 @@ class AuthService {
         if (!user) throw new Error('Usuario no encontrado.');
 
         const rawToken = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
         await authRepository.createPasswordResetToken({
             user_id: user.id,
@@ -203,11 +228,11 @@ class AuthService {
             to: email,
             subject: 'Restablecimiento de contraseña',
             html: `
-                <h3>Hola ${user.first_name || user.username},</h3>
-                <p>Solicitaste restablecer tu contraseña. Haz clic en el siguiente enlace:</p>
-                <p><a href="${resetUrl}">${resetUrl}</a></p>
-                <p>Este enlace expirará en 30 minutos.</p>
-            `
+        <h3>Hola ${user.first_name || user.username},</h3>
+        <p>Solicitaste restablecer tu contraseña. Haz clic en el siguiente enlace:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>Este enlace expirará en 30 minutos.</p>
+      `
         });
 
         return true;
@@ -226,14 +251,12 @@ class AuthService {
         const user = await authRepository.findUserById(tokenDoc.user_id);
         if (!user) throw new Error('Usuario no encontrado.');
 
-        const strongPassRegex =
-            /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+        const strongPassRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
         if (!strongPassRegex.test(new_password)) {
             throw new Error('La contraseña no cumple los requisitos de seguridad.');
         }
 
-        const hashedPassword = await bcrypt.hash(new_password, 10);
-        user.password = hashedPassword;
+        user.password = await bcrypt.hash(new_password, 10);
         await user.save();
 
         await authRepository.deletePasswordResetToken(tokenDoc._id);

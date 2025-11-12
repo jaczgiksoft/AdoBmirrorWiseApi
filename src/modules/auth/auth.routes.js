@@ -9,19 +9,30 @@ const ActiveToken = require('../../models/mongo/activeToken.model');
 const { loginLimiter } = require('../../middlewares/rateLimit.middleware');
 const { checkPermissions } = require('../../middlewares/permissions.middleware');
 const { validateRequest } = require('../../middlewares/validate.middleware');
-const { loginValidator, forgotPasswordValidator, resetPasswordValidator } = require('./auth.validator');
+const {
+    loginValidator,
+    forgotPasswordValidator,
+    resetPasswordValidator
+} = require('./auth.validator');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 const { logger } = require('../../utils/logger');
 const { createLog } = require('../../utils/log.helper');
 
-// 🔑 Login
+// =====================
+// 🔐 LOGIN
+// =====================
 router.post('/login', loginLimiter, loginValidator, validateRequest, login);
 
-// 🔒 Logout (invalida solo el token actual)
+// =====================
+// 🔒 LOGOUT (invalida el token actual)
+// =====================
 router.post('/logout', validateToken, async (req, res) => {
     try {
         const authHeader = req.headers['authorization'];
         const token = authHeader?.split(' ')[1];
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Token no proporcionado' });
+        }
 
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -44,21 +55,48 @@ router.post('/logout', validateToken, async (req, res) => {
             user_agent: req.headers['user-agent']
         });
 
-        res.json({ message: 'Sesión cerrada exitosamente', tokenInvalidated: true });
+        res.status(200).json({
+            success: true,
+            message: 'Sesión cerrada exitosamente',
+            tokenInvalidated: true
+        });
     } catch (err) {
         logger.error(`Error en logout: ${err.message}`);
-        res.status(500).json({ message: 'Error al cerrar sesión' });
+        res.status(500).json({ success: false, message: 'Error al cerrar sesión' });
     }
 });
 
-// 🔓 Unblock user (solo superadmin o con permiso explícito)
-router.delete('/unblock/:username', validateToken, checkPermissions('delete', 'users'), unblockUser);
+// =====================
+// 🔓 DESBLOQUEAR USUARIO
+// (solo superadmin o con permiso explícito en módulo users)
+// =====================
+router.delete(
+    '/unblock/:username',
+    validateToken,
+    checkPermissions('delete', 'users'),
+    unblockUser
+);
 
-// 👤 Perfil autenticado
+// =====================
+// 👤 PERFIL DEL USUARIO ACTUAL
+// =====================
 router.get('/me', validateToken, loadPermissions, me);
 
-// 🔑 Reset password flow
-router.post('/forgot-password', forgotPasswordValidator, validateRequest, forgotPassword);
-router.post('/reset-password', resetPasswordValidator, validateRequest, resetPassword);
+// =====================
+// 🔑 RECUPERACIÓN DE CONTRASEÑA
+// =====================
+router.post(
+    '/forgot-password',
+    forgotPasswordValidator,
+    validateRequest,
+    forgotPassword
+);
+
+router.post(
+    '/reset-password',
+    resetPasswordValidator,
+    validateRequest,
+    resetPassword
+);
 
 module.exports = router;

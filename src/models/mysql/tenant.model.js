@@ -25,37 +25,25 @@ const Tenant = sequelize.define('Tenant', {
     postal_code: { type: DataTypes.STRING, allowNull: true },
 
     // 🧾 Datos fiscales
-    tax_id: { type: DataTypes.STRING, allowNull: true },       // RFC / NIT / CUIT
-    legal_name: { type: DataTypes.STRING, allowNull: true },   // Razón social
-    regime: { type: DataTypes.STRING, allowNull: true },       // Régimen fiscal
+    tax_id: { type: DataTypes.STRING, allowNull: true },
+    legal_name: { type: DataTypes.STRING, allowNull: true },
+    regime: { type: DataTypes.STRING, allowNull: true },
     certificate_path: { type: DataTypes.STRING, allowNull: true },
     key_path: { type: DataTypes.STRING, allowNull: true },
     certificate_password: { type: DataTypes.STRING, allowNull: true },
     cfdi_use: { type: DataTypes.STRING, allowNull: true },
     payment_method: { type: DataTypes.STRING, allowNull: true },
     payment_form: { type: DataTypes.STRING, allowNull: true },
-    tax_rate: {
-        type: DataTypes.DECIMAL(5, 2),
-        defaultValue: 16.00,
-        comment: 'IVA o impuesto local aplicado a servicios'
-    },
+    tax_rate: { type: DataTypes.DECIMAL(5, 2), defaultValue: 16.0 },
 
-    // ⚕️ Registro sanitario (COFEPRIS)
-    health_registration: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        comment: 'Número de registro o permiso sanitario COFEPRIS'
-    },
-    health_registration_expires_at: {
-        type: DataTypes.DATE,
-        allowNull: true,
-        comment: 'Fecha de vencimiento del registro sanitario (si aplica)'
-    },
+    // ⚕️ Registro sanitario
+    health_registration: { type: DataTypes.STRING, allowNull: true },
+    health_registration_expires_at: { type: DataTypes.DATE, allowNull: true },
 
     // ⚙️ Configuración y estado
     status: {
         type: DataTypes.ENUM('active', 'inactive', 'suspended'),
-        defaultValue: 'active'
+        defaultValue: 'active',
     },
     current_subscription_id: { type: DataTypes.INTEGER, allowNull: true },
     max_users: { type: DataTypes.INTEGER, defaultValue: 5 },
@@ -66,38 +54,30 @@ const Tenant = sequelize.define('Tenant', {
         type: DataTypes.STRING,
         allowNull: true,
         defaultValue: 'America/Hermosillo',
-        comment: 'Zona horaria de la clínica'
     },
     currency: { type: DataTypes.STRING, defaultValue: 'MXN' },
-    exchange_rate: {
-        type: DataTypes.DECIMAL(10, 4),
-        allowNull: true,
-        comment: 'Tipo de cambio del dólar respecto a MXN'
-    },
+    exchange_rate: { type: DataTypes.DECIMAL(10, 4), allowNull: true },
+    profit_margin: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 30.0 },
 
-    // 🕓 Horarios de atención
-    opening_hours: {
-        type: DataTypes.JSON,
-        allowNull: true,
-        comment: 'Horarios de atención, ej: {"monday": ["08:00", "18:00"]}'
-    },
-
-    // 🦷 Datos específicos de clínica dental
-    specialties: {
-        type: DataTypes.JSON,
-        allowNull: true,
-        comment: 'Especialidades ofrecidas, ej. ["ortodoncia", "endodoncia"]'
-    },
-    number_of_rooms: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        comment: 'Cantidad de consultorios o gabinetes en la clínica'
-    },
+    // 🕓 Horarios y clínica
+    opening_hours: { type: DataTypes.JSON, allowNull: true },
+    specialties: { type: DataTypes.JSON, allowNull: true },
+    number_of_rooms: { type: DataTypes.INTEGER, allowNull: true },
 }, {
     tableName: 'tenants',
     timestamps: true,
     paranoid: true,
-    underscored: false
+    underscored: true,
+
+    // ⚙️ Índices eficientes
+    indexes: [
+        { unique: true, fields: ['code'], name: 'idx_tenants_code' },
+        { unique: true, fields: ['name'], name: 'idx_tenants_name' },
+        { fields: ['status'], name: 'idx_tenants_status' },
+        { fields: ['city'], name: 'idx_tenants_city' },
+        { fields: ['country'], name: 'idx_tenants_country' },
+        { fields: ['current_subscription_id'], name: 'idx_tenants_subscription' },
+    ],
 });
 
 module.exports = Tenant;

@@ -1,27 +1,35 @@
 // src/modules/auth/auth.validator.js
 const { body } = require('express-validator');
 
-// 🔹 LOGIN
+/**
+ * 🔹 LOGIN
+ * Se usa para validar credenciales antes de autenticar.
+ * Ahora soporta login por usuario o email dentro del tenant.
+ */
 const loginValidator = [
     body('tenant')
-        .exists().withMessage('El código de tenant es obligatorio')
+        .exists().withMessage('El código del tenant es obligatorio')
         .bail()
         .trim()
-        .notEmpty().withMessage('El código de tenant no puede estar vacío'),
+        .notEmpty().withMessage('El código del tenant no puede estar vacío')
+        .isString().withMessage('El código del tenant debe ser texto'),
 
     body('username')
-        .exists().withMessage('El nombre de usuario es obligatorio')
+        .exists().withMessage('El usuario o correo es obligatorio')
         .bail()
         .trim()
-        .notEmpty().withMessage('El nombre de usuario no puede estar vacío'),
+        .notEmpty().withMessage('El usuario o correo no puede estar vacío'),
 
     body('password')
         .exists().withMessage('La contraseña es obligatoria')
         .bail()
+        .isString().withMessage('La contraseña debe ser texto')
         .isLength({ min: 4 }).withMessage('La contraseña debe tener al menos 4 caracteres')
 ];
 
-// 🔹 OLVIDÉ CONTRASEÑA
+/**
+ * 🔹 OLVIDÉ CONTRASEÑA
+ */
 const forgotPasswordValidator = [
     body('email')
         .trim()
@@ -30,7 +38,9 @@ const forgotPasswordValidator = [
         .normalizeEmail({ gmail_remove_dots: false })
 ];
 
-// 🔹 RESETEAR CONTRASEÑA
+/**
+ * 🔹 RESETEAR CONTRASEÑA
+ */
 const resetPasswordValidator = [
     body('token')
         .trim()
