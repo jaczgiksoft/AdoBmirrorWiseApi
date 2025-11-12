@@ -56,7 +56,14 @@ const createPatientValidator = [
     body('occupation_id').optional().isInt().withMessage('occupation_id debe ser un número entero'),
     body('patient_profession_id').optional().isInt().withMessage('patient_profession_id debe ser un número entero'),
     body('bracket_type_id').optional().isInt().withMessage('bracket_type_id debe ser un número entero'),
-    body('patient_type_id').optional().isInt().withMessage('patient_type_id debe ser un número entero'),
+
+    // 🔁 Tipos de paciente (N:M)
+    body('patient_type_ids')
+        .optional()
+        .isArray().withMessage('patient_type_ids debe ser un arreglo de IDs de tipo de paciente'),
+    body('patient_type_ids.*')
+        .isInt().withMessage('Cada ID en patient_type_ids debe ser un número entero'),
+
     body('patient_status_id').optional().isInt().withMessage('patient_status_id debe ser un número entero'),
 
     // 🏠 Dirección
@@ -77,7 +84,7 @@ const createPatientValidator = [
     body('company').optional().trim(),
     body('company_address').optional().trim(),
 
-    // 🖼️ Imagenes
+    // 🖼️ Imágenes
     body('photo_url').optional().isURL().withMessage('La foto debe ser una URL válida'),
     body('medical_record_image_url').optional().isURL().withMessage('El archivo del expediente debe ser una URL válida'),
 
@@ -120,7 +127,6 @@ const createPatientValidator = [
 const updatePatientValidator = [
     param('id').isInt().withMessage('El ID debe ser un número entero'),
     ...createPatientValidator.map(v => {
-        // permite todos los campos como opcionales en actualización
         if (v.builder?.fields) v.builder.optional = true;
         return v;
     })

@@ -4,6 +4,7 @@ const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
 const { notifyUser } = require('../../utils/notify.helper');
+const Patient = require('../../models/mysql/patient.model'); // 👈 necesario para setTypes()
 
 class PatientService {
     // 📋 Obtener todos los pacientes por tenant
@@ -37,7 +38,7 @@ class PatientService {
                 'genre', 'birth_date', 'marital_status',
                 'phone_number', 'email',
                 'referral_id', 'occupation_id', 'bracket_type_id',
-                'patient_type_id', 'patient_status_id', 'patient_profession_id',
+                'patient_status_id', 'patient_profession_id',
                 'address_street_name', 'address_neighborhood',
                 'address_apartment_number', 'address_street_number',
                 'address_zip_code', 'address_city', 'address_state', 'address_country',
@@ -65,7 +66,14 @@ class PatientService {
 
             cleanData.tenant_id = currentUser.tenant_id;
 
+            // Crear paciente base
             const newPatient = await patientRepository.createPatient(cleanData, t);
+
+            // 🔁 Asociar múltiples tipos de paciente si existen
+            if (Array.isArray(data.patient_type_ids) && data.patient_type_ids.length > 0) {
+                await newPatient.setTypes(data.patient_type_ids, { transaction: t });
+            }
+
             await t.commit();
 
             await createLog({
@@ -110,7 +118,7 @@ class PatientService {
                 'genre', 'birth_date', 'marital_status',
                 'phone_number', 'email',
                 'referral_id', 'occupation_id', 'bracket_type_id',
-                'patient_type_id', 'patient_status_id', 'patient_profession_id',
+                'patient_status_id', 'patient_profession_id',
                 'address_street_name', 'address_neighborhood',
                 'address_apartment_number', 'address_street_number',
                 'address_zip_code', 'address_city', 'address_state', 'address_country',
@@ -137,6 +145,12 @@ class PatientService {
             );
 
             await patientRepository.updatePatient(patient, cleanData, t);
+
+            // 🔁 Actualizar tipos asociados si se envían
+            if (Array.isArray(data.patient_type_ids)) {
+                await patient.setTypes(data.patient_type_ids, { transaction: t });
+            }
+
             await t.commit();
 
             await createLog({

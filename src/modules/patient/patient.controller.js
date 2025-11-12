@@ -26,6 +26,15 @@ const getOne = async (req, res) => {
 // 🟢 Crear nuevo paciente
 const create = async (req, res) => {
     try {
+        // 🧩 Si el frontend envía patient_type_ids como string JSON, parsearlo
+        if (typeof req.body.patient_type_ids === 'string') {
+            try {
+                req.body.patient_type_ids = JSON.parse(req.body.patient_type_ids);
+            } catch {
+                req.body.patient_type_ids = [];
+            }
+        }
+
         const patient = await patientService.createPatient(req.body, req.user, req);
         res.status(201).json({ message: 'Paciente creado exitosamente', patient });
     } catch (err) {
@@ -36,6 +45,15 @@ const create = async (req, res) => {
 // 🟡 Actualizar paciente
 const update = async (req, res) => {
     try {
+        // 🧩 Asegurar que patient_type_ids llegue como array
+        if (typeof req.body.patient_type_ids === 'string') {
+            try {
+                req.body.patient_type_ids = JSON.parse(req.body.patient_type_ids);
+            } catch {
+                req.body.patient_type_ids = [];
+            }
+        }
+
         const patient = await patientService.updatePatient(req.params.id, req.body, req.user, req);
         res.json({ message: 'Paciente actualizado exitosamente', patient });
     } catch (err) {

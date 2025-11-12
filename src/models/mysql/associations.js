@@ -26,6 +26,7 @@ const PatientType = require('./patient_type.model'); // 🔹 nuevo bwise
 const PatientStatus = require('./patient_status.model'); // 🔹 nuevo bwise
 const BracketType = require('./bracket_type.model'); // 🔹 nuevo bwise
 const Patient = require('./patient.model');  // 🔹 nuevo bwise
+const PatientPatientType = require('./patient_patient_type.model');  // 🔹 nuevo bwise
 
 // =====================
 // TENANTS
@@ -276,10 +277,13 @@ Patient.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant', onDelete: 'CA
 // RELACIONES OPCIONALES (catálogos)
 Patient.belongsTo(Referral, { foreignKey: 'referral_id', as: 'referral', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 Patient.belongsTo(Occupation, { foreignKey: 'occupation_id', as: 'occupation', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
-Patient.belongsTo(PatientType, { foreignKey: 'patient_type_id', as: 'type', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 Patient.belongsTo(PatientStatus, { foreignKey: 'patient_status_id', as: 'status', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 Patient.belongsTo(BracketType, { foreignKey: 'bracket_type_id', as: 'bracket_type', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 Patient.belongsTo(PatientProfession, {foreignKey: 'patient_profession_id', as: 'profession', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
+
+// 🔁 Relación N:M entre pacientes y tipos
+Patient.belongsToMany(PatientType, { through: PatientPatientType, as: 'types', foreignKey: 'patient_id', otherKey: 'patient_type_id', onDelete: 'CASCADE', onUpdate: 'CASCADE', });
+PatientType.belongsToMany(Patient, { through: PatientPatientType, as: 'patients', foreignKey: 'patient_type_id', otherKey: 'patient_id', onDelete: 'CASCADE', onUpdate: 'CASCADE', });
 
 // =====================
 // RELACIONES INVERSAS (Catálogos → Pacientes)
@@ -289,8 +293,6 @@ Patient.belongsTo(PatientProfession, {foreignKey: 'patient_profession_id', as: '
 Referral.hasMany(Patient, { foreignKey: 'referral_id', as: 'patients', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 // OCCUPATION ↔ PATIENT
 Occupation.hasMany(Patient, { foreignKey: 'occupation_id', as: 'patients', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
-// PATIENT TYPE ↔ PATIENT
-PatientType.hasMany(Patient, { foreignKey: 'patient_type_id', as: 'patients', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 // PATIENT STATUS ↔ PATIENT
 PatientStatus.hasMany(Patient, { foreignKey: 'patient_status_id', as: 'patients', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 // BRACKET TYPE ↔ PATIENT

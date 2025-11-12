@@ -17,7 +17,8 @@ class PatientRepository {
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
                 { model: Referral, as: 'referral', attributes: ['id', 'name'] },
                 { model: Occupation, as: 'occupation', attributes: ['id', 'name'] },
-                { model: PatientType, as: 'type', attributes: ['id', 'name', 'color'] },
+                // 🔁 Cambiado a relación N:M
+                { model: PatientType, as: 'types', through: { attributes: [] }, attributes: ['id', 'name', 'color'] },
                 { model: PatientStatus, as: 'status', attributes: ['id', 'name', 'color'] },
                 { model: BracketType, as: 'bracket_type', attributes: ['id', 'name', 'color'] },
                 { model: PatientProfession, as: 'profession', attributes: ['id', 'name', 'abbreviation'] }
@@ -34,7 +35,8 @@ class PatientRepository {
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
                 { model: Referral, as: 'referral', attributes: ['id', 'name'] },
                 { model: Occupation, as: 'occupation', attributes: ['id', 'name'] },
-                { model: PatientType, as: 'type', attributes: ['id', 'name'] },
+                // 🔁 Cambiado a N:M
+                { model: PatientType, as: 'types', through: { attributes: [] }, attributes: ['id', 'name', 'color'] },
                 { model: PatientStatus, as: 'status', attributes: ['id', 'name'] },
                 { model: BracketType, as: 'bracket_type', attributes: ['id', 'name'] },
                 { model: PatientProfession, as: 'profession', attributes: ['id', 'name', 'abbreviation'] }
@@ -82,7 +84,8 @@ class PatientRepository {
             order: [[orderColumn, orderDir]],
             include: [
                 { model: PatientStatus, as: 'status', attributes: ['id', 'name', 'color'] },
-                { model: PatientType, as: 'type', attributes: ['id', 'name', 'color'] }
+                // 🔁 Cambiado a relación N:M
+                { model: PatientType, as: 'types', through: { attributes: [] }, attributes: ['id', 'name', 'color'] }
             ]
         });
 
@@ -97,7 +100,8 @@ class PatientRepository {
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
                 { model: Referral, as: 'referral', attributes: ['id', 'name'] },
                 { model: Occupation, as: 'occupation', attributes: ['id', 'name'] },
-                { model: PatientType, as: 'type', attributes: ['id', 'name', 'color'] },
+                // 🔁 Cambiado a N:M
+                { model: PatientType, as: 'types', through: { attributes: [] }, attributes: ['id', 'name', 'color'] },
                 { model: PatientStatus, as: 'status', attributes: ['id', 'name', 'color', 'order_index'] },
                 { model: BracketType, as: 'bracket_type', attributes: ['id', 'name', 'material', 'color'] },
                 { model: PatientProfession, as: 'profession', attributes: ['id', 'name', 'abbreviation'] }

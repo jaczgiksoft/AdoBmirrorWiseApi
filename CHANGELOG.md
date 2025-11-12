@@ -10,6 +10,30 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.3.1] - 2025-11-11
+### Changed
+- **Estructura de relación entre pacientes y tipos de paciente** actualizada de 1:N a N:M:
+    - Eliminado el campo `patient_type_id` de la tabla `patients`.
+    - Creada nueva tabla pivote `patient_patient_types` con soporte multi-tenant.
+    - Migración incremental `remove-patient-type-column-and-add-pivot.js` agregada.
+    - Actualizados modelos y asociaciones en `associations.js`:
+        - `Patient.belongsToMany(PatientType, { as: 'types' })`
+        - `PatientType.belongsToMany(Patient, { as: 'patients' })`
+    - Actualizados `patient.repository.js`, `patient.service.js`, y `patient.controller.js` para manejar `patient_type_ids` como arreglo.
+    - Actualizado `patient.validator.js` para validar arrays con `express-validator`.
+    - Eliminada dependencia del campo `patient_type_id` en todas las capas de negocio y validación.
+
+### Added
+- **Nuevo modelo pivote `patient_patient_type.model.js`** con soporte `tenant_id`, `timestamps`, y `paranoid` (soft delete).
+- **Nueva migración incremental** que elimina la FK antigua y crea la tabla pivote con índices (`tenant_id`, `patient_id`, `patient_type_id`).
+- **Compatibilidad hacia atrás garantizada** en endpoints de lectura (`getAll`, `getProfile`, `getDatatable`), que ahora devuelven un arreglo `types` en lugar de un único campo `type`.
+
+### Notes
+- Esta actualización prepara el sistema para futuros filtros combinados (p. ej. "Activos y Referidos").
+- Requiere ejecutar `npx sequelize-cli db:migrate` tras desplegar la nueva versión.
+
+---
+
 ## [0.3.0] - 2025-11-10
 ### Added
 - **Módulo completo `Patients`** (modelo, migración, validador, controlador, servicio, repositorio y rutas).

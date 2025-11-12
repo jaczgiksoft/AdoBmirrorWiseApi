@@ -31,7 +31,6 @@ const Patient = sequelize.define('Patient', {
     referral_id: { type: DataTypes.INTEGER, allowNull: true },
     occupation_id: { type: DataTypes.INTEGER, allowNull: true },
     bracket_type_id: { type: DataTypes.INTEGER, allowNull: true },
-    patient_type_id: { type: DataTypes.INTEGER, allowNull: true },
     patient_status_id: { type: DataTypes.INTEGER, allowNull: true },
 
     // 🏠 Dirección
