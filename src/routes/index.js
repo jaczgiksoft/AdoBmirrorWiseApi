@@ -32,5 +32,6 @@ router.use('/bracket-types', require('../modules/bracket_type/bracket_type.route
 // router.use('/patient-professions', require('../modules/patientProfession/patientProfession.routes'));
 router.use('/patients', require('../modules/patient/patient.routes'));
 router.use('/patient-alerts', require('../modules/patient_alert/patient_alert.routes'));
+router.use('/patient-hobbies', require('../modules/patient_hobby/patient_hobby.routes'));
 
 module.exports = router;

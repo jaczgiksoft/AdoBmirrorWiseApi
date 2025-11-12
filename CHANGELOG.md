@@ -10,6 +10,46 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.5.1] - 2025-11-12
+### Added
+- **Nuevo módulo clínico `Patient Hobbies`** (`patient_hobbies`):
+    - Modelo `patient_hobby.model.js` con soporte multi-tenant (`tenant_id`) y relación directa con `Patient` (`patient_id`).
+    - Campo `name` obligatorio para registrar pasatiempos o actividades recreativas del paciente.
+    - **Migración `create-patient-hobbies.js`**:
+        - Crea la tabla `patient_hobbies` con claves foráneas hacia `tenants` y `patients`.
+        - Índices optimizados en `tenant_id` y `patient_id`.
+        - Restricción única `uq_patient_hobbies_unique_per_patient` para evitar duplicados del mismo hobby por paciente.
+    - **Asociaciones (`associations.js`)**:
+        - `Tenant.hasMany(PatientHobby, { as: 'patient_hobbies' })`
+        - `Patient.hasMany(PatientHobby, { as: 'hobbies' })`
+    - **Estructura completa del módulo:**
+        - `patient_hobby.repository.js` → Métodos CRUD con `Sequelize` y relaciones (`Tenant`, `Patient`).
+        - `patient_hobby.service.js` → Lógica de negocio con:
+            - Transacciones Sequelize (`sequelize.transaction()`).
+            - Logs de auditoría (`createLog`, `logApiError`).
+            - Notificaciones automáticas (`notifyUser`).
+        - `patient_hobby.controller.js` → Endpoints REST:
+            - `POST /patient-hobbies` → Crear pasatiempo.
+            - `PUT /patient-hobbies/:id` → Actualizar pasatiempo.
+            - `DELETE /patient-hobbies/:id` → Eliminar (borrado físico).
+            - `GET /patient-hobbies/patient/:patient_id` → Listar pasatiempos por paciente.
+        - `patient_hobby.validator.js` → Validaciones con `express-validator` para creación, edición y consulta.
+        - `patient_hobby.routes.js` → Rutas protegidas con middlewares (`validateToken`, `checkPermissions`, `loadPermissions`, `validateRequest`).
+    - **Integración lista para router principal:**
+      ```js
+      const patientHobbyRoutes = require('../modules/patient_hobby/patient_hobby.routes');
+      app.use('/api/patient-hobbies', patientHobbyRoutes);
+      ```
+
+### Notes
+- Este módulo permite registrar los **pasatiempos o intereses personales** de los pacientes, mejorando la personalización en el trato clínico.
+- Compatible con el sistema de auditoría y notificaciones internas.
+- Requiere ejecutar:
+  ```bash
+  npx sequelize-cli db:migrate
+
+---
+
 ## [0.5.0] - 2025-11-12
 ### Added
 - **Nuevo esquema de usuarios y autenticación:**

@@ -23,6 +23,7 @@ const Patient = require('./patient.model');
 const PatientPatientType = require('./patient_patient_type.model');
 const PatientAlert = require('./patient_alert.model');
 const PatientProfession = require('./patient_profession.model');
+const PatientHobby = require('./patient_hobby.model');
 
 // =====================
 // TENANTS
@@ -391,6 +392,32 @@ Patient.hasMany(PatientAlert, {
     onUpdate: 'CASCADE',
 });
 PatientAlert.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// PATIENT HOBBIES
+Tenant.hasMany(PatientHobby, {
+    foreignKey: 'tenant_id',
+    as: 'patient_hobbies',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+PatientHobby.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Patient.hasMany(PatientHobby, {
+    foreignKey: 'patient_id',
+    as: 'hobbies',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+PatientHobby.belongsTo(Patient, {
     foreignKey: 'patient_id',
     as: 'patient',
     onDelete: 'CASCADE',
