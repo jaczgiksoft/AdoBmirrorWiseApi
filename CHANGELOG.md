@@ -10,6 +10,58 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.5.2] - 2025-11-12
+### Added
+- **Nuevo módulo clínico `Patient Notes`** (`patient_notes`):
+    - Modelo `patient_note.model.js` con soporte multi-tenant (`tenant_id`) y relaciones directas con:
+        - `Patient` (`patient_id`) → paciente asociado.
+        - `User` (`user_id`) → autor de la nota (empleado o doctor).
+    - Campos principales:
+        - `title` (string, obligatorio) → título o resumen de la nota.
+        - `content` (text, obligatorio) → descripción o contenido completo.
+        - `is_private` (boolean, por defecto `false`) → determina si la nota es privada o visible para otros usuarios.
+    - **Migración `create-patient-notes.js`**:
+        - Crea la tabla `patient_notes` con referencias a `tenants`, `patients` y `users`.
+        - Índices optimizados (`tenant_id`, `patient_id`, `user_id`, `is_private`).
+        - `CASCADE` en todas las relaciones y `timestamps` (`created_at`, `updated_at`).
+    - **Asociaciones en `associations.js`:**
+        - `Tenant.hasMany(PatientNote, { as: 'patient_notes' })`
+        - `Patient.hasMany(PatientNote, { as: 'notes' })`
+        - `User.hasMany(PatientNote, { as: 'authored_notes' })`
+        - `PatientNote.belongsTo(Tenant, { as: 'tenant' })`
+        - `PatientNote.belongsTo(Patient, { as: 'patient' })`
+        - `PatientNote.belongsTo(User, { as: 'author' })`
+    - **Estructura completa del módulo:**
+        - `patient_note.repository.js` → métodos CRUD (`createNote`, `updateNote`, `deleteNote`, `findById`, `findByPatientId`), con soporte para visibilidad de notas privadas.
+        - `patient_note.service.js` → lógica de negocio con:
+            - Transacciones Sequelize (`sequelize.transaction()`).
+            - Control de privacidad (`is_private`) y permisos del autor.
+            - Logs de auditoría (`createLog`, `logApiError`).
+            - Notificaciones automáticas (`notifyUser`) para notas públicas.
+        - `patient_note.controller.js` → endpoints REST:
+            - `POST /patient-notes` → crear nota.
+            - `PUT /patient-notes/:id` → actualizar.
+            - `DELETE /patient-notes/:id` → eliminar (borrado físico).
+            - `GET /patient-notes/patient/:patient_id` → listar notas por paciente.
+            - `GET /patient-notes/:id` → obtener una nota específica.
+        - `patient_note.validator.js` → validaciones con `express-validator` (campos obligatorios, privacidad, longitud de texto).
+        - `patient_note.routes.js` → rutas protegidas con middlewares (`validateToken`, `loadPermissions`, `checkPermissions`, `validateRequest`).
+    - **Integración lista para router principal:**
+      ```js
+      const patientNoteRoutes = require('../modules/patient_note/patient_note.routes');
+      app.use('/api/patient-notes', patientNoteRoutes);
+      ```
+
+### Notes
+- Este módulo permite registrar **notas clínicas o administrativas** asociadas a pacientes, manteniendo trazabilidad del autor.
+- Compatible con el sistema de auditoría, roles y permisos.
+- Las notas privadas solo pueden ser vistas o editadas por su autor.
+- Requiere ejecutar:
+  ```bash
+  npx sequelize-cli db:migrate
+
+---
+
 ## [0.5.1] - 2025-11-12
 ### Added
 - **Nuevo módulo clínico `Patient Hobbies`** (`patient_hobbies`):
