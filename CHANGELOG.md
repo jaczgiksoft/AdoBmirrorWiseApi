@@ -18,6 +18,9 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
     - Asociaciones definidas en `associations.js`:
         - `Tenant.hasMany(PatientAlert, { as: 'patient_alerts' })`
         - `Patient.hasMany(PatientAlert, { as: 'alerts' })`
+    - **Migración `create-patient-alerts.js`**:
+        - Crea la tabla `patient_alerts` con referencias a `tenants` y `patients`.
+        - Borrado físico (sin `paranoid`) y con índices en `tenant_id`, `patient_id` e `is_admin_alert`.
     - Validadores `patient_alert.validator.js` con `express-validator` para:
         - Creación (`createPatientAlertValidator`)
         - Actualización (`updatePatientAlertValidator`)
@@ -37,10 +40,21 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
         - `validateToken`, `loadPermissions`, `checkPermissions` y `validateRequest`.
         - Endpoints REST bajo `/api/patient-alerts`.
 
+- **Configuración `.env` actualizada**:
+    - Variable `JWT_SECRET` agregada para autenticación con JWT.
+    - Generación segura recomendada:
+      ```bash
+      node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+      ```
+    - Agregado `JWT_EXPIRES_IN=7d` como tiempo de expiración predeterminado.
+
 ### Notes
 - Las alertas solo existen **vinculadas a un paciente**, evitando registros “huérfanos”.
 - El módulo registra auditoría completa en MongoDB (`logs`) y dispara notificaciones internas si la alerta es administrativa.
-- Compatible con el modelo clínico actual de pacientes (`patient.model.js`).
+- Incluye soporte para borrado físico (no soft delete) y registro de auditoría completo.
+- Requiere ejecutar:
+  ```bash
+  npx sequelize-cli db:migrate
 
 ---
 

@@ -20,7 +20,7 @@ const PatientAlert = sequelize.define('PatientAlert', {
 }, {
     tableName: 'patient_alerts',
     timestamps: true,
-    paranoid: true, // habilita soft delete
+    paranoid: false,
     underscored: false,
 });
 
