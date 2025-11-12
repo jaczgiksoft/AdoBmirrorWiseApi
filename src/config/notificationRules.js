@@ -1,41 +1,51 @@
 // src/config/notificationRules.js
 
 /**
- * 🧠 MATRIZ DE NOTIFICACIONES POR EVENTO POS
+ * 🧠 MATRIZ DE NOTIFICACIONES POR EVENTO CLÍNICA DENTAL
  * Define qué roles deben recibir cada tipo de evento importante.
  * El superadmin (user.is_superadmin) siempre recibe todas.
  */
 
 const NOTIFICATION_RULES = {
-    // 🏪 Tiendas / configuración
-    STORE_CREATED: ['Administrador General', 'Gerente de Tienda'],
-    STORE_UPDATED: ['Administrador General', 'Gerente de Tienda'],
-    STORE_DELETED: ['Administrador General', 'Gerente de Tienda'],
+    // 🏥 Pacientes
+    PATIENT_CREATED: ['Administrador General', 'Recepcionista', 'Odontólogo'],
+    PATIENT_UPDATED: ['Administrador General', 'Odontólogo', 'Asistente Dental'],
+    PATIENT_DELETED: ['Administrador General', 'Director Médico'],
 
-    // 💰 Finanzas / caja
-    CASH_REGISTER_CREATED: ['Administrador General', 'Gerente de Tienda'],
-    CASH_REGISTER_UPDATED: ['Administrador General', 'Gerente de Tienda'],
-    CASH_REGISTER_DELETED: ['Administrador General', 'Gerente de Tienda'],
-    CASH_OPEN_CLOSE: ['Gerente de Tienda', 'Contador'],
-    CASH_MOVEMENT: ['Gerente de Tienda', 'Contador'],
-    CASH_DIFFERENCE: ['Gerente de Tienda', 'Cajero', 'Contador'],
-    CASH_REFUND: ['Gerente de Tienda', 'Supervisor de Caja'],
+    // ⚕️ Tratamientos y procedimientos
+    TREATMENT_STARTED: ['Odontólogo', 'Asistente Dental', 'Director Médico'],
+    TREATMENT_COMPLETED: ['Odontólogo', 'Director Médico', 'Recepcionista'],
+    TREATMENT_CANCELLED: ['Administrador General', 'Director Médico'],
 
-    // 📦 Inventario y almacén
-    INVENTORY_ADJUSTMENT: ['Gerente de Tienda', 'Encargado de Almacén'],
-    INVENTORY_ENTRY: ['Encargado de Almacén', 'Jefe de Compras'],
-    LOW_STOCK: ['Jefe de Compras', 'Gerente de Tienda'],
-    PRODUCT_EXPIRATION: ['Encargado de Almacén', 'Gerente de Tienda'],
+    // 📅 Citas
+    APPOINTMENT_CREATED: ['Recepcionista', 'Odontólogo', 'Asistente Dental'],
+    APPOINTMENT_UPDATED: ['Recepcionista', 'Odontólogo', 'Asistente Dental'],
+    APPOINTMENT_CANCELLED: ['Recepcionista', 'Administrador General'],
+    APPOINTMENT_REMINDER: ['Odontólogo', 'Asistente Dental'],
 
-    // 👥 Usuarios / RRHH
+    // 💰 Pagos y finanzas
+    PAYMENT_RECEIVED: ['Administrador General', 'Contador', 'Recepcionista'],
+    REFUND_ISSUED: ['Administrador General', 'Contador'],
+    INVOICE_GENERATED: ['Administrador General', 'Contador'],
+    CASH_REGISTER_OPEN: ['Administrador General', 'Contador'],
+    CASH_REGISTER_CLOSE: ['Administrador General', 'Contador'],
+
+    // 🦷 Inventario y materiales
+    SUPPLY_LOW_STOCK: ['Administrador General', 'Asistente Dental'],
+    SUPPLY_ORDERED: ['Administrador General', 'Contador'],
+    SUPPLY_RECEIVED: ['Administrador General', 'Asistente Dental'],
+
+    // 👥 Personal / usuarios
     USER_CREATED: ['Administrador General'],
     USER_REMOVED: ['Administrador General'],
-    EMPLOYEE_ADDED: ['Jefe de Recursos Humanos', 'Gerente de Tienda'],
-    EMPLOYEE_REMOVED: ['Jefe de Recursos Humanos', 'Gerente de Tienda'],
+    EMPLOYEE_ADDED: ['Administrador General', 'Coordinador Clínico'],
+    EMPLOYEE_REMOVED: ['Administrador General', 'Coordinador Clínico'],
 
-    // ⚙️ Sistema
-    SYSTEM_ERROR: ['Administrador General', 'Técnico'],
-    BACKUP_STATUS: ['Administrador General'],
+    // ⚙️ Sistema y alertas
+    SYSTEM_ERROR: ['Administrador General', 'Técnico de Sistemas'],
+    BACKUP_STATUS: ['Administrador General', 'Técnico de Sistemas'],
+    PATIENT_ALERT_CREATED: ['Odontólogo', 'Asistente Dental', 'Recepcionista'],
+    PATIENT_ALERT_RESOLVED: ['Administrador General', 'Odontólogo'],
 };
 
 module.exports = { NOTIFICATION_RULES };

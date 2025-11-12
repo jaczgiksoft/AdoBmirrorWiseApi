@@ -9,6 +9,40 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ---
+
+## [0.4.1] - 2025-11-12
+### Changed
+- **Actualización del seeder `seedTenantModulesClinic.js`:**
+    - Reestructurada la definición de módulos **core** y **por plan**:
+        - `patients` se movió a los **módulos core** (ya que es esencial para cualquier clínica).
+        - `patient_alerts` se removió del core y se asignó únicamente a los planes **Pro** y **Premium**, para mantener la diferenciación funcional entre planes.
+    - Se agregó el nuevo módulo base **`bracket_types`** al arreglo `coreModules`, permitiendo que todas las clínicas administren su catálogo de tipos de brackets.
+    - Ahora la estructura final queda así:
+      ```js
+      // Core
+      ['users', 'roles', 'permissions', 'auth', 'settings', 'logs', 'notifications', 'patients', 'bracket_types']
+
+      // Planes
+      Basic → ['appointments', 'billing']
+      Pro → ['appointments', 'billing', 'patient_alerts', 'communications', 'inventory']
+      Premium → ['appointments', 'billing', 'patient_alerts', 'communications', 'inventory', 'reports', 'integrations', 'patientPortal']
+      ```
+    - Se actualizó el log de inicialización para reflejar correctamente los módulos combinados por plan.
+
+- **Actualización del archivo `notificationRules.js`:**
+    - Sustituida la versión POS por una matriz clínica adaptada a roles dentales:
+        - Roles soportados: `Administrador General`, `Director Médico`, `Odontólogo`, `Recepcionista`, `Asistente Dental`, `Contador`, `Técnico de Sistemas`, entre otros.
+        - Eventos cubiertos: creación y modificación de pacientes, citas, tratamientos, pagos, alertas, e inventario.
+    - Se eliminan los roles comerciales (`Gerente de Tienda`, `Cajero`, etc.) y se reemplazan por los del dominio clínico.
+    - Se añadió soporte de notificaciones específicas para alertas de pacientes (`PATIENT_ALERT_CREATED`, `PATIENT_ALERT_RESOLVED`).
+
+### Notes
+- Con esta versión, los módulos core reflejan únicamente las funcionalidades clínicas indispensables.
+- La separación de `patient_alerts` mejora la escalabilidad de los planes de suscripción.
+- `notificationRules.js` queda alineado con los roles definidos en `seedRolesAndPermissionsClinic.js`.
+
+---
+
 ## [0.4.0] - 2025-11-11
 ### Added
 - **Nuevo módulo clínico `Bracket Types`** (`bracket_types`):

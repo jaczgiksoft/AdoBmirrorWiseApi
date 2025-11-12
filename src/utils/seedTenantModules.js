@@ -14,7 +14,9 @@ const coreModules = [
     'auth',
     'settings',
     'logs',
-    'notifications'
+    'notifications',
+    'patients',
+    'bracket_types'
 ];
 
 // =========================
@@ -22,13 +24,11 @@ const coreModules = [
 // =========================
 const planModules = {
     Basic: [
-        'patients',
         'patient_alerts',
         'appointments',
         'billing'
     ],
     Pro: [
-        'patients',
         'patient_alerts',
         'appointments',
         'billing',
@@ -36,7 +36,6 @@ const planModules = {
         'inventory'
     ],
     Premium: [
-        'patients',
         'patient_alerts',
         'appointments',
         'billing',
