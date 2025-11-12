@@ -10,6 +10,40 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.3.2] - 2025-11-11
+### Added
+- **Nuevo módulo clínico `Patient Alerts`** (`patient_alerts`):
+    - Modelo `patient_alert.model.js` con soporte multi-tenant (`tenant_id`) y relación directa con `Patient` (`patient_id`).
+    - Campo booleano `is_admin_alert` para distinguir alertas administrativas (con notificación interna automática).
+    - Asociaciones definidas en `associations.js`:
+        - `Tenant.hasMany(PatientAlert, { as: 'patient_alerts' })`
+        - `Patient.hasMany(PatientAlert, { as: 'alerts' })`
+    - Validadores `patient_alert.validator.js` con `express-validator` para:
+        - Creación (`createPatientAlertValidator`)
+        - Actualización (`updatePatientAlertValidator`)
+        - Eliminación y obtención por ID (`getPatientAlertByIdValidator`)
+    - Controlador `patient_alert.controller.js` con endpoints para:
+        - Crear, actualizar y eliminar alertas (borrado físico, con log en MongoDB).
+        - Listar alertas únicamente por paciente (`GET /patient-alerts/patient/:patient_id`).
+    - Servicio `patient_alert.service.js` con lógica de negocio:
+        - Transacciones Sequelize (`sequelize.transaction()`).
+        - Logs de auditoría (`createLog`, `logApiError`).
+        - Notificaciones automáticas (`notifyUser`) en alertas administrativas.
+        - Eliminación física (`destroy({ force: true })`), no `paranoid`.
+    - Repositorio `patient_alert.repository.js`:
+        - Métodos CRUD basados en Sequelize (`createAlert`, `updateAlert`, `deleteAlert`, `findByPatientId`).
+        - Relaciones completas con `Tenant` y `Patient` (`include` con alias).
+    - Rutas `patient_alert.routes.js` integradas con middlewares:
+        - `validateToken`, `loadPermissions`, `checkPermissions` y `validateRequest`.
+        - Endpoints REST bajo `/api/patient-alerts`.
+
+### Notes
+- Las alertas solo existen **vinculadas a un paciente**, evitando registros “huérfanos”.
+- El módulo registra auditoría completa en MongoDB (`logs`) y dispara notificaciones internas si la alerta es administrativa.
+- Compatible con el modelo clínico actual de pacientes (`patient.model.js`).
+
+---
+
 ## [0.3.1] - 2025-11-11
 ### Changed
 - **Estructura de relación entre pacientes y tipos de paciente** actualizada de 1:N a N:M:

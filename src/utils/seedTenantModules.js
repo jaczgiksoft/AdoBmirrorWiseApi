@@ -23,11 +23,13 @@ const coreModules = [
 const planModules = {
     Basic: [
         'patients',
+        'patient_alerts',
         'appointments',
         'billing'
     ],
     Pro: [
         'patients',
+        'patient_alerts',
         'appointments',
         'billing',
         'communications',
@@ -35,6 +37,7 @@ const planModules = {
     ],
     Premium: [
         'patients',
+        'patient_alerts',
         'appointments',
         'billing',
         'communications',

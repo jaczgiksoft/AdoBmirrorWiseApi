@@ -20,13 +20,17 @@ const ProductStore = require('./productStore.model'); // 🔹 nuevo
 const InventoryMovement = require('./inventoryMovement.model'); // 🔹 nuevo
 const Supplier = require('./supplier.model'); // 🔹 nuevo
 
-const Referral = require('./referral.model'); // 🔹 nuevo bwise
-const Occupation = require('./occupation.model'); // 🔹 nuevo bwise
-const PatientType = require('./patient_type.model'); // 🔹 nuevo bwise
-const PatientStatus = require('./patient_status.model'); // 🔹 nuevo bwise
-const BracketType = require('./bracket_type.model'); // 🔹 nuevo bwise
-const Patient = require('./patient.model');  // 🔹 nuevo bwise
-const PatientPatientType = require('./patient_patient_type.model');  // 🔹 nuevo bwise
+// =====================
+// BWISE
+// =====================
+const Referral = require('./referral.model');
+const Occupation = require('./occupation.model');
+const PatientType = require('./patient_type.model');
+const PatientStatus = require('./patient_status.model');
+const BracketType = require('./bracket_type.model');
+const Patient = require('./patient.model');
+const PatientPatientType = require('./patient_patient_type.model');
+const PatientAlert = require('./patient_alert.model');
 
 // =====================
 // TENANTS
@@ -299,3 +303,12 @@ PatientStatus.hasMany(Patient, { foreignKey: 'patient_status_id', as: 'patients'
 BracketType.hasMany(Patient, { foreignKey: 'bracket_type_id', as: 'patients', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
 // PATIENT PROFESSION ↔ PATIENT
 PatientProfession.hasMany(Patient, {foreignKey: 'patient_profession_id', as: 'patients', onDelete: 'SET NULL', onUpdate: 'CASCADE' });
+
+
+// TENANT ↔ PATIENT ALERT
+Tenant.hasMany(PatientAlert, {foreignKey: 'tenant_id', as: 'patient_alerts', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+PatientAlert.belongsTo(Tenant, {foreignKey: 'tenant_id', as: 'tenant', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+
+// PATIENT ↔ PATIENT ALERT
+Patient.hasMany(PatientAlert, {foreignKey: 'patient_id', as: 'alerts', onDelete: 'CASCADE', onUpdate: 'CASCADE' });
+PatientAlert.belongsTo(Patient, {foreignKey: 'patient_id', as: 'patient', onDelete: 'CASCADE', onUpdate: 'CASCADE' });

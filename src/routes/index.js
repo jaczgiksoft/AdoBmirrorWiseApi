@@ -45,4 +45,6 @@ router.use('/logs', require('../modules/log/log.routes'));
 // router.use('/patient-professions', require('../modules/patientProfession/patientProfession.routes'));
 router.use('/patients', require('../modules/patient/patient.routes'));
 
+router.use('/patient-alerts', require('../modules/patient_alert/patient_alert.routes'));
+
 module.exports = router;
