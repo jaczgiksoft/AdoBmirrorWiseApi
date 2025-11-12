@@ -1,7 +1,6 @@
 // src/modules/tenant/tenant.service.js
 const sequelize = require('../../config/database');
 const tenantRepository = require('./tenant.repository');
-const storeRepository = require('../store/store.repository');
 const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
@@ -68,7 +67,7 @@ class TenantService {
             await notifyUser({
                 user_id: currentUser.id,
                 title: 'Nuevo tenant creado',
-                message: `${currentUser.username} ha creado el tenant "${newTenant.name}".`,
+                message: `${currentUser.username} ha creado la clínica "${newTenant.name}".`,
                 type: 'admin'
             });
 
@@ -81,7 +80,7 @@ class TenantService {
         }
     }
 
-    // 🟡 Actualizar tenant (con sincronización de margen global)
+    // 🟡 Actualizar tenant
     async updateTenant(id, data, currentUser, req) {
         if (!currentUser.is_superadmin) {
             throw new Error('No autorizado');
@@ -112,22 +111,7 @@ class TenantService {
                 Object.entries(data).filter(([key]) => allowedFields.includes(key))
             );
 
-            const previousMargin = tenant.profit_margin;
             await tenantRepository.updateTenant(tenant, cleanData, t);
-
-            // 🔄 Si el profit_margin cambió, sincronizar en stores que heredan del tenant
-            if (
-                'profit_margin' in cleanData &&
-                cleanData.profit_margin !== undefined &&
-                parseFloat(cleanData.profit_margin) !== parseFloat(previousMargin)
-            ) {
-                await storeRepository.updateProfitMarginForTenant(
-                    tenant.id,
-                    cleanData.profit_margin,
-                    t
-                );
-            }
-
             await t.commit();
 
             await createLog({
@@ -143,7 +127,7 @@ class TenantService {
             await notifyUser({
                 user_id: currentUser.id,
                 title: 'Tenant actualizado',
-                message: `${currentUser.username} actualizó los datos del tenant "${tenant.name}".`,
+                message: `${currentUser.username} actualizó los datos de la clínica "${tenant.name}".`,
                 type: 'admin'
             });
 
@@ -183,7 +167,7 @@ class TenantService {
             await notifyUser({
                 user_id: currentUser.id,
                 title: 'Tenant eliminado',
-                message: `${currentUser.username} ha eliminado el tenant "${tenant.name}".`,
+                message: `${currentUser.username} ha eliminado la clínica "${tenant.name}".`,
                 type: 'admin'
             });
 

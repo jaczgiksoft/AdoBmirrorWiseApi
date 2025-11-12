@@ -1,4 +1,4 @@
-// models/tenant.model.js
+// src/models/mysql/tenant.model.js
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
@@ -73,12 +73,6 @@ const Tenant = sequelize.define('Tenant', {
         type: DataTypes.DECIMAL(10, 4),
         allowNull: true,
         comment: 'Tipo de cambio del dólar respecto a MXN'
-    },
-    profit_margin: {
-        type: DataTypes.DECIMAL(5, 2),
-        allowNull: false,
-        defaultValue: 30.00,
-        comment: 'Margen global de ganancia en porcentaje'
     },
 
     // 🕓 Horarios de atención

@@ -18,15 +18,14 @@ class TenantRepository {
     }
 
     async createTenant(data, transaction) {
-        // 🔒 Filtrar solo los campos permitidos
         const allowedFields = [
             'name', 'description', 'logo_url', 'website',
             'contact_name', 'contact_email', 'contact_phone',
             'address', 'city', 'state', 'country', 'postal_code',
             'tax_id', 'legal_name', 'regime',
             'certificate_path', 'key_path', 'certificate_password',
-            'status', 'timezone', 'opening_hours', 'currency',
-            'exchange_rate', 'profit_margin' // 🆕 agregado
+            'status', 'timezone', 'opening_hours',
+            'currency', 'exchange_rate'
         ];
 
         const filteredData = Object.fromEntries(
@@ -37,7 +36,6 @@ class TenantRepository {
     }
 
     async updateTenant(tenant, data, transaction) {
-        // 🔒 Igual filtrado de seguridad en actualizaciones
         const allowedFields = [
             'description', 'logo_url', 'website',
             'contact_name', 'contact_email', 'contact_phone',
@@ -45,7 +43,7 @@ class TenantRepository {
             'tax_id', 'legal_name', 'regime',
             'certificate_path', 'key_path', 'certificate_password',
             'status', 'timezone', 'opening_hours',
-            'currency', 'exchange_rate', 'profit_margin' // 🆕 agregado
+            'currency', 'exchange_rate'
         ];
 
         const filteredData = Object.fromEntries(
@@ -92,7 +90,6 @@ class TenantRepository {
         const where = andConditions.length ? { [Op.and]: andConditions } : {};
 
         const recordsTotal = await Tenant.count();
-
         const { rows, count: recordsFiltered } = await Tenant.findAndCountAll({
             where,
             offset: start,

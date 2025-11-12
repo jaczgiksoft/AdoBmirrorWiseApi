@@ -4,7 +4,6 @@ const Role = require('../../models/mysql/role.model');
 const Permission = require('../../models/mysql/permission.model');
 const Tenant = require('../../models/mysql/tenant.model');
 const TenantModule = require('../../models/mysql/tenant_module.model');
-const Store = require('../../models/mysql/store.model');
 
 const ActiveToken = require('../../models/mongo/activeToken.model');
 const LoginAttempt = require('../../models/mongo/loginAttempt.model');
@@ -13,7 +12,10 @@ const BlacklistedToken = require('../../models/mongo/blacklistedToken.model');
 
 class AuthRepository {
     async findUserByUsername(username) {
-        return User.findOne({ where: { username }, include: { model: Role, as: 'role' } });
+        return User.findOne({
+            where: { username },
+            include: { model: Role, as: 'role' }
+        });
     }
 
     async findUserByEmail(email) {
@@ -39,11 +41,17 @@ class AuthRepository {
                 {
                     model: Role,
                     as: 'role',
-                    attributes: ['id', 'name', 'requires_cash_session'], // ✅ ahora incluye el flag
+                    attributes: ['id', 'name', 'requires_cash_session'],
                     include: {
                         model: Permission,
                         as: 'permissions',
-                        attributes: ['module', 'can_read', 'can_write', 'can_edit', 'can_delete']
+                        attributes: [
+                            'module',
+                            'can_read',
+                            'can_write',
+                            'can_edit',
+                            'can_delete'
+                        ]
                     }
                 },
                 {
@@ -58,33 +66,20 @@ class AuthRepository {
                         'timezone'
                     ],
                     include: [
-                        { model: TenantModule, as: 'modules', attributes: ['module', 'is_enabled'] }
-                    ]
-                },
-                {
-                    model: Store,
-                    as: 'store',
-                    attributes: [
-                        'id',
-                        'name',
-                        'code',
-                        'address',
-                        'city',
-                        'country',
-                        'phone',
-                        'email',
-                        'status',
-                        'currency',
-                        'exchange_rate',
-                        'timezone',
-                        'use_parent_config'
+                        {
+                            model: TenantModule,
+                            as: 'modules',
+                            attributes: ['module', 'is_enabled']
+                        }
                     ]
                 }
             ]
         });
     }
 
-    // Active Tokens
+    // =====================
+    // ACTIVE TOKENS
+    // =====================
     async createActiveToken(data) {
         return ActiveToken.create(data);
     }
@@ -95,7 +90,9 @@ class AuthRepository {
         return ActiveToken.find({ user_id: userId });
     }
 
-    // Login Attempts
+    // =====================
+    // LOGIN ATTEMPTS
+    // =====================
     async findLoginAttempt(username) {
         return LoginAttempt.findOne({ username });
     }
@@ -109,7 +106,9 @@ class AuthRepository {
         return LoginAttempt.deleteOne({ username });
     }
 
-    // Password Reset
+    // =====================
+    // PASSWORD RESET
+    // =====================
     async createPasswordResetToken(data) {
         return PasswordResetToken.create(data);
     }
@@ -120,7 +119,9 @@ class AuthRepository {
         return PasswordResetToken.deleteOne({ _id: id });
     }
 
-    // Blacklist
+    // =====================
+    // BLACKLIST
+    // =====================
     async blacklistToken(data) {
         return BlacklistedToken.create(data);
     }

@@ -3,37 +3,39 @@ const seedTenants = require('../utils/seedTenants');
 const seedTenantModulesClinic = require('../utils/seedTenantModules');
 const seedRolesAndPermissionsClinic = require('../utils/seedRolesAndPermissions');
 const seedAdminUsersClinic = require('../utils/seedAdminUser');
-const seedStores = require('../utils/seedStores'); // 🔹 nuevo
-const seedCategories = require('../utils/seedCategories'); // 🔹 nuevo
-const seedUnits = require('../utils/seedUnits'); // 🔹 nuevo
-const seedTaxes = require('../utils/seedTaxes'); // 🔹 nuevo
-const seedDepartments = require('../utils/seedDepartments'); // 🔹 nuevo
-const seedPatientRelationsClinic = require('../utils/seedPatientRelationsClinic'); // 🔹 nuevo
-const seedPatientsClinic = require('../utils/seedPatientsClinic'); // 🔹 nuevo
+const seedPatientRelationsClinic = require('../utils/seedPatientRelationsClinic');
+const seedPatientsClinic = require('../utils/seedPatientsClinic');
 
 const { logger } = require('../utils/logger');
 
 async function runSeeds() {
     try {
-        logger.info('🌱 Iniciando seeders...');
+        logger.info('🌱 Iniciando seeders clínicos...');
 
-        await seedTenants();                    // 1️⃣ Crea tenants con suscripción activa
-        await seedStores();                     // 2️⃣ Crea sucursales para cada tenant
-        await seedTenantModulesClinic();        // 3️⃣ Asigna módulos habilitados a cada tenant
-        await seedRolesAndPermissionsClinic();  // 4️⃣ Crea roles base + permisos por módulo
-        await seedPatientRelationsClinic();  // 4️⃣ Crea roles base + permisos por módulo
-        await seedPatientsClinic();  // 4️⃣ Crea roles base + permisos por módulo
-        await seedAdminUsersClinic();           // 5️⃣ Crea admin master por tenant
+        // 1️⃣ Crea tenant base (clínica principal)
+        await seedTenants();
 
-        // 🔹 Seeders globales
-        await seedCategories();          // 6️⃣ Categorías globales
-        await seedUnits();               // 7️⃣ Unidades globales
-        await seedTaxes();               // 8️⃣ Impuestos globales
-        await seedDepartments();         // 9️⃣ Departamentos base
+        // 2️⃣ Asigna módulos habilitados a cada clínica (tenant)
+        await seedTenantModulesClinic();
 
-        logger.info('✅ Seeders ejecutados correctamente');
+        // 3️⃣ Crea roles y permisos base (admin, doctor, asistente, etc.)
+        await seedRolesAndPermissionsClinic();
+
+        // 4️⃣ Crea relaciones clínicas base (referencias, ocupaciones, etc.)
+        await seedPatientRelationsClinic();
+
+        // 5️⃣ Crea pacientes demo (opcional, para desarrollo)
+        await seedPatientsClinic();
+
+        // 6️⃣ Crea usuario administrador principal
+        await seedAdminUsersClinic();
+
+        logger.info('✅ Seeders clínicos ejecutados correctamente');
     } catch (error) {
-        logger.error('❌ Error al ejecutar seeders', { message: error.message, stack: error.stack });
+        logger.error('❌ Error al ejecutar seeders', {
+            message: error.message,
+            stack: error.stack
+        });
     }
 }
 

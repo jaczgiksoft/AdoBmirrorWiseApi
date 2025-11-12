@@ -33,8 +33,7 @@ const seedTenants = async () => {
             number_of_rooms: 4,
 
             max_users: 10,
-            current_users: 0,
-            profit_margin: 50.00
+            current_users: 0
         },
         {
             name: 'Dental Care Premium',
@@ -61,8 +60,7 @@ const seedTenants = async () => {
             number_of_rooms: 6,
 
             max_users: 15,
-            current_users: 0,
-            profit_margin: 45.00
+            current_users: 0
         },
         {
             name: 'Sonrisa Total Nogales',
@@ -89,8 +87,7 @@ const seedTenants = async () => {
             number_of_rooms: 3,
 
             max_users: 8,
-            current_users: 0,
-            profit_margin: 55.00
+            current_users: 0
         }
     ];
 

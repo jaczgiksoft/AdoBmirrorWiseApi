@@ -95,13 +95,6 @@ const createTenantValidator = [
         .optional()
         .isDecimal({ decimal_digits: '0,4' })
         .withMessage('El tipo de cambio debe ser un número decimal con hasta 4 decimales'),
-
-    // 💰 Margen de ganancia global
-    body('profit_margin')
-        .notEmpty()
-        .withMessage('El margen de ganancia es obligatorio')
-        .isFloat({ min: 0, max: 100 })
-        .withMessage('El margen de ganancia debe estar entre 0 y 100'),
 ];
 
 // 🟡 Actualización de Tenant
@@ -109,10 +102,6 @@ const updateTenantValidator = [
     param('id')
         .isInt()
         .withMessage('El ID debe ser un número entero'),
-    body('profit_margin')
-        .optional()
-        .isFloat({ min: 0, max: 100 })
-        .withMessage('El margen de ganancia debe estar entre 0 y 100'),
     ...createTenantValidator.filter(v => !['name'].includes(v.builder?.fields?.[0])),
 ];
 

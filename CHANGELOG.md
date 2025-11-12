@@ -10,6 +10,45 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.3.3] - 2025-11-11
+### Changed
+- **Depuración completa del dominio POS**:
+    - Eliminados todos los modelos y asociaciones relacionados con el punto de venta:
+        - `store.model.js`, `product.model.js`, `cashRegister.model.js`, `cashSession.model.js`,
+          `cashMovement.model.js`, `brand.model.js`, `category.model.js`, `department.model.js`,
+          `departmentStore.model.js`, `productStore.model.js`, `supplier.model.js`,
+          `inventoryMovement.model.js`, `tax.model.js`, `unit.model.js`.
+    - Limpieza total de `associations.js` para conservar únicamente las relaciones clínicas y del núcleo multi-tenant (`Tenant`, `User`, `Role`, `Permission`, `Patient`, etc.).
+    - Eliminación de rutas POS (`/stores`, `/products`, `/cash-registers`, etc.) del router principal.
+    - Eliminados seeders de POS (`seedStores.js`, `seedCategories.js`, `seedDepartments.js`, `seedTaxes.js`, `seedUnits.js`).
+
+- **Reestructuración del módulo `Tenant`**:
+    - Eliminado el campo `profit_margin` del modelo `tenant.model.js`, su migración y todos los repositorios, servicios, validadores y seeders asociados.
+    - Nueva migración incremental `remove-profit-margin-from-tenants.js` para eliminar la columna `profit_margin` de la base de datos.
+    - `tenant.repository.js`, `tenant.service.js` y `tenant.validator.js` actualizados para remover referencias al margen global.
+    - Eliminada la sincronización automática de márgenes con sucursales (ya no existen).
+    - `seedTenants.js` actualizado: eliminado el campo `profit_margin` en los datos iniciales.
+
+- **Refactor del módulo `Auth`**:
+    - Eliminadas todas las dependencias de `store` y `storeRepository` en `auth.repository.js` y `auth.service.js`.
+    - `auth.service.js` simplificado: ahora el método `me()` devuelve información únicamente del `tenant` (clínica) sin subniveles.
+    - `auth.repository.js` actualizado para excluir `Store` del `include` en las consultas de usuario.
+    - `auth.routes.js`, `auth.controller.js` y `auth.validator.js` revisados y confirmados sin dependencias del POS.
+
+### Added
+- **Migración incremental `remove-profit-margin-from-tenants.js`**:
+    - Elimina la columna `profit_margin` de la tabla `tenants`.
+    - Incluye `down()` para rollback seguro (recrea la columna con los valores originales).
+
+### Notes
+- Esta actualización finaliza la separación completa entre el dominio **POS** y el dominio **Clínico**.
+- La API ahora se centra exclusivamente en la gestión de clínicas dentales, pacientes, alertas y catálogos clínicos.
+- Ejecutar tras actualizar:
+  ```bash
+  npx sequelize-cli db:migrate
+
+---
+
 ## [0.3.2] - 2025-11-11
 ### Added
 - **Nuevo módulo clínico `Patient Alerts`** (`patient_alerts`):

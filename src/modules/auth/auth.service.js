@@ -10,8 +10,7 @@ const { sendMail } = require('../../utils/mail.helper');
 const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
-const { notifyUser } = require('../../utils/notify.helper'); // ✅ agregado
-const storeRepository = require('../store/store.repository');
+const { notifyUser } = require('../../utils/notify.helper');
 
 class AuthService {
     // =====================
@@ -26,7 +25,7 @@ class AuthService {
             throw new Error('Cuenta bloqueada temporalmente. Intenta más tarde.');
         }
 
-        // 🔹 Buscar usuario dentro del tenant
+        // 🔹 Buscar usuario dentro del tenant (clínica)
         const user = await authRepository.findUserByTenantAndUsername(tenant, username);
         if (!user || !(await bcrypt.compare(password, user.password))) {
             const maxAttempts = 5;
@@ -114,7 +113,6 @@ class AuthService {
             user_agent: userAgent
         });
 
-        // 🔔 Notificación global
         await notifyUser({
             user_id: currentUser.id,
             tenant_id: currentUser.tenant_id,
@@ -133,8 +131,11 @@ class AuthService {
         const user = await authRepository.findUserById(currentUser.id);
         if (!user) throw new Error('Usuario no encontrado');
 
-        const fullName = `${user.first_name} ${user.last_name}${user.second_last_name ? ' ' + user.second_last_name : ''}`;
+        const fullName = `${user.first_name} ${user.last_name}${
+            user.second_last_name ? ' ' + user.second_last_name : ''
+        }`;
 
+        // Permisos por módulo
         const permissions = {};
         user.role.permissions.forEach(p => {
             permissions[p.module] = {
@@ -145,46 +146,20 @@ class AuthService {
             };
         });
 
-        const modules = user.tenant?.modules?.filter(m => m.is_enabled).map(m => m.module) || [];
+        // Módulos habilitados
+        const modules =
+            user.tenant?.modules?.filter(m => m.is_enabled).map(m => m.module) || [];
 
-        let stores = [];
-        if (user.is_superadmin) {
-            const allStores = await storeRepository.findAllByTenant(user.tenant_id);
-            stores = allStores.map(s => ({
-                id: s.id,
-                name: s.name,
-                code: s.code,
-                address: s.address,
-                city: s.city,
-                country: s.country,
-                phone: s.phone,
-                email: s.email,
-                status: s.status
-            }));
-        } else if (user.store) {
-            stores = [{
-                id: user.store.id,
-                name: user.store.name,
-                code: user.store.code,
-                address: user.store.address,
-                city: user.store.city,
-                country: user.store.country,
-                phone: user.store.phone,
-                email: user.store.email,
-                status: user.store.status
-            }];
-        }
+        // Información de clínica (tenant)
+        const clinic = {
+            id: user.tenant?.id,
+            name: user.tenant?.name,
+            logo_url: user.tenant?.logo_url,
+            currency: user.tenant?.currency || 'MXN',
+            exchange_rate: user.tenant?.exchange_rate || null,
+            timezone: user.tenant?.timezone || 'America/Hermosillo'
+        };
 
-        let exchangeRate = null;
-
-        // 🪙 Determinar tipo de cambio efectivo
-        if (user.store && !user.store.use_parent_config && user.store.exchange_rate) {
-            exchangeRate = user.store.exchange_rate;
-        } else if (user.tenant && user.tenant.exchange_rate) {
-            exchangeRate = user.tenant.exchange_rate;
-        }
-
-        // ✅ Agrega requires_cash_session del rol
         return {
             id: user.id,
             user_code: user.user_code,
@@ -194,19 +169,14 @@ class AuthService {
             profile_image: user.profile_image,
             role: user.role.name,
             role_id: user.role_id,
-            requires_cash_session: !!user.role.requires_cash_session, // 👈 nuevo campo
-            tenant: {
-                id: user.tenant_id,
-                name: user.tenant?.name,
-                logo_url: user.tenant?.logo_url
-            },
+            requires_cash_session: !!user.role.requires_cash_session,
+            tenant: clinic,
             permissions,
             modules,
-            stores,
             config: {
-                currency: user.store?.currency || user.tenant?.currency || 'MXN',
-                exchange_rate: exchangeRate,
-                timezone: user.store?.timezone || user.tenant?.timezone || 'America/Hermosillo'
+                currency: clinic.currency,
+                exchange_rate: clinic.exchange_rate,
+                timezone: clinic.timezone
             }
         };
     }
@@ -268,7 +238,6 @@ class AuthService {
 
         await authRepository.deletePasswordResetToken(tokenDoc._id);
 
-        // 🔔 Notificación global
         await notifyUser({
             user_id: user.id,
             tenant_id: user.tenant_id,
