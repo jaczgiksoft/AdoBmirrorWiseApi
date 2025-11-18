@@ -69,7 +69,7 @@ class AuthRepository {
     }
 
     /**
-     * Buscar usuario por ID (con todas las relaciones)
+     * Buscar usuario por ID (con todas las relaciones necesarias para el perfil)
      */
     async findUserWithRelations(id) {
         return User.findByPk(id, {
@@ -77,7 +77,14 @@ class AuthRepository {
                 {
                     model: Employee,
                     as: 'employee',
-                    attributes: ['id', 'first_name', 'last_name', 'second_last_name', 'position', 'status']
+                    attributes: [
+                        'id',
+                        'first_name',
+                        'last_name',
+                        'second_last_name',
+                        'position',
+                        'status'
+                    ]
                 },
                 {
                     model: Role,
@@ -94,7 +101,18 @@ class AuthRepository {
                 {
                     model: Tenant,
                     as: 'tenant',
-                    attributes: ['id', 'name', 'code', 'logo_url', 'currency', 'exchange_rate', 'timezone'],
+                    // ⚙️ Todos los campos relevantes para el perfil del tenant
+                    attributes: [
+                        'id', 'code', 'name', 'description', 'logo_url', 'website',
+                        'contact_name', 'contact_email', 'contact_phone',
+                        'address', 'city', 'state', 'country', 'postal_code',
+                        'tax_id', 'legal_name', 'regime', 'certificate_path', 'key_path',
+                        'certificate_password', 'cfdi_use', 'payment_method', 'payment_form', 'tax_rate',
+                        'health_registration', 'health_registration_expires_at',
+                        'status', 'current_subscription_id', 'max_users', 'current_users',
+                        'timezone', 'currency', 'exchange_rate', 'profit_margin',
+                        'opening_hours', 'specialties', 'number_of_rooms'
+                    ],
                     include: [
                         {
                             model: TenantModule,

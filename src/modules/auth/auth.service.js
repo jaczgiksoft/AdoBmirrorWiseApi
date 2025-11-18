@@ -94,14 +94,14 @@ class AuthService {
         };
     }
 
-    // =====================
-    // ME
-    // =====================
+// =====================
+// ME (Perfil del usuario autenticado)
+// =====================
     async me(currentUser) {
         const user = await authRepository.findUserWithRelations(currentUser.id);
         if (!user) throw new Error('Usuario no encontrado');
 
-        // 🧩 Tomar el nombre completo desde employee si existe, si no, fallback al user
+        // 🧩 Nombre completo (preferir employee si existe)
         const fullName = user.employee
             ? [
                 user.employee.first_name,
@@ -139,14 +139,57 @@ class AuthService {
             ?.filter(m => m.is_enabled)
             .map(m => m.module) || [];
 
-        // 🏢 Información del tenant (clínica)
+        // 🏢 Información completa del tenant (clínica)
         const tenantInfo = {
             id: user.tenant.id,
-            name: user.tenant.name,
             code: user.tenant.code,
+            name: user.tenant.name,
+            description: user.tenant.description,
             logo_url: user.tenant.logo_url,
+            website: user.tenant.website,
+
+            // 📞 Contacto
+            contact_name: user.tenant.contact_name,
+            contact_email: user.tenant.contact_email,
+            contact_phone: user.tenant.contact_phone,
+
+            // 🏠 Dirección
+            address: user.tenant.address,
+            city: user.tenant.city,
+            state: user.tenant.state,
+            country: user.tenant.country,
+            postal_code: user.tenant.postal_code,
+
+            // 🧾 Datos fiscales
+            tax_id: user.tenant.tax_id,
+            legal_name: user.tenant.legal_name,
+            regime: user.tenant.regime,
+            certificate_path: user.tenant.certificate_path,
+            key_path: user.tenant.key_path,
+            certificate_password: user.tenant.certificate_password,
+            cfdi_use: user.tenant.cfdi_use,
+            payment_method: user.tenant.payment_method,
+            payment_form: user.tenant.payment_form,
+            tax_rate: user.tenant.tax_rate,
+
+            // ⚕️ Datos clínicos
+            health_registration: user.tenant.health_registration,
+            health_registration_expires_at: user.tenant.health_registration_expires_at,
+
+            // ⚙️ Configuración general
+            status: user.tenant.status,
+            current_subscription_id: user.tenant.current_subscription_id,
+            max_users: user.tenant.max_users,
+            current_users: user.tenant.current_users,
+            timezone: user.tenant.timezone,
             currency: user.tenant.currency,
-            timezone: user.tenant.timezone
+            exchange_rate: user.tenant.exchange_rate,
+            profit_margin: user.tenant.profit_margin,
+
+            // 🕓 Clínica
+            opening_hours: user.tenant.opening_hours,
+            specialties: user.tenant.specialties,
+            number_of_rooms: user.tenant.number_of_rooms,
         };
 
         // 👤 Información de empleado (si aplica)
@@ -161,6 +204,7 @@ class AuthService {
             }
             : null;
 
+        // 🧾 Estructura final del perfil
         return {
             id: user.id,
             username: user.username,

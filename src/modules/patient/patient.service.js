@@ -1,3 +1,4 @@
+// src/modules/patient/patient.service.js
 const sequelize = require('../../config/database');
 const patientRepository = require('./patient.repository');
 const { createLog } = require('../../utils/log.helper');
@@ -69,12 +70,15 @@ class PatientService {
             // Crear paciente base
             const newPatient = await patientRepository.createPatient(cleanData, t);
 
-            // 🔁 Asociar múltiples tipos de paciente si existen
+            // 🔁 Asociar múltiples tipos si se envían
             if (Array.isArray(data.patient_type_ids) && data.patient_type_ids.length > 0) {
                 await newPatient.setTypes(data.patient_type_ids, { transaction: t });
             }
 
             await t.commit();
+
+            // 🔄 Recargar paciente con sus tipos asociados
+            const patientWithTypes = await patientRepository.findById(newPatient.id, currentUser.tenant_id);
 
             await createLog({
                 user_id: currentUser.id,
@@ -93,7 +97,7 @@ class PatientService {
                 type: 'info'
             });
 
-            return newPatient;
+            return patientWithTypes;
         } catch (err) {
             await t.rollback();
             logger.error(`Error al crear paciente: ${err.message}`);
@@ -153,6 +157,9 @@ class PatientService {
 
             await t.commit();
 
+            // 🔄 Recargar paciente actualizado con sus tipos
+            const updatedPatient = await patientRepository.findById(patient.id, currentUser.tenant_id);
+
             await createLog({
                 user_id: currentUser.id,
                 user_name: currentUser.username,
@@ -163,7 +170,7 @@ class PatientService {
                 user_agent: req.headers['user-agent']
             });
 
-            return patient;
+            return updatedPatient;
         } catch (err) {
             await t.rollback();
             logger.error(`Error al actualizar paciente: ${err.message}`);
