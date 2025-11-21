@@ -108,6 +108,16 @@ class PatientRepository {
             ]
         });
     }
+
+    // 🆔 Obtener el último número de expediente del tenant
+    async getLastMedicalRecord(tenantId) {
+        return Patient.findOne({
+            where: { tenant_id: tenantId },
+            order: [['medical_record_number', 'DESC']],
+            attributes: ['medical_record_number']
+        });
+    }
+
 }
 
 module.exports = new PatientRepository();

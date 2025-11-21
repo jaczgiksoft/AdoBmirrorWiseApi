@@ -244,6 +244,35 @@ class PatientService {
         if (!patient) throw new Error('Perfil no encontrado');
         return patient;
     }
+
+    // 🧩 Generar siguiente número de expediente
+    async getNextMedicalRecord(currentUser) {
+        const tenantId = currentUser.tenant_id;
+
+        // Obtener tenant (necesitamos el code)
+        const tenant = await require('../../models/mysql/tenant.model')
+            .findByPk(tenantId);
+
+        if (!tenant || !tenant.code) {
+            throw new Error("El tenant no tiene code definido");
+        }
+
+        // Tomamos los últimos 4 dígitos del code
+        const prefix = tenant.code.slice(-4);
+
+        // Último expediente del tenant
+        const last = await patientRepository.getLastMedicalRecord(tenantId);
+
+        if (!last || !last.medical_record_number) {
+            return `${prefix}0001`;
+        }
+
+        const lastNumber = parseInt(last.medical_record_number.slice(-4), 10);
+        const nextNumber = String(lastNumber + 1).padStart(4, '0');
+
+        return `${prefix}${nextNumber}`;
+    }
+
 }
 
 module.exports = new PatientService();

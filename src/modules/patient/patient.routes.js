@@ -34,6 +34,15 @@ router.post(
     patientController.getDatatable
 );
 
+// 🆕 Obtener siguiente número de expediente
+router.get(
+    '/next-medical-record',
+    validateToken,
+    loadPermissions,
+    checkPermissions('write', 'patients'),
+    patientController.getNextMedicalRecord
+);
+
 // 🔍 Obtener un paciente por ID
 router.get(
     '/:id',

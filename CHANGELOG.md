@@ -10,6 +10,53 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.6.0] - 2025-11-20
+
+### Added
+- **Nuevo endpoint para autogenerar número de expediente:**
+    - Ruta: `GET /patients/next-medical-record`
+    - Protegida con `validateToken`, `loadPermissions` y `checkPermissions('write', 'patients')`.
+    - Devuelve el siguiente número de expediente basado en:
+        - `tenant.code` (últimos 4 caracteres).
+        - Consecutivo interno de 4 dígitos por tenant.
+    - Preparado para soportar múltiples clínicas (multi-tenant).
+
+- **Nuevos métodos en la capa de negocio (Patient):**
+    - `patient.service.js` → `getNextMedicalRecord(user)`:
+        - Obtiene el tenant asociado al usuario.
+        - Lee el último expediente del tenant.
+        - Genera el siguiente folio con padding de 4 dígitos.
+    - `patient.repository.js` → `getLastMedicalRecord(tenant_id)`:
+        - Retorna el último `medical_record_number` del tenant ordenado de forma descendente.
+
+- **Nuevo método en controlador:**
+    - `patient.controller.js` → `getNextMedicalRecord`:
+        - Respuesta JSON uniforme `{ next: "XXXXNNNN" }`.
+        - Manejo de errores consistente con el resto del módulo.
+
+### Changed
+- **Reordenamiento crítico en `patient.routes.js`:**
+    - La ruta `/next-medical-record` ahora se declara **antes** de `/:id`
+      para evitar que Express la interprete como un parámetro dinámico.
+    - Soluciona el error de validación:
+      ```
+      "El ID debe ser un número entero"
+      ```
+      causado por `getPatientByIdValidator`.
+
+- **Compatibilidad con expedientes previos del seeder:**
+    - El generador de consecutivos ahora toma como base el **último expediente real del tenant**, incluso si los valores iniciales fueron creados con formato antiguo (`MRN-x-yyyy`).
+    - Mantiene integridad con el índice único (`tenant_id`, `medical_record_number`) sin romper datos existentes.
+
+### Notes
+- Esta actualización sienta la base para:
+    - Uso real de folios por clínica.
+    - Futuras integraciones con prefijos personalizados.
+    - Reemplazo total de formatos antiguos (MRN-x-xxxx) cuando se actualice el seeder.
+- La API ya es capaz de emitir folios consistentes incluso con datos previos legacy.
+
+---
+
 ## [0.5.3] - 2025-11-12
 ### Added
 - **Nuevo módulo clínico `Patient Conversations`** (`patient_conversations`):

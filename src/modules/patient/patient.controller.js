@@ -94,6 +94,16 @@ const getProfile = async (req, res) => {
     }
 };
 
+// 🆕 Generar siguiente número de expediente
+const getNextMedicalRecord = async (req, res) => {
+    try {
+        const next = await patientService.getNextMedicalRecord(req.user);
+        res.json({ next });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
 module.exports = {
     getAll,
     getOne,
@@ -102,4 +112,5 @@ module.exports = {
     softDelete,
     getDatatable,
     getProfile,
+    getNextMedicalRecord
 };
