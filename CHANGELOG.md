@@ -10,6 +10,94 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.6.1] - 2025-11-21
+
+### Added
+- **Nuevo módulo administrativo-fiscal `Billing Data`** (`billing_data`):
+    - Modelo `billing_data.model.js` con soporte multi-tenant (`tenant_id`) y `paranoid: true`.
+    - Campos principales: `business_name`, `rfc`, `tax_regime`, `zip_code`, `email`, `is_active`.
+    - **Migración `create-billing-data`**:
+        - Crea la tabla `billing_data` con índices (`tenant_id`, `rfc`).
+        - Relaciones (`tenant_id`) con `CASCADE`.
+    - **Estructura completa del módulo**:
+        - `billing_data.repository.js`: consultas de lectura, creación, actualización y soft delete.
+        - `billing_data.service.js`: transacciones Sequelize, auditoría (`createLog`, `logApiError`), `notifyUser`, sanitización con `allowedFields`.
+        - `billing_data.controller.js`: endpoints REST (`getAll`, `getOne`, `create`, `update`, `remove`).
+        - `billing_data.validator.js`: validaciones con `express-validator`.
+        - `billing_data.routes.js`: rutas protegidas con permisos (`read`, `write`, `edit`, `delete`).
+
+- **Nuevo módulo pivote `Patient Billing Data`** (`patient_billing_data`):
+    - Permite relacionar uno o varios datos fiscales con un paciente.
+    - Modelo `patient_billing_data.model.js` con `is_primary` para marcar un RFC principal.
+    - **Migración `create-patient-billing-data`**:
+        - Tabla pivote con referencias a `patients` y `billing_data`.
+        - Restricción única `uq_patient_billing_unique`.
+        - Índices (`tenant_id`, `patient_id`, `billing_data_id`).
+    - **Estructura completa del módulo**:
+        - `patient_billing_data.repository.js`: manejo de pivote, eliminación lógica, set/unset primary.
+        - `patient_billing_data.service.js`: transacciones, logs, notify, validación de duplicados.
+        - `patient_billing_data.controller.js`: añadir, listar, eliminar, marcar como principal.
+        - `patient_billing_data.validator.js`: validaciones de relación.
+        - `patient_billing_data.routes.js`: rutas REST protegidas.
+
+- **Nuevo módulo clínico-administrativo `Patient Representatives`** (`patient_representatives`):
+    - Permite registrar tutores o representantes legales (padre, madre, tutor).
+    - Modelo `patient_representative.model.js` con datos personales, contacto y opcional acceso al portal.
+    - **Migración `create-patient-representatives`**:
+        - Tabla `patient_representatives` con índices (`tenant_id`, `email`, `username`).
+        - Clave única en `username` (portal del representante).
+    - **Estructura completa del módulo**:
+        - `patient_representative.repository.js`: CRUD completo.
+        - `patient_representative.service.js`: transacciones, logs, notify, sanitización y soft delete.
+        - `patient_representative.controller.js`: CRUD REST estandarizado.
+        - `patient_representative.validator.js`: validación de datos personales y login opcional.
+        - `patient_representative.routes.js`: rutas protegidas bajo `/patient-representatives`.
+
+- **Nuevo módulo pivote `Patient Representative Links`** (`patient_representative_links`):
+    - Relaciona un paciente con uno o varios representantes legales.
+    - Modelo `patient_representative_link.model.js` con `is_primary` para indicar tutor principal.
+    - **Migración `create-patient-representative-links`**:
+        - Incluye referencias explícitas con `model: { tableName: '...' }` para compatibilidad MySQL en Windows.
+        - Índices (`tenant_id`, `patient_id`, `representative_id`).
+        - Restricción única `uq_rep_link_unique`.
+    - **Estructura completa del módulo**:
+        - `patient_representative_link.repository.js`: asignación, eliminación, y set/unset de primario.
+        - `patient_representative_link.service.js`: transacciones, logs, notify, validación.
+        - `patient_representative_link.controller.js`: listar, asignar, eliminar, marcar primario.
+        - `patient_representative_link.validator.js`: validadores REST.
+        - `patient_representative_link.routes.js`: rutas REST integradas con permisos.
+
+### Changed
+- **Corrección crítica en migración** `create-patient-representative-links`:
+    - Reemplazo de:
+      ```js
+      references: { model: 'patient_representatives' }
+      ```
+      por:
+      ```js
+      references: { model: { tableName: 'patient_representatives' } }
+      ```
+    - Soluciona el error MySQL:
+      ```
+      Failed to open the referenced table 'patient_representatives'
+      ```
+      causado por resolución temprana de FK en entornos Windows.
+
+### Notes
+- Sistema completo para:
+    - Datos fiscales por paciente (múltiples RFC).
+    - Representantes legales por paciente (con tutor principal).
+- Todos los módulos incluyen:
+    - Soft delete (`paranoid: true`).
+    - Índices optimizados.
+    - Auditoría completa (`createLog`, `logApiError`).
+    - Notificaciones internas automáticas.
+- **Requiere ejecutar**:
+  ```bash
+  npx sequelize-cli db:migrate
+
+---
+
 ## [0.6.0] - 2025-11-20
 
 ### Added

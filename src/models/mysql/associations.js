@@ -25,6 +25,12 @@ const PatientAlert = require('./patient_alert.model');
 const PatientProfession = require('./patient_profession.model');
 const PatientHobby = require('./patient_hobby.model');
 
+const BillingData = require('./billing_data.model');
+const PatientBillingData = require('./patient_billing_data.model');
+
+const PatientRepresentative = require('./patient_representative.model');
+const PatientRepresentativeLink = require('./patient_representative_link.model');
+
 // =====================
 // TENANTS
 // =====================
@@ -420,6 +426,99 @@ Patient.hasMany(PatientHobby, {
 PatientHobby.belongsTo(Patient, {
     foreignKey: 'patient_id',
     as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// CATÁLOGO billing_data pertenece a un tenant
+Tenant.hasMany(BillingData, {
+    foreignKey: 'tenant_id',
+    as: 'billing_data',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+BillingData.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// N:M Pacientes ↔ BillingData
+Patient.belongsToMany(BillingData, {
+    through: PatientBillingData,
+    as: 'billing_data',
+    foreignKey: 'patient_id',
+    otherKey: 'billing_data_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+BillingData.belongsToMany(Patient, {
+    through: PatientBillingData,
+    as: 'patients',
+    foreignKey: 'billing_data_id',
+    otherKey: 'patient_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Relación con pivote
+Tenant.hasMany(PatientBillingData, {
+    foreignKey: 'tenant_id',
+    as: 'patient_billing_data',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientBillingData.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Catálogo
+Tenant.hasMany(PatientRepresentative, {
+    foreignKey: 'tenant_id',
+    as: 'representatives',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+PatientRepresentative.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// N:M Paciente ↔ Representante
+Patient.belongsToMany(PatientRepresentative, {
+    through: PatientRepresentativeLink,
+    as: 'representatives',
+    foreignKey: 'patient_id',
+    otherKey: 'representative_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+PatientRepresentative.belongsToMany(Patient, {
+    through: PatientRepresentativeLink,
+    as: 'patients',
+    foreignKey: 'representative_id',
+    otherKey: 'patient_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Relación directa al pivot
+Tenant.hasMany(PatientRepresentativeLink, {
+    foreignKey: 'tenant_id',
+    as: 'patient_rep_links',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+PatientRepresentativeLink.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
