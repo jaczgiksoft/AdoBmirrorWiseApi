@@ -17,7 +17,8 @@ const coreModules = [
     'logs',
     'notifications',
     'patients',
-    'bracket_types'
+    'bracket_types',
+    'referrals'
 ];
 
 // =========================
