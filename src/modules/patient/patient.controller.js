@@ -26,21 +26,39 @@ const getOne = async (req, res) => {
 // 🟢 Crear nuevo paciente
 const create = async (req, res) => {
     try {
-        // 🧩 Si el frontend envía patient_type_ids como string JSON, parsearlo
-        if (typeof req.body.patient_type_ids === 'string') {
-            try {
-                req.body.patient_type_ids = JSON.parse(req.body.patient_type_ids);
-            } catch {
-                req.body.patient_type_ids = [];
+        const jsonFields = [
+            "billing_data",
+            "alerts",
+            "legal_representatives",
+            "patient_type_ids"
+        ];
+
+        jsonFields.forEach(field => {
+            if (typeof req.body[field] === "string") {
+                try {
+                    req.body[field] = JSON.parse(req.body[field]);
+                } catch {
+                    req.body[field] = [];
+                }
             }
+        });
+
+        // Si viene foto
+        if (req.file) {
+            // Remover ruta absoluta (Windows o Linux) y dejar solo /uploads/...
+            const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+
+            req.body.photo_url = cleanPath.replace(/\\/g, "/"); // ← Normaliza slashes en Windows
         }
 
         const patient = await patientService.createPatient(req.body, req.user, req);
-        res.status(201).json({ message: 'Paciente creado exitosamente', patient });
+        res.status(201).json({ message: "Paciente creado exitosamente", patient });
+
     } catch (err) {
         res.status(400).json({ message: err.message });
     }
 };
+
 
 // 🟡 Actualizar paciente
 const update = async (req, res) => {

@@ -116,11 +116,7 @@ const createPatientValidator = [
     body('last_dental_exam_date').optional().isDate().withMessage('Debe ser una fecha válida (YYYY-MM-DD)'),
 
     // 🔐 Portal del paciente
-    body('username').optional().isString().trim(),
-    body('password').optional().isString().trim(),
-    body('can_login').optional().isBoolean(),
-    body('push_token').optional().isString(),
-    body('first_login').optional().isBoolean(),
+    body('push_token').optional().isString()
 ];
 
 // 🟡 Actualización de Paciente

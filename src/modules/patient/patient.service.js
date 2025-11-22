@@ -31,8 +31,11 @@ class PatientService {
         }
 
         const t = await sequelize.transaction();
+
         try {
-            // 🔹 Campos permitidos
+            const tenantId = currentUser.tenant_id;
+
+            // --- LIMPIAR Y PREPARAR PAYLOAD ---
             const allowedFields = [
                 'tenant_id', 'medical_record_number', 'family_code',
                 'first_name', 'last_name', 'middle_name', 'nickname',
@@ -43,43 +46,106 @@ class PatientService {
                 'address_street_name', 'address_neighborhood',
                 'address_apartment_number', 'address_street_number',
                 'address_zip_code', 'address_city', 'address_state', 'address_country',
-                'rfc', 'company', 'company_address',
-                'photo_url', 'medical_record_image_url',
-                'is_under_medical_treatment', 'current_treatment_description',
-                'is_taking_medication', 'current_medications',
-                'is_allergic_to_medication', 'allergies_description',
-                'has_hepatitis', 'has_diabetes', 'has_lung_conditions',
-                'has_migraines', 'has_amigdalitis', 'has_adenoiditis',
-                'has_epilepsy', 'has_rheumatic_fever', 'has_psychological_conditions',
-                'has_heart_conditions', 'has_hemophilia', 'has_stds',
-                'is_pregnant', 'pregnancy_weeks',
-                'last_radiograph_date', 'last_dental_exam_date',
-                'has_received_fluoride', 'fluoride_date_description',
-                'has_bleeding_gums', 'has_oral_habits', 'chews_on_both_sides',
-                'has_jaw_pain_or_noise', 'grinds_teeth', 'breathes_through_mouth',
-                'had_previous_orthodontics', 'username', 'password',
-                'can_login', 'push_token', 'first_login'
+                'photo_url', 'username', 'password', 'can_login', 'first_login'
             ];
 
             const cleanData = Object.fromEntries(
                 Object.entries(data).filter(([key]) => allowedFields.includes(key))
             );
 
-            cleanData.tenant_id = currentUser.tenant_id;
+            // ------------------------------
+            // 🔥 GENERAR ACCESO AUTOMÁTICO
+            // ------------------------------
+            function calculateAge(birthDate) {
+                const today = new Date();
+                const dob = new Date(birthDate);
 
-            // Crear paciente base
+                let age = today.getFullYear() - dob.getFullYear();
+                const m = today.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                    age--;
+                }
+                return age;
+            }
+
+            const age = calculateAge(cleanData.birth_date);
+
+            // Paciente MAYOR de edad
+            if (age >= 18) {
+                cleanData.can_login = true;
+                cleanData.username = cleanData.phone_number;
+                cleanData.password = cleanData.phone_number;
+                cleanData.first_login = true; // fuerza cambio de contraseña
+            }
+            // Paciente MENOR de edad
+            else {
+                cleanData.can_login = false;
+                cleanData.username = null;
+                cleanData.password = null;
+                cleanData.first_login = false;
+            }
+
+            cleanData.tenant_id = tenantId;
+            // Convertir IDs numéricos
+            if (cleanData.referral_id) cleanData.referral_id = parseInt(cleanData.referral_id);
+            if (cleanData.occupation_id) cleanData.occupation_id = parseInt(cleanData.occupation_id);
+            if (cleanData.bracket_type_id) cleanData.bracket_type_id = parseInt(cleanData.bracket_type_id);
+            if (cleanData.patient_status_id) cleanData.patient_status_id = parseInt(cleanData.patient_status_id);
+            if (cleanData.patient_profession_id) cleanData.patient_profession_id = parseInt(cleanData.patient_profession_id);
+
+            console.log("cleanData", cleanData)
+
+            // 📌 Crear paciente base
             const newPatient = await patientRepository.createPatient(cleanData, t);
 
-            // 🔁 Asociar múltiples tipos si se envían
+            // 📌 Tipos N:M
             if (Array.isArray(data.patient_type_ids) && data.patient_type_ids.length > 0) {
-                await newPatient.setTypes(data.patient_type_ids, { transaction: t });
+                if (Array.isArray(data.patient_type_ids) && data.patient_type_ids.length > 0) {
+                    console.log("tipos", data.patient_type_ids, `newPatient: ${newPatient}, tenantId: ${tenantId}`);
+                    await patientRepository.setPatientTypes(
+                        newPatient.id,
+                        data.patient_type_ids,
+                        tenantId,
+                        t
+                    );
+                }
+            }
+
+            // 📌 Datos fiscales
+            if (Array.isArray(data.billing_data) && data.billing_data.length > 0) {
+                await patientRepository.addBillingData(
+                    newPatient.id,
+                    data.billing_data,
+                    tenantId,
+                    t
+                );
+            }
+
+            // 📌 Representantes
+            if (Array.isArray(data.legal_representatives) && data.legal_representatives.length > 0) {
+                await patientRepository.addRepresentatives(
+                    newPatient.id,
+                    data.legal_representatives,
+                    tenantId,
+                    t
+                );
+            }
+
+            // 📌 Alertas
+            if (Array.isArray(data.alerts) && data.alerts.length > 0) {
+                await patientRepository.addAlerts(
+                    newPatient.id,
+                    data.alerts,
+                    tenantId,
+                    t
+                );
             }
 
             await t.commit();
 
-            // 🔄 Recargar paciente con sus tipos asociados
-            const patientWithTypes = await patientRepository.findById(newPatient.id, currentUser.tenant_id);
+            const result = await patientRepository.findById(newPatient.id, tenantId);
 
+            // 🔔 Notificaciones, logs
             await createLog({
                 user_id: currentUser.id,
                 user_name: currentUser.username,
@@ -90,14 +156,8 @@ class PatientService {
                 user_agent: req.headers['user-agent']
             });
 
-            await notifyUser({
-                user_id: currentUser.id,
-                title: 'Nuevo paciente creado',
-                message: `${currentUser.username} registró al paciente ${newPatient.first_name} ${newPatient.last_name}.`,
-                type: 'info'
-            });
+            return result;
 
-            return patientWithTypes;
         } catch (err) {
             await t.rollback();
             logger.error(`Error al crear paciente: ${err.message}`);

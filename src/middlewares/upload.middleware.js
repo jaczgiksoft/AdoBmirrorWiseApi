@@ -59,7 +59,6 @@ const userProfileStorage = multer.diskStorage({
     },
 });
 
-
 // 3️⃣ Tiendas (logo / banner)
 const storeStorage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -84,6 +83,23 @@ const productStorage = multer.diskStorage({
     filename: (req, file, cb) => {
         cb(null, `product_${Date.now()}${path.extname(file.originalname)}`);
     },
+});
+
+// 5️⃣ Pacientes (foto de perfil)
+const patientStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const tenantId = req.user?.tenant_id || "unknown";
+        const mrn = req.body.medical_record_number || "temp";
+
+        const dir = ensureDir(
+            path.join(__dirname, `../../uploads/${tenantId}/patients/${mrn}/profile`)
+        );
+
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `profile_${Date.now()}${path.extname(file.originalname)}`);
+    }
 });
 
 // === Inicializaciones de Multer === //
@@ -114,10 +130,17 @@ const uploadProductImage = multer({
     fileFilter: fileFilter("images"),
 }).single("image");
 
+const uploadPatientPhoto = multer({
+    storage: patientStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter("images"),
+}).single("photo");
+
 // === Exportaciones === //
 module.exports = {
     uploadTenantLogo,       // Tenant (campo: logo)
     uploadUserProfile,      // Usuario (campo: profile_image)
     uploadStoreImages,      // Tienda (campos: logo, banner)
     uploadProductImage,     // Producto (campo: image)
+    uploadPatientPhoto,     // Paciente (campo: photo_url)
 };

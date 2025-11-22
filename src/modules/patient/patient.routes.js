@@ -11,7 +11,8 @@ const {
 } = require('./patient.validator');
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
-
+const { uploadPatientPhoto } = require('../../middlewares/upload.middleware');
+const parseJsonFields = require('../../middlewares/parseJsonFields.middleware');
 // =========================
 // RUTAS PACIENTES
 // =========================
@@ -60,6 +61,8 @@ router.post(
     validateToken,
     loadPermissions,
     checkPermissions('write', 'patients'),
+    uploadPatientPhoto,
+    parseJsonFields,
     createPatientValidator,
     validateRequest,
     patientController.create

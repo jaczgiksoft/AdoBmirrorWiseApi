@@ -10,6 +10,69 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.6.2] - 2025-11-21
+
+### Added
+- **Carga de fotografías de pacientes**
+    - Nuevo middleware `uploadPatientPhoto` con ruta dinámica:
+      ```
+      uploads/{tenant_id}/patients/{MRN}/profile/{archivo}
+      ```
+    - Validación de tipos permitidos (`image/jpeg`, `image/png`, `image/jpg`).
+    - El backend ahora guarda solo rutas relativas (`uploads/...`), compatibles con cliente.
+
+- **Generación automática de acceso al portal del paciente**
+    - Cálculo de edad a partir de `birth_date`.
+    - Reglas:
+        - **Adultos (>= 18 años):**
+            - `username = phone_number`
+            - `password = phone_number`
+            - `can_login = true`
+            - `first_login = true` (forzar cambio)
+        - **Menores de edad:**
+            - `can_login = false`
+            - usuario y contraseña vacíos
+            - `first_login = false`
+
+- **Guardado completo del paciente en creación**
+    - Alta del paciente con todos los datos base.
+    - Inserción automática de:
+        - **Alertas clínicas y administrativas**.
+        - **Representantes legales** (N:M).
+        - **Datos fiscales** (N:M con pivot).
+        - **Tipos de paciente** a través de `PatientPatientType`.
+
+- **Serialización automática de datos complejos**
+    - Manejo de arrays enviados vía `FormData`, deserializados correctamente en el backend.
+
+- **Asociaciones Sequelize revisadas y corregidas**
+    - Se habilitó `Patient.belongsToMany(PatientType)` y viceversa.
+    - Se ajustaron los modelos `BillingData`, `PatientBillingData`, `PatientRepresentative`, `PatientRepresentativeLink`.
+    - Se aseguraron los alias `.as` correctos para poder usar `newPatient.setTypes(...)`.
+
+### Changed
+- **URL de foto (`photo_url`) normalizada**
+    - Ahora solo almacena rutas relativas, eliminando rutas absolutas de Windows.
+
+- **Validación de paciente actualizada**
+    - `birth_date` debe recibirse como `YYYY-MM-DD`.
+    - `patient_type_ids` ahora debe ser un arreglo válido de enteros.
+    - Limpieza del payload antes de crear al paciente mediante `allowedFields`.
+
+- **Cálculo del número de expediente**
+    - Se deshabilitó temporalmente el uso automático de `getNextMedicalRecord()` para evitar duplicados hasta ajuste final.
+
+- **Ordenamiento por defecto en datatable**
+    - Ajustado para que el backend respete el orden solicitado por el frontend.
+
+### Fixed
+- Error donde `patientRepository.addBillingData` no existía al no implementarse previamente (ya corregido).
+- Guardado de foto fallaba por `photo_url` siendo tratado como URL externa.
+- FormData enviaba objetos sin serializar causando errores de validación.
+- Problema donde `setTypes()` no funcionaba por falta de relaciones en modelo.
+
+---
+
 ## [0.6.1] - 2025-11-21
 
 ### Added
