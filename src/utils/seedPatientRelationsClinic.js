@@ -27,6 +27,7 @@ const seedPatientRelationsClinic = async () => {
                 'Facebook',
                 'Instagram',
                 'Recomendación',
+                'Paciente',
                 'Google Ads',
                 'Otro'
             ].map(name => ({ name, tenant_id: tenant.id }));
@@ -44,7 +45,8 @@ const seedPatientRelationsClinic = async () => {
             // 👤 Patient Types
             const types = [
                 { name: 'Nuevo', color: '#2196F3' },
-                { name: 'En tratamiento', color: '#4CAF50' },
+                { name: 'Consulta única', color: '#A80B70' },
+                { name: 'Activo', color: '#4CAF50' },
                 { name: 'Control', color: '#FFC107' },
                 { name: 'Referido', color: '#9C27B0' }
             ].map(t => ({ ...t, tenant_id: tenant.id }));
@@ -58,11 +60,13 @@ const seedPatientRelationsClinic = async () => {
             ].map(s => ({ ...s, tenant_id: tenant.id }));
 
             // 🦷 Bracket Types
+            // 🦷 Bracket Types (colores mejorados)
             const bracketTypes = [
-                { name: 'Metálico', color: '#607D8B' },
-                { name: 'Cerámico', color: '#B0BEC5' },
-                { name: 'Autoligado', color: '#9E9E9E' },
-                { name: 'Zafiro', color: '#E1F5FE' }
+                { name: 'Standard',   color: '#546E7A' }, // Azul grisáceo elegante
+                { name: 'Metálico',   color: '#90A4AE' }, // Gris acero moderno
+                { name: 'Cerámico',   color: '#CFD8DC' }, // Gris claro porcelana
+                { name: 'Autoligado', color: '#8D6E63' }, // Café suave premium
+                { name: 'Zafiro',     color: '#81D4FA' }  // Azul zafiro suave
             ].map(b => ({ ...b, tenant_id: tenant.id }));
 
             // 🎓 Professions

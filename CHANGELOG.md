@@ -10,6 +10,27 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.7.2] - 2025-11-24
+
+### Changed
+- Ajustado el **payload del perfil del paciente** (`GET /patients/profile/:id`) para incluir datos adicionales requeridos por el cliente.
+    - Campos normalizados que ahora viajan correctamente en el perfil.
+    - Alineación del formato del perfil con el nuevo front (React/Electron).
+
+### Added
+- Nuevos datos añadidos a los **seeders clínicos**:
+    - `seedPatientsRealData.js` añadido al proyecto.
+    - `seedPatientRelationsClinic.js` actualizado con nuevos pacientes y relaciones.
+    - `seedTenantModules.js` ajustado para reflejar módulos requeridos tras la actualización del front.
+    - Actualización en `patient.repository.js` para permitir que el nuevo perfil incluya relaciones adicionales.
+
+### Updated
+- Archivo `src/routes/index.js` modificado para registrar los seeders y nuevas rutas correctamente.
+- Limpieza y alineación general de seeders existentes para coincidir con la nueva estructura del paciente.
+
+
+---
+
 ## [0.6.2] - 2025-11-21
 
 ### Added

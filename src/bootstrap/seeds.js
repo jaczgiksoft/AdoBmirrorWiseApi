@@ -25,7 +25,7 @@ async function runSeeds() {
         await seedPatientRelationsClinic();
 
         // 5️⃣ Crea pacientes demo (opcional, para desarrollo)
-        await seedPatientsClinic();
+        // await seedPatientsClinic();
 
         // 6️⃣ Crea usuario administrador principal
         await seedAdminUsersClinic();

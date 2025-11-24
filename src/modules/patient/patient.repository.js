@@ -13,6 +13,7 @@ const PatientRepresentative = require('../../models/mysql/patient_representative
 const PatientRepresentativeLink = require('../../models/mysql/patient_representative_link.model');
 const PatientAlert = require('../../models/mysql/patient_alert.model');
 const PatientPatientType = require('../../models/mysql/patient_patient_type.model');
+const PatientHobby = require('../../models/mysql/patient_hobby.model');
 
 class PatientRepository {
     // 📋 Obtener todos los pacientes de un tenant
@@ -111,14 +112,69 @@ class PatientRepository {
         return Patient.findOne({
             where: { id, tenant_id: tenantId },
             include: [
+                // 🟦 Tenant
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
+
+                // 🟩 Catálogos principales
                 { model: Referral, as: 'referral', attributes: ['id', 'name'] },
                 { model: Occupation, as: 'occupation', attributes: ['id', 'name'] },
-                // 🔁 Cambiado a N:M
-                { model: PatientType, as: 'types', through: { attributes: [] }, attributes: ['id', 'name', 'color'] },
                 { model: PatientStatus, as: 'status', attributes: ['id', 'name', 'color', 'order_index'] },
                 { model: BracketType, as: 'bracket_type', attributes: ['id', 'name', 'material', 'color'] },
-                { model: PatientProfession, as: 'profession', attributes: ['id', 'name', 'abbreviation'] }
+                { model: PatientProfession, as: 'profession', attributes: ['id', 'name', 'abbreviation'] },
+
+                // 🔁 Tipos de paciente (N:M)
+                {
+                    model: PatientType,
+                    as: 'types',
+                    through: { attributes: [] },
+                    attributes: ['id', 'name', 'color']
+                },
+
+                // 📢 Alertas del paciente
+                {
+                    model: PatientAlert,
+                    as: 'alerts',
+                    attributes: ['id', 'title', 'description', 'is_admin_alert', 'createdAt']
+                },
+
+                // 🎯 Hobbies
+                {
+                    model: PatientHobby,
+                    as: 'hobbies',
+                    attributes: ['id', 'name']
+                },
+
+                // 👨‍👩‍👧 REPRESENTANTES (N:M)
+                {
+                    model: PatientRepresentative,
+                    as: 'representatives',
+                    attributes: [
+                        'id',
+                        'full_name',
+                        'relationship',
+                        'phone',
+                        'phone_alt',
+                        'email',
+                        'address',
+                        'can_login',
+                        'first_login'
+                    ]
+                },
+
+                // 🧾 DATOS DE FACTURACIÓN (N:M)
+                {
+                    model: BillingData,
+                    as: 'billing_data',
+                    attributes: [
+                        'id',
+                        'business_name',
+                        'rfc',
+                        'tax_regime',
+                        'zip_code',
+                        'email',
+                        'is_active'
+                    ]
+                }
             ]
         });
     }
