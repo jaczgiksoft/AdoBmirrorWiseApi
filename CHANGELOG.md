@@ -10,6 +10,29 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.8.0] - 2025-12-04
+
+### Added
+- New module **patient_prescription** with full CRUD functionality.
+- Added model, migration, controller, service, repository, and validator for prescriptions.
+- New API endpoints:
+  - `GET /patient_prescription/patient/:id`
+  - `POST /patient_prescription`
+  - `PUT /patient_prescription/:id`
+  - `DELETE /patient_prescription/:id`
+- Implemented Sequelize associations linking **PatientPrescription** with `Tenant` and `Patient`.
+- Enabled Electron application to interact with real prescription data through API CRUD instead of mock data.
+
+### Updated
+- Updated `associations.js` to properly register relationships for `PatientPrescription`.
+- Ensured structure and behavior remain consistent with the existing `patient_hobby` module, including multitenancy and unique constraints.
+
+### Fixed
+- Corrected Sequelize association issue:
+  - *"Patient is not associated to PatientPrescription!"*
+
+---
+
 ## [0.7.2] - 2025-11-24
 
 ### Changed

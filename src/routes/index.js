@@ -36,5 +36,6 @@ router.use('/patient-hobbies', require('../modules/patient_hobby/patient_hobby.r
 router.use('/patient-notes', require('../modules/patient_note/patient_note.routes'));
 router.use('/patient-conversations', require('../modules/patient_conversation/patient_conversation.routes'));
 router.use('/patient-representative-links', require('../modules/patient_representative_link/patient_representative_link.routes'));
+router.use('/patient-prescriptions', require('../modules/patient_prescription/patient_prescription.routes'));
 
 module.exports = router;

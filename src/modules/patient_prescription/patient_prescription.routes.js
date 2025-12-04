@@ -1,64 +1,64 @@
 const express = require('express');
 const router = express.Router();
 
-const patientHobbyController = require('./patient_hobby.controller');
+const patientPrescriptionController = require('./patient_prescription.controller');
 const { validateToken } = require('../../middlewares/auth.middleware');
 const { checkPermissions } = require('../../middlewares/permissions.middleware');
 const {
-    createPatientHobbyValidator,
-    updatePatientHobbyValidator,
-    getPatientHobbyByIdValidator,
-    getHobbiesByPatientIdValidator,
-} = require('./patient_hobby.validator');
+    createPatientPrescriptionValidator,
+    updatePatientPrescriptionValidator,
+    getPatientPrescriptionByIdValidator,
+    getPrescriptionsByPatientIdValidator,
+} = require('./patient_prescription.validator');
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 
 // =========================
-// RUTAS PASATIEMPOS DE PACIENTE
+// RUTAS PRESCRIPCIONES DE PACIENTE
 // =========================
 
-// 📋 Obtener todos los pasatiempos de un paciente
+// 📋 Obtener todas las prescripciones de un paciente
 router.get(
     '/patient/:patient_id',
     validateToken,
     loadPermissions,
     checkPermissions('read', 'patients'),
-    getHobbiesByPatientIdValidator,
+    getPrescriptionsByPatientIdValidator,
     validateRequest,
-    patientHobbyController.getByPatient
+    patientPrescriptionController.getByPatient
 );
 
-// 🟢 Crear nuevo pasatiempo
+// 🟢 Crear nueva prescripción
 router.post(
     '/',
     validateToken,
     loadPermissions,
     checkPermissions('write', 'patients'),
-    createPatientHobbyValidator,
+    createPatientPrescriptionValidator,
     validateRequest,
-    patientHobbyController.create
+    patientPrescriptionController.create
 );
 
-// 🟡 Actualizar pasatiempo
+// 🟡 Actualizar prescripción
 router.put(
     '/:id',
     validateToken,
     loadPermissions,
     checkPermissions('edit', 'patients'),
-    updatePatientHobbyValidator,
+    updatePatientPrescriptionValidator,
     validateRequest,
-    patientHobbyController.update
+    patientPrescriptionController.update
 );
 
-// 🔴 Eliminar pasatiempo (borrado físico con log)
+// 🔴 Eliminar prescripción (borrado físico con log)
 router.delete(
     '/:id',
     validateToken,
     loadPermissions,
     checkPermissions('delete', 'patients'),
-    getPatientHobbyByIdValidator,
+    getPatientPrescriptionByIdValidator,
     validateRequest,
-    patientHobbyController.remove
+    patientPrescriptionController.remove
 );
 
 module.exports = router;
