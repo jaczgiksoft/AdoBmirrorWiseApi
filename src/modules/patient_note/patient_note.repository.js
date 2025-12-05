@@ -2,6 +2,7 @@ const PatientNote = require('../../models/mysql/patient_note.model');
 const Patient = require('../../models/mysql/patient.model');
 const Tenant = require('../../models/mysql/tenant.model');
 const User = require('../../models/mysql/user.model');
+const Employee = require('../../models/mysql/employee.model');
 
 class PatientNoteRepository {
     // 🟢 Crear nota
@@ -19,39 +20,48 @@ class PatientNoteRepository {
         return note.destroy({ transaction, force: true });
     }
 
-    // 🔍 Buscar nota por ID (según tenant)
+    // 🔍 Buscar nota por ID y tenant
     async findById(id, tenantId) {
         return PatientNote.findOne({
             where: { id, tenant_id: tenantId },
             include: [
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
                 { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name'] },
-                { model: User, as: 'author', attributes: ['id', 'username', 'email'] }
-            ],
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username'],
+                    include: [
+                        {
+                            model: Employee,
+                            as: 'employee',
+                            attributes: ['id', 'first_name', 'last_name', 'email', 'position', 'profile_image']
+                        }
+                    ]
+                }
+            ]
         });
     }
 
     // 📋 Obtener todas las notas de un paciente
-    async findByPatientId(patientId, tenantId, includePrivate = false, currentUserId = null) {
-        const where = { patient_id: patientId, tenant_id: tenantId };
-
-        // Si no puede ver privadas, las filtramos
-        if (!includePrivate) {
-            where.is_private = false;
-        } else if (includePrivate && currentUserId) {
-            // Mostrar privadas solo si son del mismo autor
-            where[Symbol.for('or')] = [
-                { is_private: false },
-                { user_id: currentUserId }
-            ];
-        }
-
+    async findByPatientId(patientId, tenantId) {
         return PatientNote.findAll({
-            where,
+            where: { patient_id: patientId, tenant_id: tenantId },
             include: [
-                { model: User, as: 'author', attributes: ['id', 'username', 'email'] }
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'username'],
+                    include: [
+                        {
+                            model: Employee,
+                            as: 'employee',
+                            attributes: ['id', 'first_name', 'last_name', 'email', 'position', 'profile_image']
+                        }
+                    ]
+                }
             ],
-            order: [['createdAt', 'DESC']],
+            order: [['createdAt', 'DESC']]
         });
     }
 }

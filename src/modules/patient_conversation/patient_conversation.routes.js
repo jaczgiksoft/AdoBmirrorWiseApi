@@ -22,7 +22,7 @@ router.get(
     '/patient/:patient_id',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'patient_conversations'),
+    checkPermissions('read', 'patients'),
     getConversationsByPatientIdValidator,
     validateRequest,
     patientConversationController.getByPatient
@@ -33,7 +33,7 @@ router.get(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'patient_conversations'),
+    checkPermissions('read', 'patients'),
     getPatientConversationByIdValidator,
     validateRequest,
     patientConversationController.getById
@@ -44,7 +44,7 @@ router.post(
     '/',
     validateToken,
     loadPermissions,
-    checkPermissions('write', 'patient_conversations'),
+    checkPermissions('write', 'patients'),
     createPatientConversationValidator,
     validateRequest,
     patientConversationController.create
@@ -55,7 +55,7 @@ router.put(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('edit', 'patient_conversations'),
+    checkPermissions('edit', 'patients'),
     updatePatientConversationValidator,
     validateRequest,
     patientConversationController.update
@@ -66,7 +66,7 @@ router.delete(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('delete', 'patient_conversations'),
+    checkPermissions('delete', 'patients'),
     getPatientConversationByIdValidator,
     validateRequest,
     patientConversationController.remove

@@ -22,7 +22,7 @@ router.get(
     '/patient/:patient_id',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'patient_notes'),
+    checkPermissions('read', 'patients'),
     getNotesByPatientIdValidator,
     validateRequest,
     patientNoteController.getByPatient
@@ -33,7 +33,7 @@ router.get(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'patient_notes'),
+    checkPermissions('read', 'patients'),
     getPatientNoteByIdValidator,
     validateRequest,
     patientNoteController.getById
@@ -44,7 +44,7 @@ router.post(
     '/',
     validateToken,
     loadPermissions,
-    checkPermissions('write', 'patient_notes'),
+    checkPermissions('write', 'patients'),
     createPatientNoteValidator,
     validateRequest,
     patientNoteController.create
@@ -55,7 +55,7 @@ router.put(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('edit', 'patient_notes'),
+    checkPermissions('edit', 'patients'),
     updatePatientNoteValidator,
     validateRequest,
     patientNoteController.update
@@ -66,7 +66,7 @@ router.delete(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('delete', 'patient_notes'),
+    checkPermissions('delete', 'patients'),
     getPatientNoteByIdValidator,
     validateRequest,
     patientNoteController.remove

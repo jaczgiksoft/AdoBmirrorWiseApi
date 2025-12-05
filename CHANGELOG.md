@@ -10,6 +10,41 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.9.0] - 2025-12-04
+
+### Added
+- Implemented the complete Patient Conversations module:
+  - New model, migration, repository, service, controller, and routes.
+  - Full CRUD support with tenant validation.
+  - Validation rules for creating and updating conversations.
+  - Audit logging for all conversation actions.
+  - Conversations are now linked to the authenticated user who created them.
+
+- Added support for returning Employee information through the User relationship for both Notes and Conversations.  
+  This allows APIs to return full author details such as first name, last name, email, position, and profile image.
+
+### Changed
+- Updated the Patient Notes and Patient Conversations modules to remove the incorrect `employee_id` field.  
+  Author identity is now correctly derived through the User → Employee relationship.
+  
+- Updated all repositories and services to include Employee information when returning Notes and Conversations.
+
+- Cleaned and reorganized associations to ensure consistency, avoid duplicated aliases, and maintain proper ordering.
+
+### Fixed
+- Resolved the error related to BillingData not being associated with Patient by correcting mismatched includes and association definitions.
+- Fixed alias inconsistencies (for example, replacing incorrect uses of “author” with the correct alias “user”).
+- Corrected structural issues in the associations file such as duplicated associations, missing braces, and misordered sections.
+- Fixed endpoint responses in Notes and Conversations to return the correct raw data format expected by the frontend.
+
+### Improved
+- Improved robustness of Notes and Conversations endpoints when handling User and Employee relations.
+- Enhanced tenant validation and error reporting across several modules.
+- Improved audit logging messages for clarity and consistency.
+
+
+---
+
 ## [0.8.0] - 2025-12-04
 
 ### Added

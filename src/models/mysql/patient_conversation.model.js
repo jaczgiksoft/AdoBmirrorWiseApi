@@ -33,6 +33,8 @@ const PatientConversation = sequelize.define('PatientConversation', {
         comment: 'Usuario que registró o participó en la conversación'
     },
 
+
+
     // 💬 Título descriptivo
     title: {
         type: DataTypes.STRING(150),

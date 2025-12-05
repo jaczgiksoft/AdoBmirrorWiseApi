@@ -25,6 +25,8 @@ const PatientAlert = require('./patient_alert.model');
 const PatientProfession = require('./patient_profession.model');
 const PatientHobby = require('./patient_hobby.model');
 const PatientPrescription = require('./patient_prescription.model');
+const PatientNote = require('./patient_note.model');
+const PatientConversation = require('./patient_conversation.model');
 
 const BillingData = require('./billing_data.model');
 const PatientBillingData = require('./patient_billing_data.model');
@@ -464,7 +466,89 @@ PatientPrescription.belongsTo(Patient, {
     onUpdate: 'CASCADE',
 });
 
-// Billing Data
+// PATIENT NOTES
+Tenant.hasMany(PatientNote, {
+    foreignKey: 'tenant_id',
+    as: 'patient_notes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientNote.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Patient.hasMany(PatientNote, {
+    foreignKey: 'patient_id',
+    as: 'notes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientNote.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+User.hasMany(PatientNote, {
+    foreignKey: 'user_id',
+    as: 'notes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientNote.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// PATIENT CONVERSATIONS
+Tenant.hasMany(PatientConversation, {
+    foreignKey: 'tenant_id',
+    as: 'patient_conversations',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientConversation.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Patient.hasMany(PatientConversation, {
+    foreignKey: 'patient_id',
+    as: 'conversations',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientConversation.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+User.hasMany(PatientConversation, {
+    foreignKey: 'user_id',
+    as: 'conversations',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientConversation.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// BILLING DATA
+Tenant.hasMany(BillingData, {
+    foreignKey: 'tenant_id',
+    as: 'billing_data',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
 BillingData.belongsTo(Tenant, {
     foreignKey: 'tenant_id',
     as: 'tenant',
@@ -472,7 +556,6 @@ BillingData.belongsTo(Tenant, {
     onUpdate: 'CASCADE'
 });
 
-// N:M Pacientes ↔ BillingData
 Patient.belongsToMany(BillingData, {
     through: PatientBillingData,
     as: 'billing_data',
@@ -490,13 +573,6 @@ BillingData.belongsToMany(Patient, {
     onUpdate: 'CASCADE'
 });
 
-// Relación con pivote
-Tenant.hasMany(PatientBillingData, {
-    foreignKey: 'tenant_id',
-    as: 'patient_billing_data',
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE'
-});
 PatientBillingData.belongsTo(Tenant, {
     foreignKey: 'tenant_id',
     as: 'tenant',
@@ -504,14 +580,13 @@ PatientBillingData.belongsTo(Tenant, {
     onUpdate: 'CASCADE'
 });
 
-// Catálogo
+// PATIENT REPRESENTATIVES
 Tenant.hasMany(PatientRepresentative, {
     foreignKey: 'tenant_id',
     as: 'representatives',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
-
 PatientRepresentative.belongsTo(Tenant, {
     foreignKey: 'tenant_id',
     as: 'tenant',

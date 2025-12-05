@@ -33,6 +33,8 @@ const PatientNote = sequelize.define('PatientNote', {
         comment: 'Usuario que creó la nota'
     },
 
+
+
     // 📝 Título y contenido
     title: {
         type: DataTypes.STRING(150),
