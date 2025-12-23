@@ -55,8 +55,21 @@ const resetPasswordValidator = [
         .withMessage('La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial')
 ];
 
+/**
+ * 🔹 REFRESH TOKEN
+ */
+const refreshTokenValidator = [
+    body('refresh_token')
+        .exists().withMessage('El refresh token es obligatorio')
+        .bail()
+        .trim()
+        .notEmpty().withMessage('El refresh token no puede estar vacío')
+        .isHexadecimal().withMessage('Formato de token inválido')
+];
+
 module.exports = {
     loginValidator,
     forgotPasswordValidator,
-    resetPasswordValidator
+    resetPasswordValidator,
+    refreshTokenValidator
 };

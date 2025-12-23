@@ -10,60 +10,93 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.10.0] - 2025-12-23
+
+### Added
+- Se introdujo un sistema de caché de permisos en memoria para reducir consultas redundantes a la base de datos:
+  - Nueva utilidad `permissions.cache` con alcance por tenant y conjunto de roles.
+  - Invalidación automática del caché al actualizar roles y permisos.
+  - Totalmente compatible con la lógica existente de resolución de permisos.
+
+- Se agregó una nueva infraestructura de Refresh Tokens para soportar sesiones de larga duración:
+  - Nuevo modelo MongoDB `RefreshToken` con almacenamiento seguro mediante hash.
+  - Rotación y revocación de tokens mediante identificador de familia.
+  - Limpieza automática de refresh tokens expirados mediante TTL.
+  - Diseñado para coexistir con el sistema actual de JWT + ActiveToken sin forzar cambios en los clientes.
+
+### Changed
+- Se fortaleció el flujo de autenticación para mejorar la validación de sesiones:
+  - Mejora en el manejo de ActiveToken como preparación para validación estricta de JTI.
+  - Extensión de servicios y repositorios de autenticación para soportar la emisión de refresh tokens (uso no obligatorio).
+
+- Se actualizaron los servicios de roles y permisos para invalidar el caché de permisos cuando estos son modificados, garantizando consistencia inmediata entre sesiones activas.
+
+- Se actualizaron rutas, servicios y validadores de autenticación para soportar mejoras de seguridad aditivas, manteniendo intactos los contratos existentes de la API.
+
+### Fixed
+- Se mejoró la robustez de la carga de permisos evitando accesos innecesarios a la base de datos cuando los permisos ya están cacheados.
+- Se redujeron posibles cuellos de botella de rendimiento en endpoints autenticados de alto tráfico al evitar consultas repetidas de roles y permisos.
+
+### Improved
+- Se fortaleció la postura general de seguridad del sistema de autenticación manteniendo compatibilidad total hacia atrás.
+- Se mejoró la preparación del sistema para escalar hacia aplicaciones web y móviles que requieren sesiones de larga duración.
+- Se sentaron las bases para una autenticación multi-aplicación (Desktop, Web, Mobile) utilizando un núcleo de autenticación compartido y reforzado.
+
+---
+
 ## [0.9.0] - 2025-12-04
 
 ### Added
-- Implemented the complete Patient Conversations module:
-  - New model, migration, repository, service, controller, and routes.
-  - Full CRUD support with tenant validation.
-  - Validation rules for creating and updating conversations.
-  - Audit logging for all conversation actions.
-  - Conversations are now linked to the authenticated user who created them.
+- Se implementó el módulo completo de Patient Conversations:
+  - Nuevo modelo, migración, repositorio, servicio, controlador y rutas.
+  - Soporte completo CRUD con validación de tenant.
+  - Reglas de validación para creación y actualización de conversaciones.
+  - Registro de auditoría para todas las acciones del módulo.
+  - Las conversaciones ahora están vinculadas al usuario autenticado que las creó.
 
-- Added support for returning Employee information through the User relationship for both Notes and Conversations.  
-  This allows APIs to return full author details such as first name, last name, email, position, and profile image.
+- Se agregó soporte para retornar información de Employee a través de la relación User tanto en Notes como en Conversations.  
+  Esto permite que las APIs devuelvan detalles completos del autor como nombre, apellido, correo, puesto e imagen de perfil.
 
 ### Changed
-- Updated the Patient Notes and Patient Conversations modules to remove the incorrect `employee_id` field.  
-  Author identity is now correctly derived through the User → Employee relationship.
+- Se actualizaron los módulos Patient Notes y Patient Conversations para eliminar el campo incorrecto `employee_id`.  
+  La identidad del autor ahora se deriva correctamente mediante la relación User → Employee.
   
-- Updated all repositories and services to include Employee information when returning Notes and Conversations.
+- Se actualizaron todos los repositorios y servicios para incluir información de Employee al retornar Notes y Conversations.
 
-- Cleaned and reorganized associations to ensure consistency, avoid duplicated aliases, and maintain proper ordering.
+- Se limpiaron y reorganizaron las asociaciones para asegurar consistencia, evitar alias duplicados y mantener un orden adecuado.
 
 ### Fixed
-- Resolved the error related to BillingData not being associated with Patient by correcting mismatched includes and association definitions.
-- Fixed alias inconsistencies (for example, replacing incorrect uses of “author” with the correct alias “user”).
-- Corrected structural issues in the associations file such as duplicated associations, missing braces, and misordered sections.
-- Fixed endpoint responses in Notes and Conversations to return the correct raw data format expected by the frontend.
+- Se resolvió el error relacionado con BillingData que no estaba asociado correctamente a Patient, corrigiendo includes y definiciones de asociaciones inconsistentes.
+- Se corrigieron inconsistencias de alias (por ejemplo, reemplazando usos incorrectos de “author” por el alias correcto “user”).
+- Se corrigieron problemas estructurales en el archivo de asociaciones, como asociaciones duplicadas, llaves faltantes y secciones desordenadas.
+- Se corrigieron las respuestas de los endpoints de Notes y Conversations para devolver el formato de datos esperado por el frontend.
 
 ### Improved
-- Improved robustness of Notes and Conversations endpoints when handling User and Employee relations.
-- Enhanced tenant validation and error reporting across several modules.
-- Improved audit logging messages for clarity and consistency.
-
+- Se mejoró la robustez de los endpoints de Notes y Conversations al manejar relaciones entre User y Employee.
+- Se reforzó la validación de tenant y el reporte de errores en varios módulos.
+- Se mejoraron los mensajes de auditoría para mayor claridad y consistencia.
 
 ---
 
 ## [0.8.0] - 2025-12-04
 
 ### Added
-- New module **patient_prescription** with full CRUD functionality.
-- Added model, migration, controller, service, repository, and validator for prescriptions.
-- New API endpoints:
+- Nuevo módulo **patient_prescription** con funcionalidad CRUD completa.
+- Se agregó el modelo, migración, controlador, servicio, repositorio y validador para prescripciones.
+- Nuevos endpoints de API:
   - `GET /patient_prescription/patient/:id`
   - `POST /patient_prescription`
   - `PUT /patient_prescription/:id`
   - `DELETE /patient_prescription/:id`
-- Implemented Sequelize associations linking **PatientPrescription** with `Tenant` and `Patient`.
-- Enabled Electron application to interact with real prescription data through API CRUD instead of mock data.
+- Se implementaron asociaciones de Sequelize que vinculan **PatientPrescription** con `Tenant` y `Patient`.
+- Se habilitó que la aplicación Electron interactúe con datos reales de prescripciones mediante CRUD de la API en lugar de datos simulados.
 
 ### Updated
-- Updated `associations.js` to properly register relationships for `PatientPrescription`.
-- Ensured structure and behavior remain consistent with the existing `patient_hobby` module, including multitenancy and unique constraints.
+- Se actualizó `associations.js` para registrar correctamente las relaciones de `PatientPrescription`.
+- Se aseguró que la estructura y el comportamiento se mantengan consistentes con el módulo existente `patient_hobby`, incluyendo multitenancy y restricciones únicas.
 
 ### Fixed
-- Corrected Sequelize association issue:
+- Se corrigió un problema de asociaciones en Sequelize:
   - *"Patient is not associated to PatientPrescription!"*
 
 ---

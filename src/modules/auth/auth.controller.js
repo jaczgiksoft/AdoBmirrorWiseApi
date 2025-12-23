@@ -98,6 +98,58 @@ const resetPassword = async (req, res) => {
         logger.error(`Error en resetPassword: ${err.message}`);
         await logApiError(req, err);
         res.status(400).json({ success: false, message: err.message });
+
+    }
+};
+
+// =====================
+// 🔄 REFRESH TOKEN (Rotación)
+// =====================
+const refreshToken = async (req, res) => {
+    try {
+        const { refresh_token } = req.body;
+        const result = await authService.refreshToken(
+            refresh_token,
+            req.ip,
+            req.headers['user-agent']
+        );
+
+        res.status(200).json({
+            success: true,
+            message: 'Token refrescado correctamente',
+            ...result
+        });
+    } catch (err) {
+        // Warn para no saturar error logs con intentos fallidos triviales
+        logger.warn(`Intento de refresh fallido: ${err.message}`);
+        res.status(401).json({ success: false, message: err.message });
+    }
+};
+
+// =====================
+// 🚪 LOGOUT ALL (Cerrar todas las sesiones)
+// =====================
+const logoutAll = async (req, res) => {
+    try {
+        await authService.revokeAllSessions(req.user.id);
+
+        await createLog({
+            user_id: req.user.id,
+            user_name: req.user.username,
+            action: 'logout_all',
+            module: 'auth',
+            description: `Usuario ${req.user.username} cerró todas sus sesiones`,
+            ip: req.ip,
+            user_agent: req.headers['user-agent']
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Todas las sesiones han sido cerradas.'
+        });
+    } catch (err) {
+        logger.error(`Error en logoutAll: ${err.message}`);
+        res.status(500).json({ success: false, message: 'Error interno al cerrar sesiones.' });
     }
 };
 
@@ -106,5 +158,7 @@ module.exports = {
     unblockUser,
     me,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    refreshToken,
+    logoutAll
 };

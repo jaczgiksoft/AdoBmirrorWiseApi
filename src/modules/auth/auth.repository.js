@@ -11,6 +11,7 @@ const ActiveToken = require('../../models/mongo/activeToken.model');
 const LoginAttempt = require('../../models/mongo/loginAttempt.model');
 const PasswordResetToken = require('../../models/mongo/passwordResetToken.model');
 const BlacklistedToken = require('../../models/mongo/blacklistedToken.model');
+const RefreshToken = require('../../models/mongo/refreshToken.model');
 
 class AuthRepository {
     // =====================
@@ -225,6 +226,31 @@ class AuthRepository {
 
     async findBlacklistedToken(token) {
         return BlacklistedToken.findOne({ token });
+    }
+
+    // =====================
+    // REFRESH TOKENS (LONG-LIVED)
+    // =====================
+    async createRefreshToken(data) {
+        return RefreshToken.create(data);
+    }
+
+    async findRefreshToken(token_hash) {
+        return RefreshToken.findOne({ token_hash });
+    }
+
+    async revokeRefreshTokenFamily(family_id) {
+        return RefreshToken.updateMany(
+            { family_id },
+            { is_revoked: true }
+        );
+    }
+
+    async revokeAllRefreshTokensForUser(user_id) {
+        return RefreshToken.updateMany(
+            { user_id },
+            { is_revoked: true }
+        );
     }
 }
 

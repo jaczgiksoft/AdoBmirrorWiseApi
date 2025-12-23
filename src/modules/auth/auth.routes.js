@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 
-const { login, unblockUser, me, forgotPassword, resetPassword } = require('./auth.controller');
+const { login, unblockUser, me, forgotPassword, resetPassword, refreshToken, logoutAll } = require('./auth.controller');
 const { validateToken } = require('../../middlewares/auth.middleware');
 const BlacklistedToken = require('../../models/mongo/blacklistedToken.model');
 const ActiveToken = require('../../models/mongo/activeToken.model');
@@ -12,7 +12,8 @@ const { validateRequest } = require('../../middlewares/validate.middleware');
 const {
     loginValidator,
     forgotPasswordValidator,
-    resetPasswordValidator
+    resetPasswordValidator,
+    refreshTokenValidator
 } = require('./auth.validator');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 const { logger } = require('../../utils/logger');
@@ -97,6 +98,25 @@ router.post(
     resetPasswordValidator,
     validateRequest,
     resetPassword
+);
+
+// =====================
+// 🔄 REFRESH TOKEN (Ruta pública)
+// =====================
+router.post(
+    '/refresh',
+    refreshTokenValidator,
+    validateRequest,
+    refreshToken
+);
+
+// =====================
+// 🚪 LOGOUT ALL (Requiere Auth)
+// =====================
+router.post(
+    '/logout-all',
+    validateToken,
+    logoutAll
 );
 
 module.exports = router;

@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const ms = require('ms');
 
 const authRepository = require('./auth.repository');
+const RefreshToken = require('../../models/mongo/refreshToken.model');
 const { sendMail } = require('../../utils/mail.helper');
 const { createLog } = require('../../utils/log.helper');
 const { notifyUser } = require('../../utils/notify.helper');
@@ -55,6 +56,7 @@ class AuthService {
         // 3️⃣ Obtener roles y permisos (N:M)
         const roles = await authRepository.findUserRoles(user.id);
         const roleNames = roles.map(r => r.name);
+        const roleIds = roles.map(r => r.id); // 🆔 IDs inmutables
         const permissions = await authRepository.findUserPermissions(user.id);
 
         // 4️⃣ Generar token JWT con múltiples roles
@@ -65,6 +67,7 @@ class AuthService {
             tenant_id: user.tenant_id,
             tenant_code: user.tenant?.code,
             roles: roleNames,
+            role_ids: roleIds, // ✅ Nuevo campo
             is_superadmin: !!user.is_superadmin,
             jti: uuidv4()
         };
@@ -74,7 +77,26 @@ class AuthService {
         await authRepository.createActiveToken({
             user_id: user.id,
             token,
+            jti: tokenPayload.jti, // 🆔 JTI estricto
             expires_at: new Date(Date.now() + ms(expiresIn))
+        });
+
+        // 5️⃣ Generar Refresh Token (Opaco y Rotativo)
+        const refreshTokenRaw = crypto.randomBytes(40).toString('hex');
+        const refreshFamilyId = uuidv4();
+        const refreshExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+        const refreshExpiresDate = new Date(Date.now() + ms(refreshExpiresIn));
+
+        await authRepository.createRefreshToken({
+            token_hash: RefreshToken.hashToken(refreshTokenRaw),
+            user_id: user.id,
+            tenant_id: user.tenant_id,
+            family_id: refreshFamilyId,
+            expires_at: refreshExpiresDate,
+            device_info: {
+                ip,
+                user_agent: userAgent
+            }
         });
 
         await createLog({
@@ -89,14 +111,95 @@ class AuthService {
         return {
             message: 'Login exitoso',
             token,
+            refresh_token: refreshTokenRaw, // 🎁 Token opaco para el cliente
             roles: roleNames,
             permissions
         };
     }
 
-// =====================
-// ME (Perfil del usuario autenticado)
-// =====================
+    // =====================
+    // REFRESH ACCESS TOKEN (ROTACIÓN)
+    // =====================
+    async refreshToken(rawRefreshToken, ip, userAgent) {
+        const tokenHash = RefreshToken.hashToken(rawRefreshToken);
+        const storedToken = await authRepository.findRefreshToken(tokenHash);
+
+        if (!storedToken) {
+            throw new Error('Refresh token inválido o expirado.');
+        }
+
+        if (storedToken.is_revoked) {
+            // 🚨 REUSE DETECTED!
+            await authRepository.revokeRefreshTokenFamily(storedToken.family_id);
+            logger.error(`🚨 SEGURIDAD: Reuso de Refresh Token detectado. Familia ${storedToken.family_id} revocada.`);
+            throw new Error('Sesión comprometida. Por favor inicia sesión nuevamente.');
+        }
+
+        if (storedToken.expires_at < new Date()) {
+            throw new Error('Refresh token expirado.');
+        }
+
+        storedToken.is_revoked = true;
+        await storedToken.save();
+
+        const user = await authRepository.findUserById(storedToken.user_id);
+        if (!user) throw new Error('Usuario no encontrado.');
+
+        const roles = await authRepository.findUserRoles(user.id);
+        const roleNames = roles.map(r => r.name);
+        const roleIds = roles.map(r => r.id);
+
+        const expiresIn = process.env.JWT_EXPIRES_IN || '1h';
+        const newAccessTokenPayload = {
+            id: user.id,
+            username: user.username,
+            tenant_id: user.tenant_id,
+            tenant_code: user.tenant?.code,
+            roles: roleNames,
+            role_ids: roleIds,
+            is_superadmin: !!user.is_superadmin,
+            jti: uuidv4()
+        };
+
+        const newAccessToken = jwt.sign(newAccessTokenPayload, process.env.JWT_SECRET, { expiresIn });
+
+        await authRepository.createActiveToken({
+            user_id: user.id,
+            token: newAccessToken,
+            jti: newAccessTokenPayload.jti,
+            expires_at: new Date(Date.now() + ms(expiresIn))
+        });
+
+        const newRefreshTokenRaw = crypto.randomBytes(40).toString('hex');
+        const refreshExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+
+        await authRepository.createRefreshToken({
+            token_hash: RefreshToken.hashToken(newRefreshTokenRaw),
+            user_id: user.id,
+            tenant_id: user.tenant_id,
+            family_id: storedToken.family_id,
+            expires_at: new Date(Date.now() + ms(refreshExpiresIn)),
+            device_info: { ip, user_agent: userAgent }
+        });
+
+        return {
+            token: newAccessToken,
+            refresh_token: newRefreshTokenRaw
+        };
+    }
+
+    // =====================
+    // REVOKE ALL SESSIONS
+    // =====================
+    async revokeAllSessions(userId) {
+        await authRepository.revokeAllRefreshTokensForUser(userId);
+        await authRepository.removeActiveToken({ user_id: userId });
+        return true;
+    }
+
+    // =====================
+    // ME (Perfil del usuario autenticado)
+    // =====================
     async me(currentUser) {
         const user = await authRepository.findUserWithRelations(currentUser.id);
         if (!user) throw new Error('Usuario no encontrado');

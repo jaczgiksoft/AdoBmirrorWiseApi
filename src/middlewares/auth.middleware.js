@@ -48,11 +48,18 @@ const validateToken = async (req, res, next) => {
         const actives = await ActiveToken.find({ user_id: decoded.id });
 
         // 4. Validar si alguna coincide (usa compareToken)
-        const valid = actives.some(active => active.compareToken(token));
+        // 4. Validar si alguna coincide (usa compareToken)
+        const activeSession = actives.find(active => active.compareToken(token));
 
-        if (!valid) {
+        if (!activeSession) {
             logger.warn(`Auth fallo: Sesión inválida. Usuario: ${decoded.id}, IP: ${req.ip}`);
             return res.status(401).json({ message: 'Sesión no válida o reemplazada' });
+        }
+
+        // 🛡️ JTI CHECK (Validación estricta contra robo de sesión)
+        if (activeSession.jti && activeSession.jti !== decoded.jti) {
+            logger.error(`🚨 ALERTA DE SEGURIDAD: JTI Mismatch. Posible robo de token. User: ${decoded.id}, IP: ${req.ip}`);
+            return res.status(401).json({ message: 'Sesión inválida (identificador de token no coincide)' });
         }
 
         // 5. Adjuntar usuario al request

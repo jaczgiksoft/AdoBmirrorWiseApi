@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const activeTokenSchema = new mongoose.Schema({
     user_id: { type: Number, required: true },
     token: { type: String, required: true }, // 🔐 se guardará hasheado
+    jti: { type: String, required: false }, // 🆔 UUID del token (opcional por compatibilidad pero recomendado)
     created_at: { type: Date, default: Date.now },
     expires_at: { type: Date, required: true } // 👈 TTL
 });

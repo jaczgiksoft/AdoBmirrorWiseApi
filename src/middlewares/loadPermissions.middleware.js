@@ -1,6 +1,7 @@
 const Role = require('../models/mysql/role.model');
 const Permission = require('../models/mysql/permission.model');
 const { logger } = require('../utils/logger');
+const permissionsCache = require('../utils/permissions.cache');
 
 const loadPermissions = async (req, res, next) => {
     try {
@@ -10,16 +11,35 @@ const loadPermissions = async (req, res, next) => {
         }
 
         // ⚙️ Obtener roles del usuario (del JWT)
+        const userRoleIds = req.user.role_ids;
         const userRoles = req.user.roles || [];
 
-        if (!Array.isArray(userRoles) || userRoles.length === 0) {
+        // Validar si hay roles (IDs o Nombres)
+        const hasIds = Array.isArray(userRoleIds) && userRoleIds.length > 0;
+        const hasNames = Array.isArray(userRoles) && userRoles.length > 0;
+
+        if (!hasIds && !hasNames) {
             req.user.permissions = {};
             return next();
         }
 
+        // ⚡ CACHE CHECK
+        const tenantId = req.user.tenant_id;
+        // Usa IDs si existen (más robusto), sino usa nombres (legacy)
+        const cacheKey = permissionsCache.generateKey(tenantId, hasIds ? userRoleIds : userRoles);
+        const cachedPermissions = permissionsCache.get(cacheKey);
+
+        if (cachedPermissions) {
+            req.user.permissions = cachedPermissions;
+            return next();
+        }
+
         // 🔹 Cargar permisos de todos los roles del usuario
+        // Preferir búsqueda por ID si está disponible
+        const queryWhere = hasIds ? { id: userRoleIds } : { name: userRoles };
+
         const roles = await Role.findAll({
-            where: { name: userRoles },
+            where: queryWhere,
             include: [
                 {
                     model: Permission,
@@ -33,6 +53,9 @@ const loadPermissions = async (req, res, next) => {
         const mergedPermissions = {};
 
         for (const role of roles) {
+            // Filtrar roles que no sean del tenant (seguridad adicional)
+            if (role.tenant_id && role.tenant_id !== tenantId) continue;
+
             for (const p of role.permissions) {
                 if (!mergedPermissions[p.module]) {
                     mergedPermissions[p.module] = {
@@ -49,6 +72,9 @@ const loadPermissions = async (req, res, next) => {
                 }
             }
         }
+
+        // ⚡ CACHE SET
+        permissionsCache.set(cacheKey, mergedPermissions);
 
         // ✅ Asignar permisos consolidados al request
         req.user.permissions = mergedPermissions;

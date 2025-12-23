@@ -5,6 +5,7 @@ const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
 const { notifyUser } = require('../../utils/notify.helper'); // ✅ agregado
+const permissionsCache = require('../../utils/permissions.cache');
 
 class PermissionService {
     // 🔹 Obtener permisos por rol
@@ -79,6 +80,9 @@ class PermissionService {
             );
 
             await t.commit();
+
+            // 🧹 Invalidad cache
+            permissionsCache.invalidateByTenant(currentUser.tenant_id);
 
             // 🧾 Log de seguridad
             await createLog({

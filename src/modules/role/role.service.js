@@ -4,6 +4,7 @@ const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
 const { notifyUser } = require('../../utils/notify.helper');
+const permissionsCache = require('../../utils/permissions.cache');
 
 class RoleService {
     async getAllRoles(currentUser) {
@@ -110,6 +111,9 @@ class RoleService {
             type: 'system'
         });
 
+        // 🧹 Invalidad cache
+        permissionsCache.invalidateByTenant(currentUser.tenant_id);
+
         return role.toJSON();
     }
 
@@ -142,6 +146,9 @@ class RoleService {
                 message: `${currentUser.username} ha eliminado el rol "${role.name}".`,
                 type: 'system'
             });
+
+            // 🧹 Invalidad cache
+            permissionsCache.invalidateByTenant(currentUser.tenant_id);
 
             return true;
         } catch (err) {
