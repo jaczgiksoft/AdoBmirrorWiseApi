@@ -10,6 +10,62 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.11.0] - 2025-12-28
+
+### Added
+- Se agregó el módulo **Órdenes de Extracción** (`patient_extraction`) para la gestión completa de derivaciones quirúrgicas de pacientes:
+  - Nuevo modelo `patient_extraction` para almacenar la información general de la orden (destinatario, fecha, observaciones, procedimientos adicionales).
+  - Nuevo modelo `extraction_teeth` para registrar dientes involucrados, incluyendo:
+    - Extracciones completas por pieza.
+    - Restauraciones/tratamientos por áreas específicas del diente.
+  - Nuevo modelo `extraction_files` para la gestión de radiografías asociadas a cada orden.
+
+- Se incorporaron endpoints CRUD para órdenes de extracción:
+  - Creación de órdenes con carga multipart (datos + radiografías).
+  - Consulta de órdenes por paciente.
+  - Consulta de detalle de una orden específica.
+  - Actualización de órdenes existentes.
+  - Eliminación completa de órdenes (orden, dientes y archivos físicos).
+
+- Se integró la carga de radiografías mediante el middleware centralizado de uploads:
+  - Reutilización del sistema de carga existente (sin configuraciones duplicadas).
+  - Soporte para múltiples radiografías por orden.
+  - Almacenamiento de archivos organizado por:
+    ```
+    uploads/{tenant_id}/patients/{medical_record_number}/radiographs
+    ```
+
+### Changed
+- Se normalizó el manejo de rutas de archivos guardadas en base de datos:
+  - Ahora se almacena el path relativo desde `uploads/`, garantizando portabilidad entre entornos.
+- Se mejoró la lógica de actualización de órdenes de extracción:
+  - Reemplazo controlado de dientes asociados.
+  - Manejo correcto de radiografías nuevas, existentes y eliminadas.
+- Se alineó el módulo de órdenes de extracción con la arquitectura existente:
+  - Uso de Controller / Service / Repository.
+  - Uso de transacciones para garantizar consistencia de datos.
+  - Respeto del contexto multi-tenant obtenido desde JWT.
+
+### Fixed
+- Se corrigió un problema donde las radiografías no se guardaban correctamente debido al envío incorrecto de archivos desde el frontend.
+- Se solucionó un error que impedía guardar restauraciones (tratamientos por áreas) en `extraction_teeth`, registrándose únicamente extracciones.
+- Se corrigió la resolución de rutas de archivos para evitar guardar paths absolutos del sistema.
+- Se resolvieron errores de validación y middlewares en rutas multipart que provocaban fallos silenciosos.
+- Se corrigió el uso incorrecto de validadores que causaba errores `next is not a function`.
+
+### Improved
+- Se fortaleció la consistencia entre módulos clínicos reutilizando patrones ya existentes (pacientes, alertas, galería).
+- Se mejoró la trazabilidad clínica al permitir registrar de forma estructurada:
+  - Qué piezas fueron extraídas.
+  - Qué áreas fueron tratadas.
+  - Qué evidencia radiográfica respalda la orden.
+- Se dejó preparada la base para futuras extensiones:
+  - Exportación de órdenes de extracción a PDF clínico.
+  - Versionado o bloqueo de órdenes completadas.
+  - Integración con flujos de firma o validación médica.
+
+---
+
 ## [0.10.0] - 2025-12-23
 
 ### Added

@@ -27,6 +27,9 @@ const PatientHobby = require('./patient_hobby.model');
 const PatientPrescription = require('./patient_prescription.model');
 const PatientNote = require('./patient_note.model');
 const PatientConversation = require('./patient_conversation.model');
+const PatientExtraction = require('./patient_extraction.model');
+const ExtractionTooth = require('./extraction_tooth.model');
+const ExtractionFile = require('./extraction_file.model');
 
 const BillingData = require('./billing_data.model');
 const PatientBillingData = require('./patient_billing_data.model');
@@ -624,4 +627,61 @@ PatientRepresentativeLink.belongsTo(Tenant, {
     as: 'tenant',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
+});
+
+// =====================
+// PATIENT EXTRACTIONS
+// =====================
+Tenant.hasMany(PatientExtraction, {
+    foreignKey: 'tenant_id',
+    as: 'patient_extractions',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientExtraction.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Patient.hasMany(PatientExtraction, {
+    foreignKey: 'patient_id',
+    as: 'extractions',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientExtraction.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Extraction Order -> Teeth
+PatientExtraction.hasMany(ExtractionTooth, {
+    foreignKey: 'patient_extraction_id',
+    as: 'teeth',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ExtractionTooth.belongsTo(PatientExtraction, {
+    foreignKey: 'patient_extraction_id',
+    as: 'extraction_order',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Extraction Order -> Files
+PatientExtraction.hasMany(ExtractionFile, {
+    foreignKey: 'patient_extraction_id',
+    as: 'files',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ExtractionFile.belongsTo(PatientExtraction, {
+    foreignKey: 'patient_extraction_id',
+    as: 'extraction_order',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });

@@ -1,6 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const Patient = require('../models/mysql/patient.model');
 
 // === Tipos permitidos === //
 const allowedMimeTypes = {
@@ -136,6 +137,39 @@ const uploadPatientPhoto = multer({
     fileFilter: fileFilter("images"),
 }).single("photo");
 
+// 6️⃣ Radiografías (Extracciones)
+const radiographStorage = multer.diskStorage({
+    destination: async (req, file, cb) => {
+        try {
+            const tenantId = req.user?.tenant_id || "unknown";
+            const patientId = req.body.patient_id;
+
+            let folderName = "temp";
+
+            if (patientId) {
+                const patient = await Patient.findByPk(patientId);
+                if (patient) {
+                    folderName = patient.medical_record_number;
+                }
+            }
+
+            const dir = ensureDir(path.join(__dirname, `../../uploads/${tenantId}/patients/${folderName}/radiographs`));
+            cb(null, dir);
+        } catch (error) {
+            cb(error);
+        }
+    },
+    filename: (req, file, cb) => {
+        cb(null, `radiograph_${Date.now()}${path.extname(file.originalname)}`);
+    },
+});
+
+const uploadRadiographs = multer({
+    storage: radiographStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: fileFilter("images"),
+}).array("radiographs", 10);
+
 // === Exportaciones === //
 module.exports = {
     uploadTenantLogo,       // Tenant (campo: logo)
@@ -143,4 +177,5 @@ module.exports = {
     uploadStoreImages,      // Tienda (campos: logo, banner)
     uploadProductImage,     // Producto (campo: image)
     uploadPatientPhoto,     // Paciente (campo: photo_url)
+    uploadRadiographs,      // Radiografías (campo: radiographs)
 };
