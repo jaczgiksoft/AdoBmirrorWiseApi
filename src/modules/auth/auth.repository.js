@@ -23,8 +23,11 @@ class AuthRepository {
      */
     async findUserByEmail(email) {
         return User.findOne({
-            where: { email },
-            include: [{ model: Employee, as: 'employee' }]
+            include: [{
+                model: Employee,
+                as: 'employee',
+                where: { email }
+            }]
         });
     }
 
@@ -36,12 +39,26 @@ class AuthRepository {
         if (!tenant) throw new Error('Tenant no encontrado');
 
         return User.findOne({
-            where: {
-                tenant_id: tenant.id,
-                [Op.or]: [{ username: identifier }, { email: identifier }]
-            },
+            where: { username: identifier },
             include: [
-                { model: Employee, as: 'employee' },
+                {
+                    model: Employee,
+                    as: 'employee',
+                    where: { tenant_id: tenant.id }, // 🔹 Filtrar por tenant aquí
+                    include: [
+                        {
+                            model: Tenant,
+                            as: 'tenant',
+                            include: [
+                                {
+                                    model: TenantModule,
+                                    as: 'modules',
+                                    attributes: ['module', 'is_enabled']
+                                }
+                            ]
+                        }
+                    ]
+                },
                 {
                     model: Role,
                     as: 'roles',
@@ -51,17 +68,6 @@ class AuthRepository {
                             model: Permission,
                             as: 'permissions',
                             attributes: ['module', 'can_read', 'can_write', 'can_edit', 'can_delete']
-                        }
-                    ]
-                },
-                {
-                    model: Tenant,
-                    as: 'tenant',
-                    include: [
-                        {
-                            model: TenantModule,
-                            as: 'modules',
-                            attributes: ['module', 'is_enabled']
                         }
                     ]
                 }
@@ -85,6 +91,31 @@ class AuthRepository {
                         'second_last_name',
                         'position',
                         'status'
+                    ],
+                    include: [
+                        {
+                            model: Tenant,
+                            as: 'tenant',
+                            // ⚙️ Todos los campos relevantes para el perfil del tenant
+                            attributes: [
+                                'id', 'code', 'name', 'description', 'logo_url', 'website',
+                                'contact_name', 'contact_email', 'contact_phone',
+                                'address', 'city', 'state', 'country', 'postal_code',
+                                'tax_id', 'legal_name', 'regime', 'certificate_path', 'key_path',
+                                'certificate_password', 'cfdi_use', 'payment_method', 'payment_form', 'tax_rate',
+                                'health_registration', 'health_registration_expires_at',
+                                'status', 'current_subscription_id', 'max_users', 'current_users',
+                                'timezone', 'currency', 'exchange_rate', 'profit_margin',
+                                'opening_hours', 'specialties', 'number_of_rooms'
+                            ],
+                            include: [
+                                {
+                                    model: TenantModule,
+                                    as: 'modules',
+                                    attributes: ['module', 'is_enabled']
+                                }
+                            ]
+                        }
                     ]
                 },
                 {
@@ -96,29 +127,6 @@ class AuthRepository {
                             model: Permission,
                             as: 'permissions',
                             attributes: ['module', 'can_read', 'can_write', 'can_edit', 'can_delete']
-                        }
-                    ]
-                },
-                {
-                    model: Tenant,
-                    as: 'tenant',
-                    // ⚙️ Todos los campos relevantes para el perfil del tenant
-                    attributes: [
-                        'id', 'code', 'name', 'description', 'logo_url', 'website',
-                        'contact_name', 'contact_email', 'contact_phone',
-                        'address', 'city', 'state', 'country', 'postal_code',
-                        'tax_id', 'legal_name', 'regime', 'certificate_path', 'key_path',
-                        'certificate_password', 'cfdi_use', 'payment_method', 'payment_form', 'tax_rate',
-                        'health_registration', 'health_registration_expires_at',
-                        'status', 'current_subscription_id', 'max_users', 'current_users',
-                        'timezone', 'currency', 'exchange_rate', 'profit_margin',
-                        'opening_hours', 'specialties', 'number_of_rooms'
-                    ],
-                    include: [
-                        {
-                            model: TenantModule,
-                            as: 'modules',
-                            attributes: ['module', 'is_enabled']
                         }
                     ]
                 }

@@ -3,30 +3,45 @@ const { Op } = require('sequelize');
 const User = require('../../models/mysql/user.model');
 const Role = require('../../models/mysql/role.model');
 const Tenant = require('../../models/mysql/tenant.model');
+const Employee = require('../../models/mysql/employee.model');
 
 class UserRepository {
     async findAllByTenant(tenantId) {
         return User.findAll({
-            where: { tenant_id: tenantId },
-            include: [{ model: Role, as: 'role', attributes: ['id', 'name'] }],
+            include: [
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                {
+                    model: Employee,
+                    as: 'employee',
+                    where: { tenant_id: tenantId }
+                }
+            ],
             order: [['createdAt', 'DESC']]
         });
     }
 
     async findById(id, tenantId) {
         return User.findOne({
-            where: { id, tenant_id: tenantId },
-            include: [{ model: Role, as: 'role', attributes: ['id', 'name'] }]
+            where: { id },
+            include: [
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                {
+                    model: Employee,
+                    as: 'employee',
+                    where: { tenant_id: tenantId }
+                }
+            ]
         });
     }
 
     async findByUsername(username, tenantId) {
-        return User.findOne({ where: { username, tenant_id: tenantId } });
+        return User.findOne({
+            where: { username },
+            include: [{ model: Employee, as: 'employee', where: { tenant_id: tenantId } }]
+        });
     }
 
-    async findByEmail(email, tenantId) {
-        return User.findOne({ where: { email, tenant_id: tenantId } });
-    }
+
 
     async createUser(data, transaction) {
         return User.create(data, { transaction });
@@ -54,15 +69,15 @@ class UserRepository {
     async datatable(params, tenantId) {
         const { start, length, searchValue, orderColumn, orderDir, statusFilter } = params;
 
-        const andConditions = [{ tenant_id: tenantId }];
+        const andConditions = [];
 
         if (searchValue && searchValue.trim() !== '') {
             andConditions.push({
                 [Op.or]: [
                     { username: { [Op.like]: `%${searchValue}%` } },
-                    { email: { [Op.like]: `%${searchValue}%` } },
-                    { first_name: { [Op.like]: `%${searchValue}%` } },
-                    { last_name: { [Op.like]: `%${searchValue}%` } },
+                    { '$employee.email$': { [Op.like]: `%${searchValue}%` } },
+                    { '$employee.first_name$': { [Op.like]: `%${searchValue}%` } },
+                    { '$employee.last_name$': { [Op.like]: `%${searchValue}%` } },
                     { status: { [Op.like]: `%${searchValue}%` } }
                 ]
             });
@@ -82,14 +97,22 @@ class UserRepository {
             order = [[orderColumn, orderDir]];
         }
 
-        const recordsTotal = await User.count({ where: { tenant_id: tenantId } });
+        const recordsTotal = await User.count({
+            include: [{ model: Employee, as: 'employee', where: { tenant_id: tenantId } }]
+        });
 
         const { rows, count: recordsFiltered } = await User.findAndCountAll({
             where,
             include: [
                 { model: Role, as: 'role', attributes: ['id', 'name'] },
-                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] }
+                {
+                    model: Employee,
+                    as: 'employee',
+                    where: { tenant_id: tenantId },
+                    include: [{ model: Tenant, as: 'tenant', attributes: ['id', 'name'] }]
+                }
             ],
+            subQuery: false, // 💡 Important for cross-table OR search
             offset: start,
             limit: length,
             order

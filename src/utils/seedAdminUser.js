@@ -80,12 +80,10 @@ const seedAdminUsersClinic = async () => {
 
                 // Crear usuario
                 const [user, created] = await User.findOrCreate({
-                    where: { username: u.username, tenant_id: tenant.id },
+                    where: { employee_id: employee.id },
                     defaults: {
-                        tenant_id: tenant.id,
                         employee_id: employee.id,
                         username: u.username,
-                        email: u.email,
                         password: hashed,
                         is_superadmin: !!u.is_superadmin,
                         status: 'active'

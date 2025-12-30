@@ -64,8 +64,8 @@ class AuthService {
         const tokenPayload = {
             id: user.id,
             username: user.username,
-            tenant_id: user.tenant_id,
-            tenant_code: user.tenant?.code,
+            tenant_id: user.employee.tenant_id,
+            tenant_code: user.employee.tenant?.code,
             roles: roleNames,
             role_ids: roleIds, // ✅ Nuevo campo
             is_superadmin: !!user.is_superadmin,
@@ -90,7 +90,7 @@ class AuthService {
         await authRepository.createRefreshToken({
             token_hash: RefreshToken.hashToken(refreshTokenRaw),
             user_id: user.id,
-            tenant_id: user.tenant_id,
+            tenant_id: user.employee.tenant_id,
             family_id: refreshFamilyId,
             expires_at: refreshExpiresDate,
             device_info: {
@@ -153,8 +153,8 @@ class AuthService {
         const newAccessTokenPayload = {
             id: user.id,
             username: user.username,
-            tenant_id: user.tenant_id,
-            tenant_code: user.tenant?.code,
+            tenant_id: user.employee.tenant_id,
+            tenant_code: user.employee.tenant?.code,
             roles: roleNames,
             role_ids: roleIds,
             is_superadmin: !!user.is_superadmin,
@@ -176,7 +176,7 @@ class AuthService {
         await authRepository.createRefreshToken({
             token_hash: RefreshToken.hashToken(newRefreshTokenRaw),
             user_id: user.id,
-            tenant_id: user.tenant_id,
+            tenant_id: user.employee.tenant_id,
             family_id: storedToken.family_id,
             expires_at: new Date(Date.now() + ms(refreshExpiresIn)),
             device_info: { ip, user_agent: userAgent }
@@ -238,61 +238,61 @@ class AuthService {
         });
 
         // ⚙️ Módulos habilitados del tenant
-        const modules = user.tenant?.modules
+        const modules = user.employee.tenant?.modules
             ?.filter(m => m.is_enabled)
             .map(m => m.module) || [];
 
         // 🏢 Información completa del tenant (clínica)
         const tenantInfo = {
-            id: user.tenant.id,
-            code: user.tenant.code,
-            name: user.tenant.name,
-            description: user.tenant.description,
-            logo_url: user.tenant.logo_url,
-            website: user.tenant.website,
+            id: user.employee.tenant.id,
+            code: user.employee.tenant.code,
+            name: user.employee.tenant.name,
+            description: user.employee.tenant.description,
+            logo_url: user.employee.tenant.logo_url,
+            website: user.employee.tenant.website,
 
             // 📞 Contacto
-            contact_name: user.tenant.contact_name,
-            contact_email: user.tenant.contact_email,
-            contact_phone: user.tenant.contact_phone,
+            contact_name: user.employee.tenant.contact_name,
+            contact_email: user.employee.tenant.contact_email,
+            contact_phone: user.employee.tenant.contact_phone,
 
             // 🏠 Dirección
-            address: user.tenant.address,
-            city: user.tenant.city,
-            state: user.tenant.state,
-            country: user.tenant.country,
-            postal_code: user.tenant.postal_code,
+            address: user.employee.tenant.address,
+            city: user.employee.tenant.city,
+            state: user.employee.tenant.state,
+            country: user.employee.tenant.country,
+            postal_code: user.employee.tenant.postal_code,
 
             // 🧾 Datos fiscales
-            tax_id: user.tenant.tax_id,
-            legal_name: user.tenant.legal_name,
-            regime: user.tenant.regime,
-            certificate_path: user.tenant.certificate_path,
-            key_path: user.tenant.key_path,
-            certificate_password: user.tenant.certificate_password,
-            cfdi_use: user.tenant.cfdi_use,
-            payment_method: user.tenant.payment_method,
-            payment_form: user.tenant.payment_form,
-            tax_rate: user.tenant.tax_rate,
+            tax_id: user.employee.tenant.tax_id,
+            legal_name: user.employee.tenant.legal_name,
+            regime: user.employee.tenant.regime,
+            certificate_path: user.employee.tenant.certificate_path,
+            key_path: user.employee.tenant.key_path,
+            certificate_password: user.employee.tenant.certificate_password,
+            cfdi_use: user.employee.tenant.cfdi_use,
+            payment_method: user.employee.tenant.payment_method,
+            payment_form: user.employee.tenant.payment_form,
+            tax_rate: user.employee.tenant.tax_rate,
 
             // ⚕️ Datos clínicos
-            health_registration: user.tenant.health_registration,
-            health_registration_expires_at: user.tenant.health_registration_expires_at,
+            health_registration: user.employee.tenant.health_registration,
+            health_registration_expires_at: user.employee.tenant.health_registration_expires_at,
 
             // ⚙️ Configuración general
-            status: user.tenant.status,
-            current_subscription_id: user.tenant.current_subscription_id,
-            max_users: user.tenant.max_users,
-            current_users: user.tenant.current_users,
-            timezone: user.tenant.timezone,
-            currency: user.tenant.currency,
-            exchange_rate: user.tenant.exchange_rate,
-            profit_margin: user.tenant.profit_margin,
+            status: user.employee.tenant.status,
+            current_subscription_id: user.employee.tenant.current_subscription_id,
+            max_users: user.employee.tenant.max_users,
+            current_users: user.employee.tenant.current_users,
+            timezone: user.employee.tenant.timezone,
+            currency: user.employee.tenant.currency,
+            exchange_rate: user.employee.tenant.exchange_rate,
+            profit_margin: user.employee.tenant.profit_margin,
 
             // 🕓 Clínica
-            opening_hours: user.tenant.opening_hours,
-            specialties: user.tenant.specialties,
-            number_of_rooms: user.tenant.number_of_rooms,
+            opening_hours: user.employee.tenant.opening_hours,
+            specialties: user.employee.tenant.specialties,
+            number_of_rooms: user.employee.tenant.number_of_rooms,
         };
 
         // 👤 Información de empleado (si aplica)

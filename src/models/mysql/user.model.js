@@ -4,29 +4,19 @@ const sequelize = require('../../config/database');
 const User = sequelize.define('User', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
 
-    tenant_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: { model: 'tenants', key: 'id' },
-        onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
-    },
+
 
     employee_id: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: { model: 'employees', key: 'id' },
         onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
-        comment: 'Null si el usuario no está asociado a un empleado'
+        onDelete: 'CASCADE',
+        unique: true, // 1:1 strict
+        comment: 'User must belong to an employee. 1:1 relationship.'
     },
 
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-        comment: 'Correo de acceso, único globalmente (o por tenant en producción multiinstancia)'
-    },
+
 
     password: { type: DataTypes.STRING, allowNull: false },
     username: { type: DataTypes.STRING, allowNull: false },
@@ -47,10 +37,8 @@ const User = sequelize.define('User', {
 
     // 📊 Índices documentados (solo informativos para el ORM)
     indexes: [
-        { fields: ['tenant_id'], name: 'idx_users_tenant' },
-        { fields: ['employee_id'], name: 'idx_users_employee' },
-        { fields: ['status'], name: 'idx_users_status' },
-        { unique: true, fields: ['email'], name: 'uq_users_email' }
+        { unique: true, fields: ['employee_id'], name: 'uq_users_employee_id' },
+        { fields: ['status'], name: 'idx_users_status' }
     ]
 });
 

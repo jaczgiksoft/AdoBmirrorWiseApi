@@ -10,6 +10,52 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.15.0] - 2025-12-30
+
+### Changed
+- **Refactor profundo del modelo de autenticación y jerarquía multi-tenant**:
+  - Eliminación definitiva de la relación directa **Tenant → User**.
+  - Nueva jerarquía estricta:
+    ```
+    Tenant → Employee → User
+    ```
+  - El `tenant_id` deja de existir en `users` y pasa a depender exclusivamente de `employees`.
+
+- Ajuste del modelo `users`:
+  - Eliminación de campos obsoletos:
+    - `tenant_id`
+    - `email`
+  - Relación **1:1 obligatoria** con `employees` mediante `employee_id`:
+    - `NOT NULL`
+    - `UNIQUE`
+    - `ON DELETE CASCADE`
+
+- Corrección de asociaciones Sequelize:
+  - Eliminación de la relación residual `Tenant.hasMany(User)` que provocaba inyección implícita de `tenant_id`.
+  - Normalización completa de asociaciones conforme al nuevo diseño.
+
+- Refactor del flujo de **login**:
+  - El tenant se resuelve ahora exclusivamente a través del **Employee** asociado al usuario.
+  - El `tenant_id` y `tenant_code` se incluyen en el JWT a partir de `employee.tenant`.
+  - Eliminación total de dependencias a `User.tenant_id` durante la autenticación.
+
+- Actualización de repositorios y servicios de autenticación:
+  - Corrección de queries que asumían la existencia de `tenant_id` o `email` en `users`.
+  - Ajuste de `includes` y filtros multi-tenant para operar vía `employees`.
+
+- Corrección del seeder administrativo:
+  - Actualización de `seedAdminUsersClinic` para respetar la nueva jerarquía.
+  - Los usuarios administrativos ahora se crean exclusivamente a partir de empleados existentes.
+  - Eliminación de referencias inválidas a `tenant_id` y `email` en `users`.
+
+### Notes
+- Este release corrige un **desfase crítico entre asociaciones Sequelize y el esquema real de la base de datos**.
+- Se elimina un bug persistente que provocaba errores `Unknown column 'User.tenant_id'` durante el login.
+- A partir de esta versión, **no puede existir un usuario sin un empleado asociado**.
+- Este cambio sienta la base para una futura **migración del login directamente al modelo Employee** (fase posterior).
+
+---
+
 ## [0.14.0] - 2025-12-30
 
 ### Added

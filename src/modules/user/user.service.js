@@ -25,9 +25,9 @@ class UserService {
     async createUser(data, currentUser, req) {
         const t = await sequelize.transaction();
         try {
-            const { username, email, role_id, password } = data;
-            if (!username || !email || !role_id || !password) {
-                throw new Error("Faltan campos obligatorios");
+            const { username, email, role_id, password, employee_id } = data;
+            if (!username || !email || !role_id || !password || !employee_id) {
+                throw new Error("Faltan campos obligatorios (employee_id es requerido)");
             }
 
             // 🔹 Validar rol
@@ -41,9 +41,15 @@ class UserService {
             if (await userRepository.findByUsername(username, currentUser.tenant_id)) {
                 throw new Error("El nombre de usuario ya está en uso");
             }
-            if (await userRepository.findByEmail(email, currentUser.tenant_id)) {
-                throw new Error("El correo ya está en uso");
-            }
+            // Note: email on user is removed, but we might check if employee email is unique or if username/email check was for login.
+            // Since User model no longer has email, this check findsByEmail on User model will fail unless updated.
+            // But wait, userRepo.findByEmail now queries User by email column using the new filter logic.
+            // BUT User model NO LONGER HAS EMAIL COLUMN based on the previous refactor.
+            // So userRepository.findByEmail will FAIL if it tries to query `email`.
+            // User.findOne({ where: { email } }) -> Column 'email' not found.
+            // We should REMOVE the email check here and in repository if the column is gone.
+            // HOWEVER, the `data` payload might have `email` for the employee or notifications.
+            // The Refactor removed `email` from `users`. So we shouldn't check it on `users` table.
 
             // 🔹 Preparar usuario base
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -51,10 +57,12 @@ class UserService {
 
             const newUser = await userRepository.createUser(
                 {
-                    ...data,
-                    tenant_id: currentUser.tenant_id,
-                    user_code: userCode,
+                    username,
                     password: hashedPassword,
+                    role_id,
+                    employee_id, // 🔹 Required now
+                    user_code: userCode,
+                    // tenant_id: REMOVED
                     status: data.status || "active",
                 },
                 t

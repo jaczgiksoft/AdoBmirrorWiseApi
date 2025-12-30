@@ -40,12 +40,7 @@ const PatientRepresentativeLink = require('./patient_representative_link.model')
 // =====================
 // TENANTS
 // =====================
-Tenant.hasMany(User, {
-    foreignKey: 'tenant_id',
-    as: 'users',
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-});
+
 Tenant.hasMany(Role, {
     foreignKey: 'tenant_id',
     as: 'roles',
@@ -101,25 +96,21 @@ Employee.belongsTo(Tenant, {
 Employee.hasOne(User, {
     foreignKey: 'employee_id',
     as: 'user',
-    onDelete: 'SET NULL',
+    onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
 User.belongsTo(Employee, {
     foreignKey: 'employee_id',
     as: 'employee',
-    onDelete: 'SET NULL',
+    allowNull: false,
+    onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
 
 // =====================
 // USERS
 // =====================
-User.belongsTo(Tenant, {
-    foreignKey: 'tenant_id',
-    as: 'tenant',
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-});
+
 
 // Relación N:M entre usuarios y roles
 User.belongsToMany(Role, {
