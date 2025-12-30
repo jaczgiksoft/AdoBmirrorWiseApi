@@ -8,6 +8,58 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+---
+
+## [0.13.0] - 2025-12-30
+
+### Added
+- Se incorporó soporte **DataTable server-side** al módulo de **Servicios Clínicos**:
+  - Nuevo endpoint `POST /services/datatable`.
+  - Soporte para:
+    - Paginación (`start`, `length`).
+    - Búsqueda por texto (`search.value`).
+    - Ordenamiento dinámico por columnas.
+  - Implementación alineada al contrato ya utilizado en `patients`.
+  - Mantiene `GET /services` para cargas ligeras (selects, catálogos).
+
+- Se agregó un **helper compartido para manejo de errores de unicidad en Sequelize**:
+  - Nuevo util `sequelizeErrorHandler`.
+  - Detección explícita de `SequelizeUniqueConstraintError`.
+  - Respuestas semánticas con HTTP **409 Conflict**.
+  - Mapeo de mensajes por **constraint**, evitando exponer:
+    - Nombres técnicos de índices.
+    - Valores internos concatenados.
+  - Base reutilizable para todos los módulos de la API.
+
+### Improved
+- Se mejoró la **experiencia de error al intentar crear registros duplicados**:
+  - Mensajes claros para el usuario final (ej. *“Ya existe un servicio con ese nombre”*).
+  - Eliminación de respuestas genéricas tipo *“Validation error”* en conflictos reales.
+  - Comportamiento consistente incluso con registros **soft-deleted**.
+
+- Se alineó completamente el **contrato frontend ↔ backend** para búsquedas tipo datatable:
+  - Uso estricto de `search.value` y `order[column, dir]`.
+  - Eliminación de ambigüedades en parámetros personalizados.
+  - Filtrado correcto por texto a nivel de base de datos.
+
+### Fixed
+- Corrección del filtrado en listados de servicios cuando el frontend enviaba búsquedas válidas:
+  - El backend ahora procesa correctamente los parámetros esperados.
+  - Se evita retornar resultados no filtrados por errores de contrato.
+
+### Notes
+- Esta versión consolida el patrón **DataTable reutilizable** como estándar de la API.
+- El helper de errores de unicidad será reutilizado en:
+  - Pacientes
+  - Usuarios
+  - Roles
+  - Catálogos clínicos futuros
+- La API queda preparada para:
+  - Integración limpia con Electron y Web.
+  - Implementación del módulo de **Citas** sin inconsistencias de contrato ni UX.
+
+---
+
 ## [0.12.0] - 2025-12-29
 
 ### Added

@@ -16,6 +16,15 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 // RUTAS SERVICIOS
 // =========================
 
+// 📊 DataTable servicios
+router.post(
+    '/datatable',
+    validateToken,
+    loadPermissions,
+    checkPermissions('read', 'services'),
+    serviceController.getDatatable
+);
+
 // 📋 Obtener todos los servicios
 router.get(
     '/',

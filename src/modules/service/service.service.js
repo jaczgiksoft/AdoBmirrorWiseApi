@@ -157,6 +157,25 @@ class ServiceService {
         if (!service) throw new Error('Servicio no encontrado');
         return service;
     }
+
+    // 📊 DataTable (para listado filtrado/paginado)
+    async getServicesDatatable(body, currentUser) {
+        const draw = parseInt(body.draw) || 1;
+        const start = parseInt(body.start) || 0;
+        const length = parseInt(body.length) || 10;
+        const searchValue = body['search[value]'] || (body.search?.value ?? '');
+        const orderColumnIndex = body['order[0][column]'] || (body.order?.[0]?.column ?? 0);
+        const orderDir = (body['order[0][dir]'] || (body.order?.[0]?.dir ?? 'asc')).toUpperCase();
+
+        const columns = [null, 'name', 'duration_minutes', 'price'];
+        const orderColumn = columns[orderColumnIndex] || 'id';
+
+        const params = { start, length, searchValue, orderColumn, orderDir, tenant_id: currentUser.tenant_id };
+
+        const { recordsTotal, recordsFiltered, rows } = await serviceRepository.datatable(params);
+
+        return { draw, recordsTotal, recordsFiltered, data: rows };
+    }
 }
 
 module.exports = new ServiceService();

@@ -1,4 +1,5 @@
 const serviceService = require('./service.service');
+const { handleSequelizeError } = require('../../utils/sequelizeErrorHandler');
 
 // 🟢 Crear nuevo servicio
 const create = async (req, res) => {
@@ -6,7 +7,9 @@ const create = async (req, res) => {
         const service = await serviceService.createService(req.body, req.user, req);
         res.status(201).json({ message: 'Servicio creado exitosamente', service });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err, {
+            name: 'Ya existe un servicio con ese nombre.'
+        });
     }
 };
 
@@ -16,7 +19,9 @@ const update = async (req, res) => {
         const service = await serviceService.updateService(req.params.id, req.body, req.user, req);
         res.json({ message: 'Servicio actualizado exitosamente', service });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err, {
+            name: 'Ya existe un servicio con ese nombre.'
+        });
     }
 };
 
@@ -26,7 +31,7 @@ const remove = async (req, res) => {
         await serviceService.deleteService(req.params.id, req.user, req);
         res.json({ message: 'Servicio eliminado correctamente' });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -36,7 +41,17 @@ const getAll = async (req, res) => {
         const services = await serviceService.getAllServices(req.user);
         res.json(services);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        handleSequelizeError(res, err);
+    }
+};
+
+// 📊 DataTable (listado con filtros)
+const getDatatable = async (req, res) => {
+    try {
+        const result = await serviceService.getServicesDatatable(req.body, req.user);
+        res.json(result);
+    } catch (err) {
+        handleSequelizeError(res, err);
     }
 };
 
@@ -46,7 +61,7 @@ const getOne = async (req, res) => {
         const service = await serviceService.getServiceById(req.params.id, req.user);
         res.json(service);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -55,5 +70,6 @@ module.exports = {
     update,
     remove,
     getAll,
+    getDatatable,
     getOne,
 };

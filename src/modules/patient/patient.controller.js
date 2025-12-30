@@ -1,4 +1,5 @@
 const patientService = require('./patient.service');
+const { handleSequelizeError } = require('../../utils/sequelizeErrorHandler');
 
 // 📋 Obtener todos los pacientes (por tenant)
 const getAll = async (req, res) => {
@@ -6,7 +7,7 @@ const getAll = async (req, res) => {
         const patients = await patientService.getAllPatients(req.user);
         res.json(patients);
     } catch (err) {
-        res.status(403).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -19,7 +20,7 @@ const getOne = async (req, res) => {
         }
         res.json(patient);
     } catch (err) {
-        res.status(404).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -55,7 +56,11 @@ const create = async (req, res) => {
         res.status(201).json({ message: "Paciente creado exitosamente", patient });
 
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err, {
+            email: 'Ya existe un paciente con ese correo electrónico.',
+            curp: 'Ya existe un paciente con esa CURP.',
+            rfc: 'Ya existe un paciente con ese RFC.'
+        });
     }
 };
 
@@ -75,7 +80,11 @@ const update = async (req, res) => {
         const patient = await patientService.updatePatient(req.params.id, req.body, req.user, req);
         res.json({ message: 'Paciente actualizado exitosamente', patient });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err, {
+            email: 'Ya existe un paciente con ese correo electrónico.',
+            curp: 'Ya existe un paciente con esa CURP.',
+            rfc: 'Ya existe un paciente con ese RFC.'
+        });
     }
 };
 
@@ -85,7 +94,7 @@ const softDelete = async (req, res) => {
         await patientService.deletePatient(req.params.id, req.user, req);
         res.json({ message: 'Paciente eliminado correctamente' });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -95,7 +104,7 @@ const getDatatable = async (req, res) => {
         const result = await patientService.getPatientsDatatable(req.body, req.user);
         res.json(result);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -108,7 +117,7 @@ const getProfile = async (req, res) => {
         }
         res.json(profile);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 
@@ -118,7 +127,7 @@ const getNextMedicalRecord = async (req, res) => {
         const next = await patientService.getNextMedicalRecord(req.user);
         res.json({ next });
     } catch (err) {
-        res.status(400).json({ message: err.message });
+        handleSequelizeError(res, err);
     }
 };
 

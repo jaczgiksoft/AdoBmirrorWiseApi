@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const Service = require('../../models/mysql/service.model');
 
 class ServiceRepository {
@@ -29,6 +30,39 @@ class ServiceRepository {
             where: { tenant_id: tenantId },
             order: [['name', 'ASC']],
         });
+    }
+
+    // 📊 Datatable / Listado con búsqueda y paginación
+    async datatable(params) {
+        const { start, length, searchValue, orderColumn, orderDir, tenant_id } = params;
+
+        const where = { tenant_id };
+
+        if (searchValue && searchValue.trim() !== '') {
+            where[Op.or] = [
+                { name: { [Op.like]: `%${searchValue}%` } },
+                { description: { [Op.like]: `%${searchValue}%` } }
+            ];
+        }
+
+        const recordsTotal = await Service.count({ where: { tenant_id } });
+
+        // 🧠 Lógica híbrida:
+        // Si el front NO envía un orderColumn válido → usar "id DESC"
+        const defaultOrder = [["id", "DESC"]];
+
+        const finalOrder = orderColumn
+            ? [[orderColumn, orderDir || "ASC"]]
+            : defaultOrder;
+
+        const { rows, count: recordsFiltered } = await Service.findAndCountAll({
+            where,
+            offset: start,
+            limit: length,
+            order: finalOrder,
+        });
+
+        return { recordsTotal, recordsFiltered, rows };
     }
 }
 
