@@ -38,6 +38,7 @@ router.use('/patient-notes', require('../modules/patient_note/patient_note.route
 router.use('/patient-conversations', require('../modules/patient_conversation/patient_conversation.routes'));
 router.use('/patient-representative-links', require('../modules/patient_representative_link/patient_representative_link.routes'));
 router.use('/patient-prescriptions', require('../modules/patient_prescription/patient_prescription.routes'));
+router.use('/appointments', require('../modules/appointment/appointment.routes'));
 router.use('/services', require('../modules/service/service.routes'));
 router.use('/clinic-areas', require('../modules/clinic_area/clinic_area.routes'));
 module.exports = router;

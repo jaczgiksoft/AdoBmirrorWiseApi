@@ -712,3 +712,77 @@ ClinicArea.belongsTo(Tenant, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
+
+// =====================
+// APPOINTMENTS
+// =====================
+const Appointment = require('./appointment.model');
+const AppointmentService = require('./appointment_service.model');
+const AppointmentDoctorTime = require('./appointment_doctor_time.model');
+
+// Appointment Relationships
+Appointment.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Appointment.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Appointment.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Appointment.belongsTo(ClinicArea, {
+    foreignKey: 'clinic_area_id',
+    as: 'clinic_area',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Appointment.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+});
+
+// Pivot: AppointmentService
+Appointment.hasMany(AppointmentService, {
+    foreignKey: 'appointment_id',
+    as: 'services',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentService.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentService.belongsTo(Service, {
+    foreignKey: 'service_id',
+    as: 'service',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Doctor Times
+Appointment.hasMany(AppointmentDoctorTime, {
+    foreignKey: 'appointment_id',
+    as: 'doctor_times',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentDoctorTime.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+

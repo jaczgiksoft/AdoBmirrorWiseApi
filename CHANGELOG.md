@@ -10,6 +10,68 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.17.0] - 2025-12-30
+
+### Added
+- Nuevo **módulo de Citas Clínicas (`appointments`)** implementado bajo la arquitectura estándar de la API:
+  - Separación estricta por capas (`controller`, `service`, `repository`, `validator`, `routes`).
+  - Aislamiento multi-tenant forzado desde el contexto de usuario autenticado.
+  - Endpoints CRUD completos con control de permisos y validación consistente.
+
+- Nuevo modelo `Appointment` como núcleo operativo clínico:
+  - Gestión de agenda por fecha, horario y **área clínica (`clinic_area_id`)**.
+  - Soporte para medición de **capacidad efectiva del doctor** mediante:
+    - `unit_value`
+    - `units`
+    - Campo virtual `effective_minutes`.
+  - Registro de tiempos clínicos del tratamiento:
+    - `treatment_started_at`
+    - `treatment_finished_at`.
+  - Almacenamiento del monto pactado de la cita (`total_amount`) sin lógica de pagos.
+
+- Implementación de **servicios múltiples por cita** mediante tabla pivote:
+  - Nuevo modelo `AppointmentService` (`appointment_services`).
+  - Asociación de múltiples servicios a una misma cita.
+  - Persistencia de *snapshot* del servicio (nombre, duración, precio) para integridad histórica.
+
+- Nuevo modelo de seguimiento de tiempo efectivo del doctor:
+  - `AppointmentDoctorTime` (`appointment_doctor_times`).
+  - Permite registrar múltiples entradas y salidas del doctor durante una cita.
+  - Base para el cálculo posterior de métricas de eficiencia clínica.
+
+- Nuevas migraciones de base de datos:
+  - Creación de tablas:
+    - `appointments`
+    - `appointment_services`
+    - `appointment_doctor_times`
+  - Definición explícita de:
+    - Claves foráneas con reglas `CASCADE`.
+    - Índices operativos por tenant y relaciones clave.
+    - Soporte de *soft delete* donde aplica.
+  - Migraciones alineadas con el estándar usado en `services`.
+
+- Registro de nuevas rutas en el enrutador principal:
+  - Exposición del módulo de citas bajo `/appointments`.
+
+### Changed
+- Consolidación del diseño clínico separando explícitamente:
+  - **Tiempo clínico del tratamiento** vs **tiempo efectivo del doctor**.
+  - **Agenda de citas** vs **pagos y ventas** (estos últimos quedan fuera del módulo de citas).
+- Refuerzo del diseño orientado a métricas:
+  - Las métricas de eficiencia no se persisten; se derivan a partir de los registros de tiempo y unidades.
+
+### Notes
+- El módulo de Citas queda preparado para:
+  - Visualización de agenda organizada por áreas clínicas (sillones).
+  - Evaluación objetiva del desempeño del doctor por cita.
+  - Integración futura con módulos de pagos, caja y facturación sin acoplamiento.
+- Este cambio establece la base estructural para:
+  - Reportes de eficiencia clínica.
+  - Optimización de agenda.
+  - Escenarios multi-servicio por atención.
+
+---
+
 ## [0.16.0] - 2025-12-30
 
 ### Added
