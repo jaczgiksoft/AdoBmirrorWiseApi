@@ -10,6 +10,44 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.16.0] - 2025-12-30
+
+### Added
+- Nuevo campo operativo en `employees`:
+  - `is_appointment_eligible` (`BOOLEAN`, `DEFAULT false`)
+  - Define explícitamente si un empleado puede ser asignado a **citas clínicas**.
+  - Desacopla la asignación de citas de los **roles** y la traslada a una regla operativa simple.
+
+### Changed
+- Actualización del modelo `Employee`:
+  - Inclusión del flag `is_appointment_eligible` inmediatamente después del campo `position`.
+  - Campo obligatorio (`NOT NULL`) con valor por defecto `false`.
+
+- Nueva migración incremental para `employees`:
+  - Agrega la columna `is_appointment_eligible` sin afectar datos existentes.
+  - Incluye rollback seguro mediante eliminación de la columna.
+
+- Ajuste del seeder clínico (`seedAdminUsersClinic`):
+  - Asignación explícita de `is_appointment_eligible` al crear empleados.
+  - Criterio lógico aplicado:
+    - **Odontólogo / Director Médico** → elegibles para citas.
+    - **Recepcionista / Administrador General** → no elegibles.
+  - Refuerzo del diseño donde:
+    - `User` no maneja correo electrónico.
+    - El email se conserva únicamente a nivel **Employee**.
+
+### Notes
+- La lógica de citas deja de depender de **roles o permisos** y pasa a ser un **atributo operativo del empleado**.
+- Este cambio simplifica:
+  - La asignación de citas.
+  - La UI de selección de personal.
+  - Futuros escenarios multi-rol por empleado.
+- El sistema queda preparado para:
+  - Filtros directos por `is_appointment_eligible`.
+  - Configuración manual desde el formulario de empleados en la app Electron.
+
+---
+
 ## [0.15.0] - 2025-12-30
 
 ### Changed

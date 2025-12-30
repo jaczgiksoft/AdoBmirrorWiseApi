@@ -40,28 +40,32 @@ const seedAdminUsersClinic = async () => {
                     first_name: 'Admin',
                     last_name: 'Clínica',
                     roles: ['Administrador General'],
-                    is_superadmin: true
+                    is_superadmin: true,
+                    is_appointment_eligible: false
                 },
                 {
                     username: `director_${tenant.id}`,
                     email: `director@${tenant.name.toLowerCase().replace(/\s+/g, '')}.com`,
                     first_name: 'Laura',
                     last_name: 'Hernández',
-                    roles: ['Director Médico', 'Odontólogo']
+                    roles: ['Director Médico', 'Odontólogo'],
+                    is_appointment_eligible: true
                 },
                 {
                     username: `reception_${tenant.id}`,
                     email: `recepcion@${tenant.name.toLowerCase().replace(/\s+/g, '')}.com`,
                     first_name: 'Ana',
                     last_name: 'Gómez',
-                    roles: ['Recepcionista']
+                    roles: ['Recepcionista'],
+                    is_appointment_eligible: false
                 },
                 {
                     username: `doctor_${tenant.id}`,
                     email: `doctor@${tenant.name.toLowerCase().replace(/\s+/g, '')}.com`,
                     first_name: 'Carlos',
                     last_name: 'López',
-                    roles: ['Odontólogo']
+                    roles: ['Odontólogo'],
+                    is_appointment_eligible: true
                 }
             ];
 
@@ -74,6 +78,7 @@ const seedAdminUsersClinic = async () => {
                         first_name: u.first_name,
                         last_name: u.last_name,
                         position: u.roles.join(', '),
+                        is_appointment_eligible: u.is_appointment_eligible,
                         status: 'active'
                     }
                 });

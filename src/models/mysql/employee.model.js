@@ -22,6 +22,12 @@ const Employee = sequelize.define('Employee', {
         comment: 'Puede o no coincidir con la cuenta de usuario asociada'
     },
     position: { type: DataTypes.STRING, allowNull: true },
+    is_appointment_eligible: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Indicates whether the employee can be assigned to appointments (citas)'
+    },
     profile_image: { type: DataTypes.STRING, allowNull: true },
     status: {
         type: DataTypes.ENUM('active', 'inactive'),
