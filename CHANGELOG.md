@@ -8,6 +8,62 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
+## [0.12.0] - 2025-12-29
+
+### Added
+- Se incorporó el **catálogo de Servicios Clínicos** (`services`) como base para la gestión de citas y flujos operativos:
+  - Nuevo modelo `service` con soporte multi-tenant.
+  - Campos para definir:
+    - Duración clínica total del servicio (`duration_minutes`).
+    - Capacidad sugerida del doctor mediante unidades (`suggested_units`, `unit_value`).
+    - Precio base, configuración fiscal y control operativo.
+  - Preparado para desacoplar el tiempo del sillón del tiempo efectivo del doctor.
+
+- Se creó el **módulo completo de Servicios** siguiendo la arquitectura estándar de la API:
+  - `service.controller.js`
+  - `service.service.js`
+  - `service.repository.js`
+  - `service.validator.js`
+  - `service.routes.js`
+  - Endpoints CRUD protegidos por permisos (`read`, `write`, `edit`, `delete`).
+  - Aislamiento estricto por tenant obtenido desde JWT.
+  - Uso consistente de transacciones y auditoría (`createLog`, `logApiError`).
+
+- Se agregó la **migración `create-services`**:
+  - Creación de la tabla `services` con:
+    - Relaciones explícitas con `tenants`.
+    - Índices optimizados por `tenant_id`.
+    - Restricción única para evitar duplicados de servicios por clínica.
+    - Soporte de soft delete (`deleted_at`).
+
+- Se detectaron y corrigieron **modelos sin migración existente**, preparando la base de datos para módulos clínicos avanzados:
+  - Nuevas migraciones para:
+    - `extraction_files`
+    - `extraction_teeth`
+    - `patient_extractions`
+  - Migraciones generadas a partir de los modelos reales y asociaciones existentes.
+  - Definición explícita de claves foráneas, índices y reglas de integridad referencial.
+
+### Improved
+- Se fortaleció la **consistencia entre modelos y migraciones**:
+  - Alineación completa entre `src/models/mysql` y `src/migrations`.
+  - Eliminación de discrepancias entre modelos definidos y estructura real de base de datos.
+- Se dejó preparada la base de datos para la futura implementación del **módulo de Citas**:
+  - Separación clara entre:
+    - Duración del servicio.
+    - Capacidad efectiva del doctor.
+    - Métricas de desempeño clínico.
+
+### Notes
+- Este cambio sienta las bases para:
+  - Agenda clínica basada en servicios.
+  - Medición real de eficiencia por doctor.
+  - Implementación futura del módulo de Citas (`appointments`) sin deuda técnica.
+- Requiere ejecutar:
+  ```bash
+  npx sequelize-cli db:migrate
+  ```
+
 ---
 
 ## [0.11.0] - 2025-12-28

@@ -685,3 +685,21 @@ ExtractionFile.belongsTo(PatientExtraction, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
+// =====================
+// SERVICES
+// =====================
+const Service = require('./service.model');
+
+Tenant.hasMany(Service, {
+    foreignKey: 'tenant_id',
+    as: 'services',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Service.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
