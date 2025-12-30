@@ -10,6 +10,44 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.14.0] - 2025-12-30
+
+### Added
+- Se incorporó el nuevo módulo **Clinic Areas** (Áreas Clínicas / Sillones) como recurso administrativo base:
+  - CRUD completo para la gestión de áreas de atención clínica.
+  - Diseño multi-tenant alineado al resto de catálogos clínicos.
+  - Implementación basada íntegramente en el patrón del módulo **Services**.
+
+- Nuevo modelo `clinic_areas`:
+  - Campos:
+    - `name` (nombre del área / sillón).
+    - `status` con enum:
+      - `active`
+      - `maintenance`
+      - `inactive`
+  - Soporte para **soft delete** mediante `paranoid`.
+  - Preparado para uso como recurso asignable en citas.
+
+- Nuevas migraciones de base de datos:
+  - Creación de la tabla `clinic_areas`.
+  - Relación `clinic_areas.tenant_id → tenants.id` con reglas `CASCADE`.
+  - Índices alineados a los utilizados en servicios y catálogos existentes.
+
+- Integración completa del módulo en la API:
+  - Registro de asociaciones en `models/mysql/associations.js`.
+  - Exposición de rutas REST bajo `/clinic-areas`.
+  - Validadores, repositorio, service y controller siguiendo arquitectura estricta.
+
+### Notes
+- **Clinic Areas** representa un recurso clínico reutilizable (sillones, áreas de rayos X, estaciones de tratamiento).
+- Este módulo será utilizado próximamente por:
+  - El sistema de **Citas**.
+  - La vista de **Calendario por Área**.
+  - La asignación dinámica de pacientes en tiempo real.
+- No se incluye aún lógica de agenda ni bloqueo por disponibilidad; este release prepara la base estructural.
+
+---
+
 ## [0.13.0] - 2025-12-30
 
 ### Added

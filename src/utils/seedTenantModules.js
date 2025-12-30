@@ -20,7 +20,8 @@ const coreModules = [
     'bracket_types',
     'referrals',
     'patient_representatives',
-    'services'
+    'services',
+    'clinic_areas'
 ];
 
 // =========================

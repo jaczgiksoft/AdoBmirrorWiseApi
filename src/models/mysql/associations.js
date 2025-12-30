@@ -703,3 +703,21 @@ Service.belongsTo(Tenant, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
+
+// =====================
+// CLINIC AREAS
+// =====================
+const ClinicArea = require('./clinic_area.model');
+
+Tenant.hasMany(ClinicArea, {
+    foreignKey: 'tenant_id',
+    as: 'clinic_areas',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+ClinicArea.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});

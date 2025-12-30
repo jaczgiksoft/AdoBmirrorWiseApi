@@ -39,4 +39,5 @@ router.use('/patient-conversations', require('../modules/patient_conversation/pa
 router.use('/patient-representative-links', require('../modules/patient_representative_link/patient_representative_link.routes'));
 router.use('/patient-prescriptions', require('../modules/patient_prescription/patient_prescription.routes'));
 router.use('/services', require('../modules/service/service.routes'));
+router.use('/clinic-areas', require('../modules/clinic_area/clinic_area.routes'));
 module.exports = router;
