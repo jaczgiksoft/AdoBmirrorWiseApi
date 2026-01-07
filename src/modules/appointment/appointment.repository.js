@@ -4,6 +4,7 @@ const AppointmentService = require('../../models/mysql/appointment_service.model
 const Patient = require('../../models/mysql/patient.model');
 const Employee = require('../../models/mysql/employee.model');
 const ClinicArea = require('../../models/mysql/clinic_area.model');
+const Service = require('../../models/mysql/service.model');
 
 class AppointmentRepository {
     // 🟢 Crear cita
@@ -49,13 +50,45 @@ class AppointmentRepository {
 
     // 📋 Obtener todas las citas de un tenant
     async findAllByTenant(tenantId) {
-        return Appointment.findAll({
+        const appointments = await Appointment.findAll({
             where: { tenant_id: tenantId },
             order: [['date', 'DESC'], ['start_time', 'ASC']],
             include: [
                 { model: Patient, as: 'patient' },
-                { model: Employee, as: 'employee' }
+                { model: Employee, as: 'employee' },
+                { model: ClinicArea, as: 'clinic_area' },
+                {
+                    model: AppointmentService,
+                    as: 'services',
+                    include: [
+                        { model: Service, as: 'service', attributes: ['id', 'name', 'color', 'price', 'duration_minutes'] }
+                    ]
+                }
             ]
+        });
+
+        // Normalizar respuesta para aplanar services
+        return appointments.map(appt => {
+            const plainAppt = appt.toJSON();
+
+            // Aplanar array de servicios
+            if (plainAppt.services && Array.isArray(plainAppt.services)) {
+                plainAppt.services = plainAppt.services.map(pivot => {
+                    const serviceData = pivot.service || {};
+                    return {
+                        id: pivot.service_id,
+                        // Preferir datos del snapshot (pivot) si existen, si no, del maestro
+                        name: pivot.service_name || serviceData.name,
+                        price: pivot.price || serviceData.price,
+                        duration_minutes: pivot.duration_minutes || serviceData.duration_minutes,
+                        color: serviceData.color || '#cccccc', // Color viene del maestro
+                        // Extra props si se requieren
+                        appointment_service_id: pivot.id
+                    };
+                });
+            }
+
+            return plainAppt;
         });
     }
 

@@ -786,3 +786,83 @@ AppointmentDoctorTime.belongsTo(Appointment, {
     onUpdate: 'CASCADE',
 });
 
+
+// =====================
+// PROCESSES & STEPS
+// =====================
+const Process = require('./process.model');
+const Step = require('./step.model');
+const ProcessStep = require('./process_step.model');
+
+// Tenant -> Processes
+Tenant.hasMany(Process, {
+    foreignKey: 'tenant_id',
+    as: 'processes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Process.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Tenant -> Steps
+Tenant.hasMany(Step, {
+    foreignKey: 'tenant_id',
+    as: 'steps',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Step.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Process <-> Step (Many-to-Many via ProcessStep)
+Process.belongsToMany(Step, {
+    through: ProcessStep,
+    as: 'steps',
+    foreignKey: 'process_id',
+    otherKey: 'step_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Step.belongsToMany(Process, {
+    through: ProcessStep,
+    as: 'processes',
+    foreignKey: 'step_id',
+    otherKey: 'process_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Direct relations to Pivot (for explicit editing/access)
+Process.hasMany(ProcessStep, {
+    foreignKey: 'process_id',
+    as: 'process_steps',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+ProcessStep.belongsTo(Process, {
+    foreignKey: 'process_id',
+    as: 'process',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+Step.hasMany(ProcessStep, {
+    foreignKey: 'step_id',
+    as: 'step_usages',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+ProcessStep.belongsTo(Step, {
+    foreignKey: 'step_id',
+    as: 'step',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});

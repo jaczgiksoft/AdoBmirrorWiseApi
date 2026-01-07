@@ -10,6 +10,83 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.18.0] - 2026-01-06
+
+### Added
+- Nueva **arquitectura backend para Procesos y Pasos clínicos**:
+  - Nuevas entidades persistentes:
+    - `processes`
+    - `steps`
+    - `process_steps` (tabla pivote).
+  - Modelado de flujos clínicos reutilizables mediante:
+    - Secuencia ordenada de pasos.
+    - Duración base por paso.
+    - *Override* de duración por proceso.
+  - CRUD completo para **Procesos** y **Pasos** bajo la arquitectura estándar de la API
+    (`controller`, `service`, `repository`, `validator`, `routes`).
+  - Diseño preparado para integración directa con citas clínicas.
+
+- Nuevas migraciones de base de datos:
+  - Creación de tablas:
+    - `processes`
+    - `steps`
+    - `process_steps`
+  - Migraciones alineadas al estándar del módulo `services`:
+    - Multi-tenant (`tenant_id`)
+    - Timestamps
+    - *Soft delete*
+    - Claves foráneas explícitas.
+
+- Nuevo **módulo de Empleados (`employees`)** como entidad operativa independiente:
+  - CRUD completo con control de permisos y validaciones.
+  - Soporte para **DataTable server-side** en vistas administrativas.
+  - Eliminación lógica (*soft delete*) y aislamiento multi-tenant.
+  - Endpoint especializado para personal clínico elegible para citas.
+
+- Nuevo flag operativo en `employees`:
+  - `is_appointment_eligible` (`BOOLEAN`).
+  - Define explícitamente qué empleados pueden ser asignados a **citas clínicas**.
+  - Desacopla la asignación de citas del sistema de roles.
+
+---
+
+### Changed
+- **Enriquecimiento del endpoint `GET /appointments`**:
+  - Las citas ahora devuelven el objeto completo, incluyendo:
+    - `patient`
+    - `employee`
+    - `clinic_area`
+    - `services[]` (array plano).
+  - Inclusión de los servicios asociados a cada cita para:
+    - Visualización clínica avanzada.
+    - Renderizado de agenda con color por servicio.
+  - Normalización de la respuesta para consumo directo por frontend
+    (sin lógica adicional en cliente).
+
+- Actualización de asociaciones Sequelize:
+  - Inclusión de relaciones para Procesos y Pasos sin afectar asociaciones existentes.
+  - Mantenimiento estricto de compatibilidad con el modelo actual.
+
+- Registro de nuevos módulos y rutas en el enrutador principal de la API.
+
+---
+
+### Notes
+- La API queda preparada para:
+  - Sustituir completamente el uso de *mock data* de procesos en frontend.
+  - Implementar flujos clínicos estructurados por proceso.
+  - Visualizar agenda clínica avanzada por área/sillón (resource-based scheduling).
+- Este release consolida la separación entre:
+  - **Servicios** (qué se realiza).
+  - **Procesos** (cómo se ejecuta).
+  - **Citas** (cuándo y dónde ocurre).
+- Se establece la base para:
+  - Métricas de duración real por proceso.
+  - Optimización de agenda clínica.
+  - Integración futura de procesos directamente en la lógica de citas.
+
+---
+
 ## [0.17.0] - 2025-12-30
 
 ### Added

@@ -5,7 +5,12 @@ const router = Router();
 // 🔐 AUTH & USERS
 // ==========================
 router.use('/auth', require('../modules/auth/auth.routes'));
+// ==========================
+// 🔐 AUTH & USERS
+// ==========================
+router.use('/auth', require('../modules/auth/auth.routes'));
 router.use('/users', require('../modules/user/user.routes'));
+router.use('/employees', require('../modules/employee/employee.routes'));
 router.use('/roles', require('../modules/role/role.routes'));
 router.use('/permissions', require('../modules/permission/permission.routes'));
 
@@ -40,5 +45,7 @@ router.use('/patient-representative-links', require('../modules/patient_represen
 router.use('/patient-prescriptions', require('../modules/patient_prescription/patient_prescription.routes'));
 router.use('/appointments', require('../modules/appointment/appointment.routes'));
 router.use('/services', require('../modules/service/service.routes'));
+router.use('/processes', require('../modules/process/process.routes'));
+router.use('/steps', require('../modules/step/step.routes'));
 router.use('/clinic-areas', require('../modules/clinic_area/clinic_area.routes'));
 module.exports = router;
