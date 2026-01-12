@@ -10,6 +10,103 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.20.0] - 2026-01-12
+
+### Added
+- Nuevo **módulo de Presupuestos (Budgets)** como dominio financiero-clínico:
+  - Nuevas entidades persistentes:
+    - `budgets` (cabecera financiera del presupuesto).
+    - `budget_items` (items del presupuesto con snapshot).
+  - Arquitectura completa bajo el estándar de la API:
+    - `controller`
+    - `service`
+    - `repository`
+    - `routes`
+    - `validator`
+  - Soporte multi-tenant completo (`tenant_id` obligatorio).
+  - Relación opcional **Presupuesto ↔ Plan de Tratamiento**:
+    - Asociación mediante `treatment_plan_id` (nullable).
+    - Preservación del presupuesto ante eliminación del plan.
+
+- Nueva **capa financiera de presupuestos**:
+  - Cálculo backend de:
+    - Total bruto (suma de items).
+    - Pago inicial / enganche (monto fijo o porcentaje).
+    - Descuento (monto fijo o porcentaje).
+    - Subtotal financiable.
+    - Mensualidad calculada por duración.
+  - Persistencia de montos calculados:
+    - `down_payment_amount`
+    - `discount_amount`
+    - `subtotal`
+    - `monthly_payment`
+  - Validaciones de integridad financiera:
+    - El pago inicial + descuento no pueden exceder el total.
+    - El subtotal no puede ser negativo.
+    - La duración debe ser válida cuando existe financiamiento.
+    - Re-cálculo obligatorio en backend (no se confía en frontend).
+
+- Nuevas migraciones de base de datos:
+  - Creación de tablas:
+    - `budgets`
+    - `budget_items`
+  - Definición explícita de:
+    - claves foráneas
+    - relaciones **ON DELETE CASCADE** para items
+    - campos financieros con precisión decimal
+  - Todas las tablas incluyen:
+    - `tenant_id`
+    - timestamps
+    - *soft delete*
+
+- Nuevas rutas REST para Presupuestos:
+  - `GET /budgets/patient/:patientId`
+  - `POST /budgets`
+  - `PUT /budgets/:id`
+  - `DELETE /budgets/:id`
+  - Inserción profunda de presupuestos con items asociados.
+
+---
+
+### Changed
+- Actualización de asociaciones Sequelize:
+  - Inclusión de relaciones:
+    - `Budget.hasMany(BudgetItem)`
+    - `BudgetItem.belongsTo(Budget)`
+  - Manteniendo compatibilidad con dominios existentes.
+- Actualización del enrutador principal de la API:
+  - Registro del nuevo módulo:
+    - `budgets`
+
+---
+
+### Fixed
+- Corrección de errores de asociaciones Sequelize faltantes que provocaban:
+  - `BudgetItem is not associated to Budget`.
+- Corrección de validaciones de payload:
+  - Normalización obligatoria de campos de items (`quantity`, `unit_price`).
+  - Prevención de inserción de IDs inválidos enviados desde frontend.
+- Estabilización del flujo de creación / edición de presupuestos con inserción profunda de items.
+
+---
+
+### Notes
+- Este release introduce formalmente el dominio de **Presupuestos** como
+  entidad financiera de primer nivel.
+- Se consolida la separación entre:
+  - **Catálogo de Servicios** (plantillas reutilizables).
+  - **Plan de Tratamiento** (contexto clínico).
+  - **Presupuesto** (snapshot financiero independiente).
+- Los valores numéricos se devuelven como `string` debido al uso de `DECIMAL`
+  en Sequelize, requiriendo normalización en frontend.
+- La API queda preparada para:
+  - Integración directa con módulos de pagos.
+  - Versionado futuro de presupuestos.
+  - Flujos de aprobación y bloqueo financiero.
+  - Conversión de presupuestos aprobados a ejecución clínica.
+
+---
+
 ## [0.19.0] - 2026-01-12
 
 ### Added

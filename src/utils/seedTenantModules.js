@@ -21,7 +21,8 @@ const coreModules = [
     'referrals',
     'patient_representatives',
     'services',
-    'clinic_areas'
+    'clinic_areas',
+    'budgets'
 ];
 
 // =========================

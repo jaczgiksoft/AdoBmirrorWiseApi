@@ -986,3 +986,79 @@ TreatmentPlanItem.belongsTo(TreatmentCatalog, {
     onDelete: 'SET NULL',
     onUpdate: 'CASCADE'
 });
+
+// =====================
+// BUDGETS
+// =====================
+const Budget = require('./budget.model');
+const BudgetItem = require('./budget_item.model');
+
+// Tenant -> Budget
+Tenant.hasMany(Budget, {
+    foreignKey: 'tenant_id',
+    as: 'budgets',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Budget.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Patient -> Budget
+Patient.hasMany(Budget, {
+    foreignKey: 'patient_id',
+    as: 'budgets',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Budget.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// User -> Budget (Creator)
+User.hasMany(Budget, {
+    foreignKey: 'created_by',
+    as: 'created_budgets',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+});
+Budget.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+});
+
+// TreatmentPlan -> Budget (Optional)
+TreatmentPlan.hasMany(Budget, {
+    foreignKey: 'treatment_plan_id',
+    as: 'budgets',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+Budget.belongsTo(TreatmentPlan, {
+    foreignKey: 'treatment_plan_id',
+    as: 'treatment_plan',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+
+// Budget -> BudgetItem (The error fix)
+Budget.hasMany(BudgetItem, {
+    foreignKey: 'budget_id',
+    as: 'items',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+BudgetItem.belongsTo(Budget, {
+    foreignKey: 'budget_id',
+    as: 'budget',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
