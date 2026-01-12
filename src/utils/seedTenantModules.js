@@ -29,7 +29,7 @@ const coreModules = [
 // =========================
 const planModules = {
     Basic: ['patient_alerts', 'appointments', 'billing'],
-    Pro: ['patient_alerts', 'appointments', 'billing', 'communications', 'inventory'],
+    Pro: ['patient_alerts', 'appointments', 'billing', 'communications', 'inventory', 'processes'],
     Premium: [
         'patient_alerts',
         'appointments',
@@ -38,7 +38,8 @@ const planModules = {
         'inventory',
         'reports',
         'integrations',
-        'patientPortal'
+        'patientPortal',
+        'processes'
     ]
 };
 

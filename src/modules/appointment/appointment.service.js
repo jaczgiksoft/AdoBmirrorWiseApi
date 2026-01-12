@@ -47,6 +47,12 @@ class AppointmentService {
                     price: svc.price
                 }));
                 await appointmentRepository.addServices(servicesData, t);
+
+            }
+
+            // 3. Insertar Process Snapshot (si existe)
+            if (data.process) {
+                await appointmentRepository.saveProcessSnapshot(newAppointment.id, data.process, t);
             }
 
             await t.commit();
@@ -121,6 +127,14 @@ class AppointmentService {
                 }
             }
 
+            // 3. Actualizar Process Snapshot (si viene en el payload)
+            if (data.process) {
+                // Borrar anterior
+                await appointmentRepository.removeProcessSnapshot(appointment.id, t);
+                // Crear nuevo snapshot
+                await appointmentRepository.saveProcessSnapshot(appointment.id, data.process, t);
+            }
+
             await t.commit();
 
             await createLog({
@@ -175,12 +189,12 @@ class AppointmentService {
         }
     }
 
-    // 📋 Obtener todas las citas
-    async getAllAppointments(currentUser) {
+    // 📋 Obtener todas las citas con filtros
+    async getAllAppointments(currentUser, queryParams = {}) {
         if (!currentUser.tenant_id) {
             throw new Error('No autorizado');
         }
-        return await appointmentRepository.findAllByTenant(currentUser.tenant_id);
+        return await appointmentRepository.findAllWithFilters(currentUser.tenant_id, queryParams);
     }
 
     // 🔍 Obtener una cita por ID

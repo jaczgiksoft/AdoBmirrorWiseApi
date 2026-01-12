@@ -5,6 +5,8 @@ const Patient = require('../../models/mysql/patient.model');
 const Employee = require('../../models/mysql/employee.model');
 const ClinicArea = require('../../models/mysql/clinic_area.model');
 const Service = require('../../models/mysql/service.model');
+const AppointmentProcess = require('../../models/mysql/appointment_process.model');
+const AppointmentProcessStep = require('../../models/mysql/appointment_process_step.model');
 
 class AppointmentRepository {
     // 🟢 Crear cita
@@ -43,29 +45,102 @@ class AppointmentRepository {
                 { model: AppointmentService, as: 'services' },
                 { model: Patient, as: 'patient' },
                 { model: Employee, as: 'employee' },
-                { model: ClinicArea, as: 'clinic_area' }
+                { model: ClinicArea, as: 'clinic_area' },
+                {
+                    model: AppointmentProcess,
+                    as: 'process_snapshot',
+                    include: [{ model: AppointmentProcessStep, as: 'steps' }]
+                }
             ]
         });
     }
 
-    // 📋 Obtener todas las citas de un tenant
-    async findAllByTenant(tenantId) {
+    // 📋 Obtener todas las citas con filtros
+    async findAllWithFilters(tenantId, filters = {}) {
+        const where = { tenant_id: tenantId };
+
+        // 1. Filtro por Paciente
+        if (filters.patient_id) {
+            where.patient_id = filters.patient_id;
+        }
+
+        // 2. Filtro por Rango de Fechas
+        if (filters.date_from && filters.date_to) {
+            where.date = { [Op.between]: [filters.date_from, filters.date_to] };
+        } else if (filters.date_from) {
+            where.date = { [Op.gte]: filters.date_from };
+        } else if (filters.date_to) {
+            where.date = { [Op.lte]: filters.date_to };
+        }
+
+        // 3. Filtro por Estado
+        if (filters.status && filters.status !== 'all') {
+            where.status = filters.status;
+        }
+
+        // 4. Filtro por Hora Exacta
+        if (filters.start_time) {
+            where.start_time = filters.start_time;
+        }
+
+        // 5. Filtro por Rango de Hora
+        if (filters.start_time_from && filters.start_time_to) {
+            where.start_time = { [Op.between]: [filters.start_time_from, filters.start_time_to] };
+        }
+
+        // 6. Filtro por Area Clinica
+        if (filters.clinic_area_id) {
+            where.clinic_area_id = filters.clinic_area_id;
+        }
+
+        // Configuración de Include para Servicios
+        const serviceInclude = {
+            model: AppointmentService,
+            as: 'services',
+            include: [
+                { model: Service, as: 'service', attributes: ['id', 'name', 'color', 'price', 'duration_minutes'] }
+            ]
+        };
+
+        // 7. Filtro por Servicios (Service Ids)
+        // Si se solicitan servicios, debemos asegurar que la cita tenga AL MENOS UNO de esos servicios.
+        if (filters.service_ids && filters.service_ids.length > 0) {
+            const serviceIds = Array.isArray(filters.service_ids)
+                ? filters.service_ids
+                : filters.service_ids.split(',').map(id => id.trim());
+
+            serviceInclude.required = true; // Solo traer citas que cumplan el filtro
+            serviceInclude.where = {
+                service_id: { [Op.in]: serviceIds }
+            };
+        }
+
         const appointments = await Appointment.findAll({
-            where: { tenant_id: tenantId },
+            where,
             order: [['date', 'DESC'], ['start_time', 'ASC']],
             include: [
                 { model: Patient, as: 'patient' },
                 { model: Employee, as: 'employee' },
                 { model: ClinicArea, as: 'clinic_area' },
+                serviceInclude, // Include dinámico
                 {
-                    model: AppointmentService,
-                    as: 'services',
-                    include: [
-                        { model: Service, as: 'service', attributes: ['id', 'name', 'color', 'price', 'duration_minutes'] }
-                    ]
+                    model: AppointmentProcess,
+                    as: 'process_snapshot',
+                    include: [{ model: AppointmentProcessStep, as: 'steps' }]
                 }
             ]
         });
+
+        // Recuperar TODOS los servicios de las citas encontradas
+        // El filtro anterior (required=true) hace que SOLO vengan los servicios coincidentes en el array 'services'.
+        // Si queremos mostrar TODOS los servicios de la cita, aunque filtremos por uno, necesitaríamos un enfoque diferente
+        // (e.g. subquery WHERE id IN (SELECT appointment_id FROM ...)).
+        // POR AHORA: Asumiremos que si filtras por servicio, te interesa ver la cita.
+        // Si el requisito es "ver la cita completa con todos sus servicios", haríamos una segunda consulta o un where literales.
+        // Para simplificar y rendimiento, dejamos que el include filtre.
+        // NOTA: Esto significa que en la respuesta `services` solo vendrán los que matchearon el filtro.
+        // Si el frontend necesita todos, ajustaremos a dos pasos.
+        // DECISIÓN: Para esta iteración, si filtras servicios, ves servicios filtrados.
 
         // Normalizar respuesta para aplanar services
         return appointments.map(appt => {
@@ -128,6 +203,38 @@ class AppointmentRepository {
         });
 
         return { recordsTotal, recordsFiltered, rows };
+    }
+    // 🟢 Guardar snapshot del proceso
+    async saveProcessSnapshot(appointmentId, processData, transaction) {
+        // 1. Crear Process Snapshot
+        const snapshot = await AppointmentProcess.create({
+            appointment_id: appointmentId,
+            process_id: processData.process_id || null, // Optional link
+            name_snapshot: processData.name || 'Proceso Personalizado',
+            total_minutes: processData.steps.reduce((acc, s) => acc + (s.duration_minutes || 0), 0)
+        }, { transaction });
+
+        // 2. Crear Steps Snapshot
+        if (processData.steps && processData.steps.length > 0) {
+            const stepsPayload = processData.steps.map((s, index) => ({
+                appointment_process_id: snapshot.id,
+                step_id: s.step_id || null, // Optional link
+                name_snapshot: s.name || 'Paso sin nombre',
+                order_index: typeof s.order_index === 'number' ? s.order_index : index,
+                duration_minutes: s.duration_minutes || 0
+            }));
+            await AppointmentProcessStep.bulkCreate(stepsPayload, { transaction });
+        }
+
+        return snapshot;
+    }
+
+    // 🟡 Remover snapshot existente (para updates)
+    async removeProcessSnapshot(appointmentId, transaction) {
+        return AppointmentProcess.destroy({
+            where: { appointment_id: appointmentId },
+            transaction
+        });
     }
 }
 

@@ -34,7 +34,7 @@ const remove = async (req, res) => {
 // 📋 Obtener todas las citas
 const getAll = async (req, res) => {
     try {
-        const appointments = await appointmentService.getAllAppointments(req.user);
+        const appointments = await appointmentService.getAllAppointments(req.user, req.query);
         res.json(appointments);
     } catch (err) {
         handleSequelizeError(res, err);

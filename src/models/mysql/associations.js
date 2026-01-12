@@ -794,6 +794,47 @@ const Process = require('./process.model');
 const Step = require('./step.model');
 const ProcessStep = require('./process_step.model');
 
+// Appointment Process Snapshot
+// =====================
+const AppointmentProcess = require('./appointment_process.model');
+const AppointmentProcessStep = require('./appointment_process_step.model');
+
+// Appointment -> AppointmentProcess (One-to-One)
+Appointment.hasOne(AppointmentProcess, {
+    foreignKey: 'appointment_id',
+    as: 'process_snapshot',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentProcess.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+});
+
+// AppointmentProcess -> AppointmentProcessStep (One-to-Many)
+AppointmentProcess.hasMany(AppointmentProcessStep, {
+    foreignKey: 'appointment_process_id',
+    as: 'steps',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentProcessStep.belongsTo(AppointmentProcess, {
+    foreignKey: 'appointment_process_id',
+    as: 'process_snapshot',
+});
+
+// Optional references to templates
+AppointmentProcess.belongsTo(Process, {
+    foreignKey: 'process_id',
+    as: 'template_process',
+    onDelete: 'SET NULL',
+});
+AppointmentProcessStep.belongsTo(Step, {
+    foreignKey: 'step_id',
+    as: 'template_step',
+    onDelete: 'SET NULL',
+});
+
 // Tenant -> Processes
 Tenant.hasMany(Process, {
     foreignKey: 'tenant_id',
@@ -801,6 +842,8 @@ Tenant.hasMany(Process, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
+
+
 Process.belongsTo(Tenant, {
     foreignKey: 'tenant_id',
     as: 'tenant',
@@ -865,4 +908,81 @@ ProcessStep.belongsTo(Step, {
     as: 'step',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
+});
+
+// =====================
+// TREATMENT PLANS
+// =====================
+const TreatmentCatalog = require('./treatment_catalog.model');
+const TreatmentPlan = require('./treatment_plan.model');
+const TreatmentPlanItem = require('./treatment_plan_item.model');
+
+// Tenant -> TreatmentCatalog
+Tenant.hasMany(TreatmentCatalog, {
+    foreignKey: 'tenant_id',
+    as: 'treatment_catalogs',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+TreatmentCatalog.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Tenant -> TreatmentPlan
+Tenant.hasMany(TreatmentPlan, {
+    foreignKey: 'tenant_id',
+    as: 'treatment_plans',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+TreatmentPlan.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Patient -> TreatmentPlan
+Patient.hasMany(TreatmentPlan, {
+    foreignKey: 'patient_id',
+    as: 'treatment_plans',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+TreatmentPlan.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// TreatmentPlan -> TreatmentPlanItem
+TreatmentPlan.hasMany(TreatmentPlanItem, {
+    foreignKey: 'treatment_plan_id',
+    as: 'items',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+TreatmentPlanItem.belongsTo(TreatmentPlan, {
+    foreignKey: 'treatment_plan_id',
+    as: 'treatment_plan',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// TreatmentCatalog -> TreatmentPlanItem
+TreatmentCatalog.hasMany(TreatmentPlanItem, {
+    foreignKey: 'catalog_id',
+    as: 'used_in_items',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+TreatmentPlanItem.belongsTo(TreatmentCatalog, {
+    foreignKey: 'catalog_id',
+    as: 'catalog_item',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
 });

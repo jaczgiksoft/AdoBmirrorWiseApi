@@ -10,6 +10,93 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.19.0] - 2026-01-12
+
+### Added
+- Nuevo **módulo de Planes de Tratamiento clínicos**:
+  - Nuevas entidades persistentes:
+    - `treatment_catalog` (catálogo reutilizable de tratamientos).
+    - `treatment_plans` (planes de tratamiento por paciente).
+    - `treatment_plan_items` (items clínicos por plan con snapshot).
+  - Arquitectura completa bajo el estándar de la API:
+    - `controller`
+    - `service`
+    - `repository`
+    - `routes`
+  - Soporte para:
+    - Creación manual de tratamientos.
+    - Asociación opcional a catálogo.
+    - Persistencia de *snapshot* (`title`, `description`, `color`).
+    - Orden explícito de tratamientos dentro del plan.
+  - Preparado para consumo directo desde frontend sin lógica adicional.
+
+- Nuevas migraciones de base de datos:
+  - Creación de tablas:
+    - `treatment_catalogs`
+    - `treatment_plans`
+    - `treatment_plan_items`
+  - Todas las tablas incluyen:
+    - `tenant_id`
+    - timestamps
+    - *soft delete*
+    - claves foráneas explícitas.
+
+- Nuevos **seeders multi-tenant**:
+  - Registro automático de módulos por tenant.
+  - Preparación de tenants para nuevos dominios funcionales.
+
+- Nuevos modelos auxiliares para soporte de procesos clínicos en citas:
+  - `appointment_process`
+  - `appointment_process_step`
+  - Persistencia de *snapshot* de procesos aplicados a citas.
+
+---
+
+### Changed
+- **Evolución del dominio de Citas (`appointments`)**:
+  - Ajustes en modelo, service y repository para soportar:
+    - Integración con procesos clínicos.
+    - Persistencia desacoplada de procesos aplicados.
+  - Refactor progresivo del manejo de procesos en citas
+    sin romper compatibilidad existente.
+
+- Actualización de asociaciones Sequelize:
+  - Inclusión de relaciones para:
+    - Planes de tratamiento.
+    - Items clínicos.
+    - Procesos aplicados a citas.
+  - Manteniendo compatibilidad con módulos existentes.
+
+- Actualización del enrutador principal de la API:
+  - Registro de nuevos módulos:
+    - `treatment_catalog`
+    - `treatment_plan`
+
+---
+
+### Fixed
+- Correcciones iterativas en el modelado de citas:
+  - Migraciones de ida y vuelta para:
+    - `process_id` en `appointments`.
+    - Normalización de timestamps.
+  - Estabilización del esquema final sin pérdida de datos.
+
+---
+
+### Notes
+- Este release introduce formalmente el dominio de **Planes de Tratamiento** como
+  una entidad clínica de primer nivel.
+- Se consolida la separación entre:
+  - **Catálogo clínico** (definiciones reutilizables).
+  - **Plan clínico del paciente** (estructura y tiempos).
+  - **Ejecución clínica** (procesos y citas).
+- La API queda preparada para:
+  - Eliminar completamente mocks de planes de tratamiento en frontend.
+  - Integrar planes directamente en flujos clínicos futuros.
+  - Métricas clínicas basadas en planificación vs ejecución real.
+
+---
+
 ## [0.18.0] - 2026-01-06
 
 ### Added

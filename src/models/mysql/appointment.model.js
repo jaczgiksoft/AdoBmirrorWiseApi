@@ -26,6 +26,7 @@ const Appointment = sequelize.define(
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+
         date: {
             type: DataTypes.DATEONLY,
             allowNull: false,
@@ -51,11 +52,19 @@ const Appointment = sequelize.define(
             allowNull: false,
             defaultValue: 'pendiente',
         },
+        checkin_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
         treatment_started_at: {
             type: DataTypes.DATE,
             allowNull: true,
         },
         treatment_finished_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        paid_at: {
             type: DataTypes.DATE,
             allowNull: true,
         },

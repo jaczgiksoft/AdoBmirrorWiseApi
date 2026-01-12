@@ -12,13 +12,13 @@ const {
 } = require('./step.validator');
 
 // DataTable
-router.post('/datatable', validateToken, loadPermissions, checkPermissions('read', 'steps'), stepController.getDatatable);
+router.post('/datatable', validateToken, loadPermissions, checkPermissions('read', 'processes'), stepController.getDatatable);
 
 // CRUD
-router.get('/', validateToken, loadPermissions, checkPermissions('read', 'steps'), validateRequest, stepController.getAll);
-router.get('/:id', validateToken, loadPermissions, checkPermissions('read', 'steps'), getStepByIdValidator, validateRequest, stepController.getOne);
-router.post('/', validateToken, loadPermissions, checkPermissions('write', 'steps'), createStepValidator, validateRequest, stepController.create);
-router.put('/:id', validateToken, loadPermissions, checkPermissions('edit', 'steps'), updateStepValidator, validateRequest, stepController.update);
-router.delete('/:id', validateToken, loadPermissions, checkPermissions('delete', 'steps'), getStepByIdValidator, validateRequest, stepController.remove);
+router.get('/', validateToken, loadPermissions, checkPermissions('read', 'processes'), validateRequest, stepController.getAll);
+router.get('/:id', validateToken, loadPermissions, checkPermissions('read', 'processes'), getStepByIdValidator, validateRequest, stepController.getOne);
+router.post('/', validateToken, loadPermissions, checkPermissions('write', 'processes'), createStepValidator, validateRequest, stepController.create);
+router.put('/:id', validateToken, loadPermissions, checkPermissions('edit', 'processes'), updateStepValidator, validateRequest, stepController.update);
+router.delete('/:id', validateToken, loadPermissions, checkPermissions('delete', 'processes'), getStepByIdValidator, validateRequest, stepController.remove);
 
 module.exports = router;

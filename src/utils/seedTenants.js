@@ -91,7 +91,7 @@ const seedTenants = async () => {
 
             const sub = await Subscription.create({
                 tenant_id: tenant.id,
-                plan_name: 'Professional',
+                plan_name: 'Pro',
                 start_date: new Date(),
                 end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 max_users: t.max_users,

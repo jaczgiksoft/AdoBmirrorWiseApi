@@ -18,8 +18,14 @@ const createProcessValidator = [
         .isInt({ gt: 0 }).withMessage('El ID del paso debe ser válido'),
 
     body('steps.*.duration_override')
-        .optional({ nullable: true })
-        .isInt({ gt: 0 }).withMessage('La duración override debe ser mayor a 0'),
+        .custom(value => {
+            if (value === null || value === undefined) return true;
+            if (!Number.isInteger(value) || value <= 0) {
+                throw new Error('La duración override debe ser mayor a 0');
+            }
+            return true;
+        }),
+
 ];
 
 const updateProcessValidator = [
