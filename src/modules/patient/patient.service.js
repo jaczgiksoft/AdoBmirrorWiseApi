@@ -93,8 +93,6 @@ class PatientService {
             if (cleanData.patient_status_id) cleanData.patient_status_id = parseInt(cleanData.patient_status_id);
             if (cleanData.patient_profession_id) cleanData.patient_profession_id = parseInt(cleanData.patient_profession_id);
 
-            console.log("cleanData", cleanData)
-
             // 📌 Crear paciente base
             const newPatient = await patientRepository.createPatient(cleanData, t);
 
