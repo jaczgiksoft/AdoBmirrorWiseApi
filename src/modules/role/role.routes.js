@@ -10,7 +10,7 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 
 // =====================
 // ROLES ROUTES
-// =====================
+// ===================== 
 router.get(
     '/',
     validateToken,

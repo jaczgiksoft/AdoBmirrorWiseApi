@@ -11,7 +11,7 @@ const checkUserCreation = require('../../middlewares/checkUserCreation.middlewar
 const { uploadUserProfile } = require('../../middlewares/upload.middleware');
 
 // =====================
-// USERS ROUTES
+// USERS ROUTES 
 // =====================
 router.get(
     '/',

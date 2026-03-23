@@ -144,10 +144,10 @@ class UserService {
             }
         }
 
-        if (data.email && data.email !== user.email) {
-            if (await userRepository.findByEmail(data.email, currentUser.tenant_id)) {
-                throw new Error('El correo ya está en uso');
-            }
+        // El email ahora pertenece a Employee, no a User.
+        // Se debe actualizar mediante EmployeeService.
+        if (data.email) {
+            delete data.email;
         }
 
         if (data.password) {
@@ -222,9 +222,16 @@ class UserService {
         }
     }
 
-    // 🧩 Usuario sin contraseña
     toSafeUser(user) {
         const { password, ...safeUser } = user.toJSON ? user.toJSON() : user;
+
+        // Adaptación para frontend: La relación N:M devuelve 'roles' (array),
+        // pero el frontend espera 'role' (objeto). Tomamos el primer rol.
+        if (safeUser.roles && Array.isArray(safeUser.roles)) {
+            safeUser.role = safeUser.roles[0] || null;
+            delete safeUser.roles; // Opcional: limpiar la propiedad array
+        }
+
         return safeUser;
     }
 

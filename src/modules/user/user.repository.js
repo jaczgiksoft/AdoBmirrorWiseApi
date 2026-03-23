@@ -9,7 +9,7 @@ class UserRepository {
     async findAllByTenant(tenantId) {
         return User.findAll({
             include: [
-                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Role, as: 'roles', attributes: ['id', 'name'] },
                 {
                     model: Employee,
                     as: 'employee',
@@ -24,7 +24,7 @@ class UserRepository {
         return User.findOne({
             where: { id },
             include: [
-                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Role, as: 'roles', attributes: ['id', 'name'] },
                 {
                     model: Employee,
                     as: 'employee',
@@ -92,7 +92,9 @@ class UserRepository {
         // Orden dinámico
         let order = [];
         if (orderColumn === 'role.name') {
-            order = [[{ model: Role, as: 'role' }, 'name', orderDir]];
+            order = [[{ model: Role, as: 'roles' }, 'name', orderDir]];
+        } else if (['email', 'first_name', 'last_name'].includes(orderColumn)) {
+            order = [[{ model: Employee, as: 'employee' }, orderColumn, orderDir]];
         } else {
             order = [[orderColumn, orderDir]];
         }
@@ -104,7 +106,7 @@ class UserRepository {
         const { rows, count: recordsFiltered } = await User.findAndCountAll({
             where,
             include: [
-                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Role, as: 'roles', attributes: ['id', 'name'] },
                 {
                     model: Employee,
                     as: 'employee',

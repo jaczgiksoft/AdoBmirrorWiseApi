@@ -16,7 +16,7 @@ if (process.env.DB_DIALECT === 'mssql') {
 }
 
 requiredEnv.forEach((key) => {
-    if (!process.env[key]) {
+    if (process.env[key] === undefined) {
         logger.error(`❌ ERROR: Falta configuración en .env → ${key}`);
         process.exit(1);
     }
