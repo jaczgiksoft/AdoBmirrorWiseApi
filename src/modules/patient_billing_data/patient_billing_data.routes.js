@@ -7,6 +7,8 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 const { checkPermissions } = require('../../middlewares/permissions.middleware');
 const {
     addValidator,
+    linkOrCreateValidator,
+    updateLinkOrCreateValidator,
     idValidator,
     patientIdValidator
 } = require('./patient_billing_data.validator');
@@ -32,6 +34,28 @@ router.post(
     addValidator,
     validateRequest,
     controller.add
+);
+
+// ⭐ Find or Create Unified 
+router.post(
+    '/link-or-create',
+    validateToken,
+    loadPermissions,
+    checkPermissions('write', 'billing_data'),
+    linkOrCreateValidator,
+    validateRequest,
+    controller.linkOrCreate
+);
+
+// 🟠 Update Unified 
+router.put(
+    '/link-or-create/:id',
+    validateToken,
+    loadPermissions,
+    checkPermissions('edit', 'billing_data'),
+    updateLinkOrCreateValidator,
+    validateRequest,
+    controller.updateLinkOrCreate
 );
 
 // 🔴 Eliminar relación

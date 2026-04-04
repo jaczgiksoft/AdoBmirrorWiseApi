@@ -574,6 +574,34 @@ PatientBillingData.belongsTo(Tenant, {
     onUpdate: 'CASCADE'
 });
 
+PatientBillingData.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+PatientBillingData.belongsTo(BillingData, {
+    foreignKey: 'billing_data_id',
+    as: 'billing_data',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Patient.hasMany(PatientBillingData, {
+    foreignKey: 'patient_id',
+    as: 'patient_billing_links',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+BillingData.hasMany(PatientBillingData, {
+    foreignKey: 'billing_data_id',
+    as: 'patient_links',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
 // PATIENT REPRESENTATIVES
 Tenant.hasMany(PatientRepresentative, {
     foreignKey: 'tenant_id',
