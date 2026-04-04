@@ -40,6 +40,14 @@ const createRepresentativeValidator = [
 
     body('first_login')
         .optional()
+        .isBoolean(),
+
+    body('patient_id')
+        .optional()
+        .isInt().withMessage('ID de paciente inválido'),
+
+    body('is_primary')
+        .optional()
         .isBoolean()
 ];
 

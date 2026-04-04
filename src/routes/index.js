@@ -41,6 +41,7 @@ router.use('/patient-extractions', require('../modules/patient_extraction/patien
 router.use('/patient-hobbies', require('../modules/patient_hobby/patient_hobby.routes'));
 router.use('/patient-notes', require('../modules/patient_note/patient_note.routes'));
 router.use('/patient-conversations', require('../modules/patient_conversation/patient_conversation.routes'));
+router.use('/patient-representatives', require('../modules/patient_representative/patient_representative.routes'));
 router.use('/patient-representative-links', require('../modules/patient_representative_link/patient_representative_link.routes'));
 router.use('/patient-prescriptions', require('../modules/patient_prescription/patient_prescription.routes'));
 router.use('/appointments', require('../modules/appointment/appointment.routes'));
@@ -51,4 +52,6 @@ router.use('/clinic-areas', require('../modules/clinic_area/clinic_area.routes')
 router.use('/treatment-catalogs', require('../modules/treatment_catalog/treatment_catalog.routes'));
 router.use('/treatment-plans', require('../modules/treatment_plan/treatment_plan.routes'));
 router.use('/budgets', require('../modules/budget/budget.routes'));
+router.use('/billing-data', require('../modules/billing_data/billing_data.routes'));
+router.use('/patient-billing-data', require('../modules/patient_billing_data/patient_billing_data.routes'));
 module.exports = router;

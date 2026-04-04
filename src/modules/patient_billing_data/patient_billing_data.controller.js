@@ -18,6 +18,24 @@ const add = async (req, res) => {
     }
 };
 
+const linkOrCreate = async (req, res) => {
+    try {
+        const result = await service.linkOrCreate(req.body, req.user, req);
+        res.status(201).json({ message: 'Dato fiscal procesado exitosamente', result });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+const updateLinkOrCreate = async (req, res) => {
+    try {
+        const result = await service.updateLinkOrCreate(req.params.id, req.body, req.user, req);
+        res.json({ message: 'Dato fiscal actualizado exitosamente', result });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
 const remove = async (req, res) => {
     try {
         await service.removeBillingFromPatient(req.params.id, req.user, req);
@@ -39,6 +57,8 @@ const setPrimary = async (req, res) => {
 module.exports = {
     list,
     add,
+    linkOrCreate,
+    updateLinkOrCreate,
     remove,
     setPrimary
 };

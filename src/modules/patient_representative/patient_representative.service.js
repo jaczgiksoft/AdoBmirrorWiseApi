@@ -1,5 +1,6 @@
 const sequelize = require('../../config/database');
 const repo = require('./patient_representative.repository');
+const PatientRepresentativeLink = require('../../models/mysql/patient_representative_link.model');
 const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { notifyUser } = require('../../utils/notify.helper');
@@ -31,8 +32,17 @@ class PatientRepresentativeService {
             );
 
             clean.tenant_id = currentUser.tenant_id;
-
             const created = await repo.create(clean, t);
+
+            // 🔁 Vincular con paciente si se proporciona
+            if (data.patient_id) {
+                await PatientRepresentativeLink.create({
+                    tenant_id: currentUser.tenant_id,
+                    patient_id: data.patient_id,
+                    representative_id: created.id,
+                    is_primary: data.is_primary || false
+                }, { transaction: t });
+            }
 
             await t.commit();
 

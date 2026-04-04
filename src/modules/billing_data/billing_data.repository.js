@@ -19,6 +19,12 @@ class BillingDataRepository {
         });
     }
 
+    async findByRFC(rfc, tenantId) {
+        return BillingData.findOne({
+            where: { rfc, tenant_id: tenantId }
+        });
+    }
+
     async createBillingData(data, transaction) {
         return BillingData.create(data, { transaction });
     }

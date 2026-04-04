@@ -67,6 +67,150 @@ class PatientBillingDataService {
         }
     }
 
+    async linkOrCreate(data, currentUser, req) {
+        if (!currentUser.tenant_id) throw new Error('No autorizado');
+
+        const t = await sequelize.transaction();
+        try {
+            const { 
+                patient_id, business_name, rfc, tax_regime, 
+                zip_code, email, is_primary 
+            } = data;
+
+            // Validar paciente
+            const patient = await patientRepo.findById(patient_id, currentUser.tenant_id);
+            if (!patient) throw new Error('Paciente no encontrado');
+
+            // 1. Buscar si el RFC ya existe
+            let billingData = await billingDataRepo.findByRFC(rfc, currentUser.tenant_id);
+
+            // 2. Si no existe, crearlo
+            if (!billingData) {
+                billingData = await billingDataRepo.createBillingData({
+                    tenant_id: currentUser.tenant_id,
+                    business_name,
+                    rfc,
+                    tax_regime,
+                    zip_code,
+                    email
+                }, t);
+            } else {
+                // Opcional: si existe, actualizar los datos base para que coincidan con la nueva captura
+                await billingDataRepo.updateBillingData(billingData, {
+                    business_name,
+                    tax_regime,
+                    zip_code,
+                    email
+                }, t);
+            }
+
+            // 3. Verificar si ya existe relación
+            const existing = await billingRepository.findLink(patient_id, billingData.id, currentUser.tenant_id);
+            if (existing) throw new Error('El paciente ya tiene asignado este RFC');
+
+            // Limpiar anteriores si es primario
+            if (is_primary) {
+                await billingRepository.setPrimaryForPatient(patient_id, currentUser.tenant_id, t);
+            }
+
+            // 4. Crear relación
+            const newLink = await billingRepository.createLink({
+                tenant_id: currentUser.tenant_id,
+                patient_id,
+                billing_data_id: billingData.id,
+                is_primary: is_primary || false
+            }, t);
+
+            await t.commit();
+
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: 'create_or_link',
+                module: 'patient_billing_data',
+                description: `Vinculó/Creó dato fiscal RFC ${rfc} para el paciente #${patient_id}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            return newLink;
+
+        } catch (err) {
+            await t.rollback();
+            logger.error(`Error en linkOrCreate de datos fiscales: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
+
+    async updateLinkOrCreate(id, data, currentUser, req) {
+        if (!currentUser.tenant_id) throw new Error('No autorizado');
+
+        const t = await sequelize.transaction();
+        try {
+            const { business_name, rfc, tax_regime, zip_code, email, is_primary } = data;
+
+            // 0. Obtener la relación vieja
+            const link = await billingRepository.findById(id, currentUser.tenant_id);
+            if (!link) throw new Error('Relación no encontrada');
+            const patient_id = link.patient_id;
+
+            // 1. Buscar si el nuevo RFC ya existe
+            let billingData = await billingDataRepo.findByRFC(rfc, currentUser.tenant_id);
+
+            // 2. Si no existe, crearlo
+            if (!billingData) {
+                billingData = await billingDataRepo.createBillingData({
+                    tenant_id: currentUser.tenant_id,
+                    business_name,
+                    rfc,
+                    tax_regime,
+                    zip_code,
+                    email
+                }, t);
+            } else {
+                // Si existe, actualizar datos base
+                await billingDataRepo.updateBillingData(billingData, {
+                    business_name,
+                    tax_regime,
+                    zip_code,
+                    email
+                }, t);
+            }
+
+            // 3. Verificar primario
+            if (is_primary) {
+                await billingRepository.setPrimaryForPatient(patient_id, currentUser.tenant_id, t);
+            }
+
+            // 4. Actualizar relación a apuntar al billingData (puede ser el mismo u otro si cambió el RFC)
+            await link.update({
+                billing_data_id: billingData.id,
+                is_primary: is_primary || false
+            }, { transaction: t });
+
+            await t.commit();
+
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: 'update',
+                module: 'patient_billing_data',
+                description: `Actualizó dato fiscal RFC ${rfc} para el paciente #${patient_id}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            return link;
+
+        } catch (err) {
+            await t.rollback();
+            logger.error(`Error en updateLinkOrCreate de datos fiscales: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
+
     async removeBillingFromPatient(id, currentUser, req) {
         const t = await sequelize.transaction();
         try {

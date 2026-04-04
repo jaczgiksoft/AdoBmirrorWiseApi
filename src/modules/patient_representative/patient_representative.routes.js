@@ -12,7 +12,7 @@ const {
 } = require('./patient_representative.validator');
 const { validateRequest } = require('../../middlewares/validate.middleware');
 
-// 📋 Listar representantes
+// 📋 Listar representantes 
 router.get(
     '/',
     validateToken,
