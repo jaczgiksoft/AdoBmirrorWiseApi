@@ -7,6 +7,7 @@ const { checkPermissions } = require('../../middlewares/permissions.middleware')
 const {
     createPatientValidator,
     updatePatientValidator,
+    updatePatientGeneralValidator,
     getPatientByIdValidator,
 } = require('./patient.validator');
 const { validateRequest } = require('../../middlewares/validate.middleware');
@@ -15,7 +16,7 @@ const { uploadPatientPhoto } = require('../../middlewares/upload.middleware');
 const parseJsonFields = require('../../middlewares/parseJsonFields.middleware');
 // =========================
 // RUTAS PACIENTES
-// =========================
+// ========================= 
 
 // 📋 Listar todos los pacientes (por tenant)
 router.get(
@@ -74,9 +75,24 @@ router.put(
     validateToken,
     loadPermissions,
     checkPermissions('edit', 'patients'),
+    uploadPatientPhoto,
+    parseJsonFields,
     updatePatientValidator,
     validateRequest,
     patientController.update
+);
+
+// 🟡 Actualizar paciente (General)
+router.put(
+    '/:id/general',
+    validateToken,
+    loadPermissions,
+    checkPermissions('edit', 'patients'),
+    uploadPatientPhoto,
+    parseJsonFields,
+    updatePatientGeneralValidator,
+    validateRequest,
+    patientController.updateGeneral
 );
 
 // 🔴 Eliminar paciente (soft delete)

@@ -68,13 +68,10 @@ const create = async (req, res) => {
 // 🟡 Actualizar paciente
 const update = async (req, res) => {
     try {
-        // 🧩 Asegurar que patient_type_ids llegue como array
-        if (typeof req.body.patient_type_ids === 'string') {
-            try {
-                req.body.patient_type_ids = JSON.parse(req.body.patient_type_ids);
-            } catch {
-                req.body.patient_type_ids = [];
-            }
+        // Si viene foto nueva 
+        if (req.file) {
+            const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+            req.body.photo_url = cleanPath.replace(/\\/g, "/");
         }
 
         const patient = await patientService.updatePatient(req.params.id, req.body, req.user, req);
@@ -131,11 +128,32 @@ const getNextMedicalRecord = async (req, res) => {
     }
 };
 
+// 🟡 Actualizar paciente (General)
+const updateGeneral = async (req, res) => {
+    try {
+        // Si viene foto nueva
+        if (req.file) {
+            const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+            req.body.photo_url = cleanPath.replace(/\\/g, "/");
+        }
+
+        const patient = await patientService.updatePatient(req.params.id, req.body, req.user, req);
+        res.json({ message: 'Información general actualizada exitosamente', patient });
+    } catch (err) {
+        handleSequelizeError(res, err, {
+            email: 'Ya existe un paciente con ese correo electrónico.',
+            curp: 'Ya existe un paciente con esa CURP.',
+            rfc: 'Ya existe un paciente con ese RFC.'
+        });
+    }
+};
+
 module.exports = {
     getAll,
     getOne,
     create,
     update,
+    updateGeneral,
     softDelete,
     getDatatable,
     getProfile,
