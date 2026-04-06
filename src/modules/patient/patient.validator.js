@@ -128,6 +128,31 @@ const updatePatientValidator = [
     })
 ];
 
+// 🧩 Actualización de Información General (Paso 1)
+const updatePatientGeneralValidator = [
+    param('id').isInt().withMessage('El ID debe ser un número entero'),
+    body('medical_record_number').optional().trim().isLength({ max: 50 }),
+    body('family_code').optional().trim().isLength({ max: 50 }),
+    body('first_name').optional().trim().isLength({ min: 2, max: 100 }),
+    body('last_name').optional().trim().isLength({ min: 2, max: 100 }),
+    body('middle_name').optional().trim(),
+    body('nickname').optional().trim(),
+    body('genre').optional().isIn(['male', 'female', 'other']),
+    body('birth_date').optional().isDate(),
+    body('marital_status').optional().trim(),
+    body('phone_number').optional().isString().isLength({ min: 8, max: 20 }),
+    body('email').optional().isEmail(),
+    body('referral_id').optional().isInt(),
+    body('address_street_name').optional().trim(),
+    body('address_street_number').optional().trim(),
+    body('address_apartment_number').optional().trim(),
+    body('address_neighborhood').optional().trim(),
+    body('address_zip_code').optional().trim(),
+    body('address_city').optional().trim(),
+    body('address_state').optional().trim(),
+    body('address_country').optional().trim(),
+];
+
 // 🔍 Obtener Paciente por ID
 const getPatientByIdValidator = [
     param('id').isInt().withMessage('El ID debe ser un número entero'),
@@ -136,5 +161,6 @@ const getPatientByIdValidator = [
 module.exports = {
     createPatientValidator,
     updatePatientValidator,
+    updatePatientGeneralValidator,
     getPatientByIdValidator,
 };
