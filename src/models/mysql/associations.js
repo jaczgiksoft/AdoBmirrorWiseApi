@@ -30,6 +30,8 @@ const PatientConversation = require('./patient_conversation.model');
 const PatientExtraction = require('./patient_extraction.model');
 const ExtractionTooth = require('./extraction_tooth.model');
 const ExtractionFile = require('./extraction_file.model');
+const Odontogram = require('./odontogram.model');
+const OdontogramDetalle = require('./odontogram_detalle.model');
 
 const BillingData = require('./billing_data.model');
 const PatientBillingData = require('./patient_billing_data.model');
@@ -1087,6 +1089,52 @@ Budget.hasMany(BudgetItem, {
 BudgetItem.belongsTo(Budget, {
     foreignKey: 'budget_id',
     as: 'budget',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// =====================
+// ODONTOGRAMS
+// =====================
+
+// Tenant -> Odontogram
+Tenant.hasMany(Odontogram, {
+    foreignKey: 'tenant_id',
+    as: 'odontograms',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Odontogram.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Patient -> Odontogram
+Patient.hasOne(Odontogram, {
+    foreignKey: 'patient_id',
+    as: 'odontogram',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Odontogram.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Odontogram -> OdontogramDetalle
+Odontogram.hasMany(OdontogramDetalle, {
+    foreignKey: 'odontogram_id',
+    as: 'details',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+OdontogramDetalle.belongsTo(Odontogram, {
+    foreignKey: 'odontogram_id',
+    as: 'odontogram',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });

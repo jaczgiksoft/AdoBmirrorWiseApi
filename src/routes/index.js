@@ -54,4 +54,5 @@ router.use('/treatment-plans', require('../modules/treatment_plan/treatment_plan
 router.use('/budgets', require('../modules/budget/budget.routes'));
 router.use('/billing-data', require('../modules/billing_data/billing_data.routes'));
 router.use('/patient-billing-data', require('../modules/patient_billing_data/patient_billing_data.routes'));
+router.use('/odontograms', require('../modules/odontogram/odontogram.routes'));
 module.exports = router;

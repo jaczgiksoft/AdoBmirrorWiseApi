@@ -30,3 +30,4 @@ ecosystem.config.js
 # Ignorar todo dentro de uploads, pero mantener la carpeta
 /uploads/*
 !/uploads/.gitkeep
+repomix-output.txt
