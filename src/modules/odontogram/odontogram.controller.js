@@ -7,7 +7,7 @@ class OdontogramController {
             const { patientId } = req.params;
             const tenantId = req.user.tenant_id;
             const odontogram = await odontogramService.getOdontogramByPatient(patientId, tenantId);
-            
+
             if (!odontogram) {
                 return res.json({ success: true, data: null });
             }
@@ -22,13 +22,13 @@ class OdontogramController {
         try {
             const { patientId, ...data } = req.body;
             const tenantId = req.user.tenant_id;
-            
+
             const savedOdontogram = await odontogramService.saveOdontogram(patientId, tenantId, data);
-            
-            res.json({ 
-                success: true, 
+
+            res.json({
+                success: true,
                 message: 'Odontograma guardado correctamente',
-                data: savedOdontogram 
+                data: savedOdontogram
             });
         } catch (error) {
             next(error);
