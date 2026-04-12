@@ -38,6 +38,7 @@ router.use('/bracket-types', require('../modules/bracket_type/bracket_type.route
 router.use('/patients', require('../modules/patient/patient.routes'));
 router.use('/patient-alerts', require('../modules/patient_alert/patient_alert.routes'));
 router.use('/patient-extractions', require('../modules/patient_extraction/patient_extraction.routes'));
+router.use('/extraction-orders', require('../modules/extraction_order/extraction_order.routes'));
 router.use('/patient-hobbies', require('../modules/patient_hobby/patient_hobby.routes'));
 router.use('/patient-notes', require('../modules/patient_note/patient_note.routes'));
 router.use('/patient-conversations', require('../modules/patient_conversation/patient_conversation.routes'));
@@ -55,4 +56,15 @@ router.use('/budgets', require('../modules/budget/budget.routes'));
 router.use('/billing-data', require('../modules/billing_data/billing_data.routes'));
 router.use('/patient-billing-data', require('../modules/patient_billing_data/patient_billing_data.routes'));
 router.use('/odontograms', require('../modules/odontogram/odontogram.routes'));
+router.use('/patient-elastics', require('../modules/patient_elastic/patient_elastic.routes'));
+router.use('/patient-gallery', require('../modules/patient_gallery/patient_gallery.routes'));
+router.use('/patient-clinical', require('../modules/patient_clinical/patient_clinical.routes'));
+
+// ==========================
+// 📦 INVENTORY
+// ==========================
+router.use('/inventory-providers', require('../modules/inventory_provider/inventory_provider.routes'));
+router.use('/inventory-items', require('../modules/inventory_item/inventory_item.routes'));
+router.use('/inventory-movements', require('../modules/inventory_movement/inventory_movement.routes'));
+
 module.exports = router;

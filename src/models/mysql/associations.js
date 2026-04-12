@@ -32,12 +32,23 @@ const ExtractionTooth = require('./extraction_tooth.model');
 const ExtractionFile = require('./extraction_file.model');
 const Odontogram = require('./odontogram.model');
 const OdontogramDetalle = require('./odontogram_detalle.model');
+const PatientElastic = require('./patient_elastic.model');
+const PatientExtractionOrder = require('./patient_extraction_order.model');
+const ExtractionOrderTooth = require('./extraction_order_tooth.model');
+const ExtractionOrderFile = require('./extraction_order_file.model');
+const PatientClinicalRecord = require('./patient_clinical_record.model');
 
 const BillingData = require('./billing_data.model');
 const PatientBillingData = require('./patient_billing_data.model');
 
+const InventoryProvider = require('./inventory_provider.model');
+const InventoryItem = require('./inventory_item.model');
+const InventoryMovement = require('./inventory_movement.model');
+
 const PatientRepresentative = require('./patient_representative.model');
 const PatientRepresentativeLink = require('./patient_representative_link.model');
+const PatientGalleryFolder = require('./patient_gallery_folder.model');
+const PatientGalleryImage = require('./patient_gallery_image.model');
 
 // =====================
 // TENANTS
@@ -708,6 +719,75 @@ ExtractionFile.belongsTo(PatientExtraction, {
 });
 
 // =====================
+// EXTRACTION ORDERS (MIGRATED)
+// =====================
+
+Tenant.hasMany(PatientExtractionOrder, {
+    foreignKey: 'tenant_id',
+    as: 'extractionOrders',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientExtractionOrder.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Patient.hasMany(PatientExtractionOrder, {
+    foreignKey: 'patient_id',
+    as: 'clinicalExtractionOrders',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientExtractionOrder.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Employee.hasMany(PatientExtractionOrder, {
+    foreignKey: 'doctor_id',
+    as: 'performedExtractionOrders',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+PatientExtractionOrder.belongsTo(Employee, {
+    foreignKey: 'doctor_id',
+    as: 'doctor',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+
+PatientExtractionOrder.hasMany(ExtractionOrderTooth, {
+    foreignKey: 'extraction_order_id',
+    as: 'teeth',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ExtractionOrderTooth.belongsTo(PatientExtractionOrder, {
+    foreignKey: 'extraction_order_id',
+    as: 'order',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+PatientExtractionOrder.hasMany(ExtractionOrderFile, {
+    foreignKey: 'extraction_order_id',
+    as: 'files',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+ExtractionOrderFile.belongsTo(PatientExtractionOrder, {
+    foreignKey: 'extraction_order_id',
+    as: 'order',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// =====================
 // SERVICES
 // =====================
 const Service = require('./service.model');
@@ -1137,4 +1217,172 @@ OdontogramDetalle.belongsTo(Odontogram, {
     as: 'odontogram',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
+});
+
+// =====================
+// PATIENT ELASTICS
+// =====================
+
+Tenant.hasMany(PatientElastic, {
+    foreignKey: 'tenant_id',
+    as: 'patient_elastics',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientElastic.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Patient.hasMany(PatientElastic, {
+    foreignKey: 'patient_id',
+    as: 'elastics',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientElastic.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// =====================
+// PATIENT GALLERY
+// =====================
+
+// Tenant -> Gallery Folder
+Tenant.hasMany(PatientGalleryFolder, {
+    foreignKey: 'tenant_id',
+    as: 'gallery_folders',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientGalleryFolder.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant'
+});
+
+// Patient -> Gallery Folder
+Patient.hasMany(PatientGalleryFolder, {
+    foreignKey: 'patient_id',
+    as: 'gallery_folders',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientGalleryFolder.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient'
+});
+
+// Folder -> Image
+PatientGalleryFolder.hasMany(PatientGalleryImage, {
+    foreignKey: 'folder_id',
+    as: 'images',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientGalleryImage.belongsTo(PatientGalleryFolder, {
+    foreignKey: 'folder_id',
+    as: 'folder'
+});
+
+// =====================
+// PATIENT CLINICAL RECORD
+// =====================
+Tenant.hasMany(PatientClinicalRecord, {
+    foreignKey: 'tenant_id',
+    as: 'clinical_records',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientClinicalRecord.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant'
+});
+
+Patient.hasOne(PatientClinicalRecord, {
+    foreignKey: 'patient_id',
+    as: 'clinical_record',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientClinicalRecord.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient'
+});
+
+// =====================
+// INVENTORY
+// =====================
+
+// Inventory Provider
+Tenant.hasMany(InventoryProvider, {
+    foreignKey: 'tenant_id',
+    as: 'inventory_providers',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+InventoryProvider.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant'
+});
+
+// Inventory Item
+Tenant.hasMany(InventoryItem, {
+    foreignKey: 'tenant_id',
+    as: 'inventory_items',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+InventoryItem.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant'
+});
+
+InventoryProvider.hasMany(InventoryItem, {
+    foreignKey: 'provider_id',
+    as: 'items',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+InventoryItem.belongsTo(InventoryProvider, {
+    foreignKey: 'provider_id',
+    as: 'provider'
+});
+
+// Inventory Movement
+Tenant.hasMany(InventoryMovement, {
+    foreignKey: 'tenant_id',
+    as: 'inventory_movements',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+InventoryMovement.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant'
+});
+
+InventoryItem.hasMany(InventoryMovement, {
+    foreignKey: 'item_id',
+    as: 'movements',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+InventoryMovement.belongsTo(InventoryItem, {
+    foreignKey: 'item_id',
+    as: 'item'
+});
+
+InventoryProvider.hasMany(InventoryMovement, {
+    foreignKey: 'provider_id',
+    as: 'provider_movements',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+InventoryMovement.belongsTo(InventoryProvider, {
+    foreignKey: 'provider_id',
+    as: 'provider'
 });
