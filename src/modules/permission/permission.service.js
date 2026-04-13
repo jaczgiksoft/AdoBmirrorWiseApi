@@ -112,6 +112,21 @@ class PermissionService {
             throw err;
         }
     }
+
+    // 🔹 Obtener todos los módulos habilitados para el tenant
+    async getAllModules(currentUser, req) {
+        try {
+            const modules = await permissionRepository.findModulesByTenant(currentUser.tenant_id);
+            return modules.map(m => ({
+                id: m.module,
+                label: m.module.charAt(0).toUpperCase() + m.module.slice(1) // Capitalize basic label
+            }));
+        } catch (err) {
+            logger.error(`Error en getAllModules Permissions: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
 }
 
 module.exports = new PermissionService();

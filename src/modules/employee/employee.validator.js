@@ -20,7 +20,16 @@ const employeeValidationRules = [
         .isEmail().withMessage('El email no es válido'),
 
     body('phone').optional().trim(),
-    body('position').optional().trim(),
+    
+    body('role_id')
+        .notEmpty().withMessage('El rol es obligatorio')
+        .isInt().withMessage('El rol debe ser un ID válido'),
+
+    body('positionIds')
+        .isArray({ min: 1 }).withMessage('Debe seleccionar al menos un puesto'),
+
+    body('positionIds.*')
+        .isInt().withMessage('Los puestos deben ser IDs válidos'),
 
     body('is_appointment_eligible')
         .optional()

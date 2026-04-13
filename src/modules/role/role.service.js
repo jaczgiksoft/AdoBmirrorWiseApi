@@ -1,5 +1,6 @@
 const sequelize = require('../../config/database');
 const roleRepository = require('./role.repository');
+const permissionRepository = require('../permission/permission.repository');
 const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
@@ -15,7 +16,23 @@ class RoleService {
     async getRoleById(id, currentUser) {
         const role = await roleRepository.findById(id, currentUser.tenant_id);
         if (!role) throw new Error('Rol no encontrado');
-        return role.toJSON();
+        
+        const roleData = role.toJSON();
+        
+        // Formatear permisos para que el frontend los entienda fácilmente
+        if (role.permissions) {
+            roleData.permissions = {};
+            role.permissions.forEach(p => {
+                roleData.permissions[p.module] = {
+                    read: p.can_read,
+                    write: p.can_write,
+                    edit: p.can_edit,
+                    delete: p.can_delete
+                };
+            });
+        }
+        
+        return roleData;
     }
 
     // 🟢 Crear rol
@@ -37,6 +54,22 @@ class RoleService {
                 },
                 t
             );
+
+            // 📑 Permissions
+            if (data.permissions && Array.isArray(data.permissions)) {
+                await permissionRepository.bulkCreate(
+                    data.permissions.map(p => ({
+                        role_id: newRole.id,
+                        tenant_id: currentUser.tenant_id, // ✅ Agregado tenant_id
+                        module: p.module,
+                        can_read: !!p.read,
+                        can_write: !!p.write,
+                        can_edit: !!p.edit,
+                        can_delete: !!p.delete
+                    })),
+                    t
+                );
+            }
 
             await t.commit();
 
@@ -89,7 +122,32 @@ class RoleService {
             updateData.requires_cash_session = !!data.requires_cash_session;
         }
 
-        await roleRepository.updateRole(role, updateData);
+        const t = await sequelize.transaction();
+        try {
+            await roleRepository.updateRole(role, updateData, t);
+
+            // 📑 Permissions update (reemplazo completo)
+            if (data.permissions && Array.isArray(data.permissions)) {
+                await permissionRepository.deleteByRole(role.id, t);
+                await permissionRepository.bulkCreate(
+                    data.permissions.map(p => ({
+                        role_id: role.id,
+                        tenant_id: currentUser.tenant_id, // ✅ Agregado tenant_id
+                        module: p.module,
+                        can_read: !!p.read,
+                        can_write: !!p.write,
+                        can_edit: !!p.edit,
+                        can_delete: !!p.delete
+                    })),
+                    t
+                );
+            }
+
+            await t.commit();
+        } catch (err) {
+            await t.rollback();
+            throw err;
+        }
 
         // 🧾 Log
         await createLog({

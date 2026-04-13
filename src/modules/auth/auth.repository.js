@@ -6,6 +6,7 @@ const Tenant = require('../../models/mysql/tenant.model');
 const TenantModule = require('../../models/mysql/tenant_module.model');
 const Employee = require('../../models/mysql/employee.model');
 const UserRole = require('../../models/mysql/user_role.model');
+const Position = require('../../models/mysql/position.model');
 
 const ActiveToken = require('../../models/mongo/activeToken.model');
 const LoginAttempt = require('../../models/mongo/loginAttempt.model');
@@ -26,7 +27,8 @@ class AuthRepository {
             include: [{
                 model: Employee,
                 as: 'employee',
-                where: { email }
+                where: { email },
+                include: [{ model: Tenant, as: 'tenant' }]
             }]
         });
     }
@@ -89,10 +91,15 @@ class AuthRepository {
                         'first_name',
                         'last_name',
                         'second_last_name',
-                        'position',
                         'status'
                     ],
                     include: [
+                        {
+                            model: Position,
+                            as: 'positions',
+                            attributes: ['id', 'name', 'color'],
+                            through: { attributes: [] }
+                        },
                         {
                             model: Tenant,
                             as: 'tenant',
@@ -173,7 +180,13 @@ class AuthRepository {
      * Buscar usuario por ID simple (para reset, etc.)
      */
     async findUserById(id) {
-        return User.findByPk(id, { include: [{ model: Employee, as: 'employee' }] });
+        return User.findByPk(id, {
+            include: [{
+                model: Employee,
+                as: 'employee',
+                include: [{ model: Tenant, as: 'tenant' }]
+            }]
+        });
     }
 
     // =====================

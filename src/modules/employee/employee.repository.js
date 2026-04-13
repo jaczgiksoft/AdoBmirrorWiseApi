@@ -1,6 +1,9 @@
 const { Op } = require('sequelize');
 const Employee = require('../../models/mysql/employee.model');
 const Tenant = require('../../models/mysql/tenant.model');
+const Role = require('../../models/mysql/role.model');
+const Position = require('../../models/mysql/position.model');
+const User = require('../../models/mysql/user.model');
 
 class EmployeeRepository {
     // 📋 Obtener todos los empleados de un tenant
@@ -8,7 +11,10 @@ class EmployeeRepository {
         return Employee.findAll({
             where: { tenant_id: tenantId },
             include: [
-                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] }
+                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
+                { model: User, as: 'user', attributes: ['id', 'username', 'status'] }
             ],
             order: [['first_name', 'ASC'], ['last_name', 'ASC']]
         });
@@ -19,7 +25,10 @@ class EmployeeRepository {
         return Employee.findOne({
             where: { id, tenant_id: tenantId },
             include: [
-                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] }
+                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
+                { model: User, as: 'user', attributes: ['id', 'username', 'status'] }
             ]
         });
     }
@@ -56,8 +65,7 @@ class EmployeeRepository {
                 { last_name: { [Op.like]: `%${searchValue}%` } },
                 { second_last_name: { [Op.like]: `%${searchValue}%` } },
                 { email: { [Op.like]: `%${searchValue}%` } },
-                { phone: { [Op.like]: `%${searchValue}%` } },
-                { position: { [Op.like]: `%${searchValue}%` } }
+                { phone: { [Op.like]: `%${searchValue}%` } }
             ];
         }
 
@@ -71,9 +79,15 @@ class EmployeeRepository {
 
         const { rows, count: recordsFiltered } = await Employee.findAndCountAll({
             where,
+            include: [
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
+                { model: User, as: 'user', attributes: ['id', 'username', 'status'] }
+            ],
             offset: start,
             limit: length,
-            order: finalOrder
+            order: finalOrder,
+            distinct: true // Necesario para evitar conteo erróneo con relaciones Many-to-Many
         });
 
         return { recordsTotal, recordsFiltered, rows };
@@ -87,7 +101,10 @@ class EmployeeRepository {
                 is_appointment_eligible: true,
                 status: 'active'
             },
-            attributes: ['id', 'first_name', 'last_name', 'position', 'profile_image'],
+            attributes: ['id', 'first_name', 'last_name', 'profile_image'],
+            include: [
+                { model: Position, as: 'positions', attributes: ['id', 'name'], through: { attributes: [] } }
+            ],
             order: [['first_name', 'ASC']]
         });
     }

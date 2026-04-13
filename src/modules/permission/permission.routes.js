@@ -11,6 +11,14 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 // 🔒 Requiere autenticación para todo
 router.use(validateToken);
 
+// Obtener todos los módulos (para configuración de roles)
+router.get(
+    '/',
+    loadPermissions,
+    checkPermissions('read', 'roles'), // Usamos roles como permiso base para ver módulos en este contexto
+    permissionController.getAllModules
+);
+
 // Obtener permisos de un rol
 router.get(
     '/:role_id',

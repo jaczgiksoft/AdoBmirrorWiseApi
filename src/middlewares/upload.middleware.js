@@ -103,6 +103,19 @@ const patientStorage = multer.diskStorage({
     }
 });
 
+// 6️⃣ Inventario (imagen del ítem)
+const inventoryStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const tenantId = req.user?.tenant_id || "unknown";
+        const itemId = req.params.id || `temp_${Date.now()}`;
+        const dir = ensureDir(path.join(__dirname, `../../uploads/${tenantId}/inventory/${itemId}`));
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `item_${Date.now()}${path.extname(file.originalname)}`);
+    },
+});
+
 // === Inicializaciones de Multer === //
 const uploadTenantLogo = multer({
     storage: tenantStorage,
@@ -137,6 +150,12 @@ const uploadPatientPhoto = multer({
     fileFilter: fileFilter("images"),
 }).single("photo");
 
+const uploadInventoryImage = multer({
+    storage: inventoryStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter("images"),
+}).single("image");
+
 // 6️⃣ Radiografías (Extracciones)
 const radiographStorage = multer.diskStorage({
     destination: async (req, file, cb) => {
@@ -170,6 +189,38 @@ const uploadRadiographs = multer({
     fileFilter: fileFilter("images"),
 }).array("radiographs", 10);
 
+// 7️⃣ Galería de Pacientes
+const galleryStorage = multer.diskStorage({
+    destination: async (req, file, cb) => {
+        try {
+            const tenantId = req.user?.tenant_id || "unknown";
+            const patientId = req.body.patient_id;
+            let folderMRN = "temp";
+
+            if (patientId) {
+                const patient = await Patient.findByPk(patientId);
+                if (patient) folderMRN = patient.medical_record_number;
+            }
+
+            // Guardamos en una carpeta temporal dentro de la galería del paciente
+            // El servicio se encargará de moverlos si es necesario o renombrar la carpeta
+            const dir = ensureDir(path.join(__dirname, `../../uploads/${tenantId}/patients/${folderMRN}/gallery/temp_${Date.now()}`));
+            cb(null, dir);
+        } catch (error) {
+            cb(error);
+        }
+    },
+    filename: (req, file, cb) => {
+        cb(null, `img_${Date.now()}_${file.originalname}`);
+    },
+});
+
+const uploadGalleryPhotos = multer({
+    storage: galleryStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: fileFilter("images"),
+}).any(); // Aceptamos cualquier campo (para los 8 fijos + radiografías)
+
 // === Exportaciones === //
 module.exports = {
     uploadTenantLogo,       // Tenant (campo: logo)
@@ -177,5 +228,7 @@ module.exports = {
     uploadStoreImages,      // Tienda (campos: logo, banner)
     uploadProductImage,     // Producto (campo: image)
     uploadPatientPhoto,     // Paciente (campo: photo_url)
+    uploadInventoryImage,   // Inventario (campo: image)
     uploadRadiographs,      // Radiografías (campo: radiographs)
+    uploadGalleryPhotos,    // Galería (múltiples campos)
 };

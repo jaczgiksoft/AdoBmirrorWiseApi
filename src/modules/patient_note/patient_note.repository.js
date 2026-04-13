@@ -3,6 +3,7 @@ const Patient = require('../../models/mysql/patient.model');
 const Tenant = require('../../models/mysql/tenant.model');
 const User = require('../../models/mysql/user.model');
 const Employee = require('../../models/mysql/employee.model');
+const Position = require('../../models/mysql/position.model');
 
 class PatientNoteRepository {
     // 🟢 Crear nota
@@ -35,7 +36,10 @@ class PatientNoteRepository {
                         {
                             model: Employee,
                             as: 'employee',
-                            attributes: ['id', 'first_name', 'last_name', 'email', 'position', 'profile_image']
+                            attributes: ['id', 'first_name', 'last_name', 'email', 'profile_image'],
+                            include: [
+                                { model: Position, as: 'positions', attributes: ['id', 'name'], through: { attributes: [] } }
+                            ]
                         }
                     ]
                 }
@@ -56,7 +60,10 @@ class PatientNoteRepository {
                         {
                             model: Employee,
                             as: 'employee',
-                            attributes: ['id', 'first_name', 'last_name', 'email', 'position', 'profile_image']
+                            attributes: ['id', 'first_name', 'last_name', 'email', 'profile_image'],
+                            include: [
+                                { model: Position, as: 'positions', attributes: ['id', 'name'], through: { attributes: [] } }
+                            ]
                         }
                     ]
                 }

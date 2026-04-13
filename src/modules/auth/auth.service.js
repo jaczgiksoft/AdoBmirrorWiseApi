@@ -11,6 +11,7 @@ const { sendMail } = require('../../utils/mail.helper');
 const { createLog } = require('../../utils/log.helper');
 const { notifyUser } = require('../../utils/notify.helper');
 const { logger } = require('../../utils/logger');
+const { loggers } = require('winston');
 
 class AuthService {
     // =====================
@@ -20,10 +21,10 @@ class AuthService {
         const now = new Date();
 
         // 1️⃣ Intentos fallidos
-        const attempt = await authRepository.findLoginAttempt(username);
-        if (attempt?.blocked_until && now < attempt.blocked_until) {
-            throw new Error('Cuenta bloqueada temporalmente. Intenta más tarde.');
-        }
+        // const attempt = await authRepository.findLoginAttempt(username);
+        // if (attempt?.blocked_until && now < attempt.blocked_until) {
+        //     throw new Error('Cuenta bloqueada temporalmente. Intenta más tarde.');
+        // }
 
         // 2️⃣ Buscar usuario dentro del tenant
         const user = await authRepository.findUserByTenantAndUsernameOrEmail(tenant, username);
@@ -52,6 +53,11 @@ class AuthService {
         }
 
         await authRepository.clearLoginAttempts(username);
+
+        // 2.1️⃣ Validar perfil completo (Employee vinculado)
+        if (!user.employee) {
+            throw new Error("Perfil incompleto: El usuario no tiene un empleado asociado.");
+        }
 
         // 3️⃣ Obtener roles y permisos (N:M)
         const roles = await authRepository.findUserRoles(user.id);
@@ -144,6 +150,10 @@ class AuthService {
 
         const user = await authRepository.findUserById(storedToken.user_id);
         if (!user) throw new Error('Usuario no encontrado.');
+
+        if (!user.employee) {
+            throw new Error("Perfil incompleto: El usuario no tiene un empleado asociado.");
+        }
 
         const roles = await authRepository.findUserRoles(user.id);
         const roleNames = roles.map(r => r.name);
@@ -302,7 +312,8 @@ class AuthService {
                 first_name: user.employee.first_name,
                 last_name: user.employee.last_name,
                 second_last_name: user.employee.second_last_name,
-                position: user.employee.position,
+                // 💼 Puestos (extraer nombres de la relación N:M)
+                position: user.employee.positions?.map(p => p.name).join(', ') || '',
                 status: user.employee.status
             }
             : null;
@@ -358,7 +369,11 @@ class AuthService {
     // =====================
     async forgotPassword(email) {
         const user = await authRepository.findUserByEmail(email);
-        if (!user) throw new Error('Usuario no encontrado.');
+        // Si user.employee existe pero user.employee.tenant es null, lanzará el error.
+        if (!user.employee || !user.employee.tenant) {
+            throw new Error('Tenant no encontrado');
+        }
+        // if (!user) throw new Error('Usuario no encontrado.');
 
         const rawToken = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
@@ -375,7 +390,7 @@ class AuthService {
             to: email,
             subject: 'Restablecimiento de contraseña',
             html: `
-        <h3>Hola ${user.first_name || user.username},</h3>
+        <h3>Hola ${user.employee?.first_name || user.username},</h3>
         <p>Solicitaste restablecer tu contraseña. Haz clic en el siguiente enlace:</p>
         <p><a href="${resetUrl}">${resetUrl}</a></p>
         <p>Este enlace expirará en 30 minutos.</p>
@@ -410,7 +425,7 @@ class AuthService {
 
         await notifyUser({
             user_id: user.id,
-            tenant_id: user.tenant_id,
+            tenant_id: user.employee.tenant_id,
             title: 'Contraseña restablecida',
             message: `El usuario ${user.username} ha restablecido su contraseña exitosamente.`,
             type: 'system'
