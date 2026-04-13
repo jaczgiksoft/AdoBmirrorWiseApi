@@ -60,6 +60,7 @@ router.use('/odontograms', require('../modules/odontogram/odontogram.routes'));
 router.use('/patient-elastics', require('../modules/patient_elastic/patient_elastic.routes'));
 router.use('/patient-gallery', require('../modules/patient_gallery/patient_gallery.routes'));
 router.use('/patient-clinical', require('../modules/patient_clinical/patient_clinical.routes'));
+router.use('/attendance', require('../modules/attendance/attendance.routes'));
 
 // ==========================
 // 📦 INVENTORY

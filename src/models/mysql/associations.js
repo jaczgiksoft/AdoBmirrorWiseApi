@@ -51,6 +51,7 @@ const PatientRepresentative = require('./patient_representative.model');
 const PatientRepresentativeLink = require('./patient_representative_link.model');
 const PatientGalleryFolder = require('./patient_gallery_folder.model');
 const PatientGalleryImage = require('./patient_gallery_image.model');
+const Attendance = require('./attendance.model');
 
 // =====================
 // TENANTS
@@ -1423,4 +1424,34 @@ InventoryProvider.hasMany(InventoryMovement, {
 InventoryMovement.belongsTo(InventoryProvider, {
     foreignKey: 'provider_id',
     as: 'provider'
+});
+
+// =====================
+// ATTENDANCES
+// =====================
+
+Tenant.hasMany(Attendance, {
+    foreignKey: 'tenant_id',
+    as: 'attendances',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Attendance.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Employee.hasMany(Attendance, {
+    foreignKey: 'employee_id',
+    as: 'attendances',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Attendance.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
