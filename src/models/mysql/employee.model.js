@@ -15,13 +15,19 @@ const Employee = sequelize.define('Employee', {
     first_name: { type: DataTypes.STRING, allowNull: false },
     last_name: { type: DataTypes.STRING, allowNull: false },
     second_last_name: { type: DataTypes.STRING, allowNull: true },
+    role_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: { model: 'roles', key: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+    },
     phone: { type: DataTypes.STRING, allowNull: true },
     email: {
         type: DataTypes.STRING,
         allowNull: true,
         comment: 'Puede o no coincidir con la cuenta de usuario asociada'
     },
-    position: { type: DataTypes.STRING, allowNull: true },
     is_appointment_eligible: {
         type: DataTypes.BOOLEAN,
         allowNull: false,

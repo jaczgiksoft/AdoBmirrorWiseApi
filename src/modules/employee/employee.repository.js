@@ -1,6 +1,8 @@
 const { Op } = require('sequelize');
 const Employee = require('../../models/mysql/employee.model');
 const Tenant = require('../../models/mysql/tenant.model');
+const Role = require('../../models/mysql/role.model');
+const Position = require('../../models/mysql/position.model');
 
 class EmployeeRepository {
     // 📋 Obtener todos los empleados de un tenant
@@ -8,7 +10,9 @@ class EmployeeRepository {
         return Employee.findAll({
             where: { tenant_id: tenantId },
             include: [
-                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] }
+                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } }
             ],
             order: [['first_name', 'ASC'], ['last_name', 'ASC']]
         });
@@ -19,7 +23,9 @@ class EmployeeRepository {
         return Employee.findOne({
             where: { id, tenant_id: tenantId },
             include: [
-                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] }
+                { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } }
             ]
         });
     }
@@ -56,8 +62,7 @@ class EmployeeRepository {
                 { last_name: { [Op.like]: `%${searchValue}%` } },
                 { second_last_name: { [Op.like]: `%${searchValue}%` } },
                 { email: { [Op.like]: `%${searchValue}%` } },
-                { phone: { [Op.like]: `%${searchValue}%` } },
-                { position: { [Op.like]: `%${searchValue}%` } }
+                { phone: { [Op.like]: `%${searchValue}%` } }
             ];
         }
 
@@ -71,9 +76,14 @@ class EmployeeRepository {
 
         const { rows, count: recordsFiltered } = await Employee.findAndCountAll({
             where,
+            include: [
+                { model: Role, as: 'role', attributes: ['id', 'name'] },
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } }
+            ],
             offset: start,
             limit: length,
-            order: finalOrder
+            order: finalOrder,
+            distinct: true // Necesario para evitar conteo erróneo con relaciones Many-to-Many
         });
 
         return { recordsTotal, recordsFiltered, rows };

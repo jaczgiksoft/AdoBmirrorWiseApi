@@ -37,6 +37,8 @@ const PatientExtractionOrder = require('./patient_extraction_order.model');
 const ExtractionOrderTooth = require('./extraction_order_tooth.model');
 const ExtractionOrderFile = require('./extraction_order_file.model');
 const PatientClinicalRecord = require('./patient_clinical_record.model');
+const Position = require('./position.model');
+const EmployeePosition = require('./employee_position.model');
 
 const BillingData = require('./billing_data.model');
 const PatientBillingData = require('./patient_billing_data.model');
@@ -119,6 +121,42 @@ User.belongsTo(Employee, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
+
+// Relación de rol único
+Employee.belongsTo(Role, {
+    foreignKey: 'role_id',
+    as: 'role',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+});
+Role.hasMany(Employee, {
+    foreignKey: 'role_id',
+    as: 'employees',
+});
+
+// Relación N:M con Puestos
+Employee.belongsToMany(Position, {
+    through: EmployeePosition,
+    as: 'positions',
+    foreignKey: 'employee_id',
+    otherKey: 'position_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Position.belongsToMany(Employee, {
+    through: EmployeePosition,
+    as: 'employees',
+    foreignKey: 'position_id',
+    otherKey: 'employee_id',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Relación explícita con el pivote
+EmployeePosition.belongsTo(Employee, { foreignKey: 'employee_id', as: 'employee' });
+EmployeePosition.belongsTo(Position, { foreignKey: 'position_id', as: 'position' });
+Employee.hasMany(EmployeePosition, { foreignKey: 'employee_id', as: 'employee_positions' });
+Position.hasMany(EmployeePosition, { foreignKey: 'position_id', as: 'position_employees' });
 
 // =====================
 // USERS

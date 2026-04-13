@@ -33,6 +33,11 @@ class EmployeeService {
 
             const newEmployee = await employeeRepository.create(payload, t);
 
+            // 🛠️ Asociar los puestos
+            if (data.positionIds && data.positionIds.length > 0) {
+                await newEmployee.setPositions(data.positionIds, { transaction: t });
+            }
+
             await createLog({
                 user_id: currentUser.id,
                 user_name: currentUser.username,
@@ -44,7 +49,7 @@ class EmployeeService {
             });
 
             await t.commit();
-            return newEmployee;
+            return await employeeRepository.findById(newEmployee.id, currentUser.tenant_id);
         } catch (err) {
             await t.rollback();
             logger.error(`Error creando empleado: ${err.message}`);
@@ -63,6 +68,11 @@ class EmployeeService {
             if (!employee) throw new Error('Empleado no encontrado');
 
             await employeeRepository.update(employee, data, t);
+
+            // 🛠️ Sincronizar puestos
+            if (data.positionIds) {
+                await employee.setPositions(data.positionIds, { transaction: t });
+            }
 
             await createLog({
                 user_id: currentUser.id,
