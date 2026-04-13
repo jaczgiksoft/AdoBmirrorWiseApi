@@ -14,7 +14,7 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 
 // =========================
 // RUTAS CITAS
-// =========================
+// ========================= 
 
 // 📊 DataTable citas
 router.post(
@@ -23,6 +23,15 @@ router.post(
     loadPermissions,
     checkPermissions('read', 'appointments'),
     appointmentController.getDatatable
+);
+
+// 🔍 Buscar citas para el Kiosko (por teléfono)
+router.get(
+    '/kiosk/find',
+    validateToken,
+    loadPermissions,
+    checkPermissions('read', 'appointments'),
+    appointmentController.findKioskAppointments
 );
 
 // 📋 Obtener todas las citas

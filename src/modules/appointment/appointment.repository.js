@@ -7,6 +7,8 @@ const ClinicArea = require('../../models/mysql/clinic_area.model');
 const Service = require('../../models/mysql/service.model');
 const AppointmentProcess = require('../../models/mysql/appointment_process.model');
 const AppointmentProcessStep = require('../../models/mysql/appointment_process_step.model');
+const PatientRepresentative = require('../../models/mysql/patient_representative.model');
+const PatientRepresentativeLink = require('../../models/mysql/patient_representative_link.model');
 
 class AppointmentRepository {
     // 🟢 Crear cita
@@ -234,6 +236,57 @@ class AppointmentRepository {
         return AppointmentProcess.destroy({
             where: { appointment_id: appointmentId },
             transaction
+        });
+    }
+
+    // 🔍 Buscar citas para el Kiosko por Teléfono
+    async findKioskAppointments(phoneNumber, tenantId) {
+        // 1. Buscar Pacientes directamente por teléfono
+        const patientsDirect = await Patient.findAll({
+            where: { phone_number: phoneNumber, tenant_id: tenantId },
+            attributes: ['id']
+        });
+
+        // 2. Buscar Representantes por teléfono
+        const representatives = await PatientRepresentative.findAll({
+            where: { phone: phoneNumber, tenant_id: tenantId },
+            attributes: ['id']
+        });
+
+        // 3. Si hay representantes, buscar los pacientes vinculados
+        let linkedPatientIds = [];
+        if (representatives.length > 0) {
+            const repIds = representatives.map(r => r.id);
+            const links = await PatientRepresentativeLink.findAll({
+                where: { representative_id: { [Op.in]: repIds }, tenant_id: tenantId },
+                attributes: ['patient_id']
+            });
+            linkedPatientIds = links.map(l => l.patient_id);
+        }
+
+        // 4. Consolidar IDs de pacientes
+        const allPatientIds = [...new Set([
+            ...patientsDirect.map(p => p.id),
+            ...linkedPatientIds
+        ])];
+
+        if (allPatientIds.length === 0) return [];
+
+        // 5. Buscar citas pendientes (status = 'pendiente') desde hoy para esos pacientes
+        const today = new Date().toISOString().split('T')[0];
+
+        return Appointment.findAll({
+            where: {
+                patient_id: { [Op.in]: allPatientIds },
+                tenant_id: tenantId,
+                status: 'pendiente', // Según model ENUM: pendiente
+                date: { [Op.gte]: today }
+            },
+            include: [
+                { model: Patient, as: 'patient', attributes: ['first_name', 'last_name'] },
+                { model: Employee, as: 'employee', attributes: ['first_name', 'last_name'] }
+            ],
+            order: [['date', 'ASC'], ['start_time', 'ASC']]
         });
     }
 }

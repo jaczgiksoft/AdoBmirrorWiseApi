@@ -61,6 +61,20 @@ const getOne = async (req, res) => {
     }
 };
 
+// 🔍 Buscar citas para el Kiosko
+const findKioskAppointments = async (req, res) => {
+    try {
+        const { phone_number } = req.query;
+        if (!phone_number) {
+            return res.status(400).json({ message: 'El número de teléfono es requerido' });
+        }
+        const appointments = await appointmentService.getKioskAppointments(phone_number, req.user, req);
+        res.json(appointments);
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 module.exports = {
     create,
     update,
@@ -68,4 +82,5 @@ module.exports = {
     getAll,
     getDatatable,
     getOne,
+    findKioskAppointments
 };

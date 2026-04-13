@@ -226,6 +226,30 @@ class AppointmentService {
 
         return { draw, recordsTotal, recordsFiltered, data: rows };
     }
+
+    // 🔍 Buscar citas para el Kiosko
+    async getKioskAppointments(phoneNumber, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado: falta tenant en el usuario');
+        }
+
+        try {
+            const appointments = await appointmentRepository.findKioskAppointments(phoneNumber, currentUser.tenant_id);
+
+            // Formatear respuesta según lo solicitado (nombre del paciente y hora)
+            return appointments.map(appt => ({
+                id: appt.id,
+                patient: `${appt.patient.first_name} ${appt.patient.last_name}`,
+                time: appt.start_time,
+                date: appt.date,
+                doctor: appt.employee ? `Dr. ${appt.employee.last_name}` : 'N/A'
+            }));
+        } catch (err) {
+            logger.error(`Error al buscar citas de kiosko: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
 }
 
 module.exports = new AppointmentService();
