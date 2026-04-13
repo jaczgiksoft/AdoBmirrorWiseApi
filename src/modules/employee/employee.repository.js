@@ -3,6 +3,7 @@ const Employee = require('../../models/mysql/employee.model');
 const Tenant = require('../../models/mysql/tenant.model');
 const Role = require('../../models/mysql/role.model');
 const Position = require('../../models/mysql/position.model');
+const User = require('../../models/mysql/user.model');
 
 class EmployeeRepository {
     // 📋 Obtener todos los empleados de un tenant
@@ -12,7 +13,8 @@ class EmployeeRepository {
             include: [
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
                 { model: Role, as: 'role', attributes: ['id', 'name'] },
-                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } }
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
+                { model: User, as: 'user', attributes: ['id', 'username', 'status'] }
             ],
             order: [['first_name', 'ASC'], ['last_name', 'ASC']]
         });
@@ -25,7 +27,8 @@ class EmployeeRepository {
             include: [
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] },
                 { model: Role, as: 'role', attributes: ['id', 'name'] },
-                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } }
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
+                { model: User, as: 'user', attributes: ['id', 'username', 'status'] }
             ]
         });
     }
@@ -78,7 +81,8 @@ class EmployeeRepository {
             where,
             include: [
                 { model: Role, as: 'role', attributes: ['id', 'name'] },
-                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } }
+                { model: Position, as: 'positions', attributes: ['id', 'name', 'color'], through: { attributes: [] } },
+                { model: User, as: 'user', attributes: ['id', 'username', 'status'] }
             ],
             offset: start,
             limit: length,
