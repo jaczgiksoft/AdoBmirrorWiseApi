@@ -31,6 +31,7 @@ router.use('/logs', require('../modules/log/log.routes'));
 // ==========================
 router.use('/referrals', require('../modules/referral/referral.routes'));
 router.use('/occupations', require('../modules/occupation/occupation.routes'));
+router.use('/positions', require('../modules/positions/position.routes'));
 // router.use('/patient-types', require('../modules/patientType/patientType.routes'));
 // router.use('/patient-statuses', require('../modules/patientStatus/patientStatus.routes'));
 router.use('/bracket-types', require('../modules/bracket_type/bracket_type.routes'));

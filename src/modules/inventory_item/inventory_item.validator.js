@@ -9,7 +9,11 @@ const createItemValidator = [
     body('min_stock').optional().isInt({ min: 0 }),
     body('current_stock').optional().isInt({ min: 0 }),
     body('purchase_price').optional().isNumeric(),
-    body('provider_id').optional().isInt()
+    body('sale_price').optional().isNumeric(),
+    body('lot_number').optional().isLength({ max: 100 }),
+    body('expiry_date').optional().isISO8601().toDate(),
+    body('provider_id').optional().isInt(),
+    body('image').optional()
 ];
 
 const updateItemValidator = [
@@ -22,7 +26,11 @@ const updateItemValidator = [
     body('min_stock').optional().isInt({ min: 0 }),
     body('current_stock').optional().isInt({ min: 0 }),
     body('purchase_price').optional().isNumeric(),
-    body('provider_id').optional({ nullable: true }).isInt()
+    body('sale_price').optional().isNumeric(),
+    body('lot_number').optional().isLength({ max: 100 }),
+    body('expiry_date').optional().isISO8601().toDate(),
+    body('provider_id').optional({ nullable: true }).isInt(),
+    body('image').optional()
 ];
 
 const getItemByIdValidator = [

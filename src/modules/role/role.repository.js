@@ -1,5 +1,6 @@
 // src/modules/role/role.repository.js
 const Role = require('../../models/mysql/role.model');
+const Permission = require('../../models/mysql/permission.model');
 const { Op } = require('sequelize');
 
 class RoleRepository {
@@ -11,7 +12,10 @@ class RoleRepository {
     }
 
     async findById(id, tenantId) {
-        return Role.findOne({ where: { id, tenant_id: tenantId } });
+        return Role.findOne({
+            where: { id, tenant_id: tenantId },
+            include: [{ model: Permission, as: 'permissions' }]
+        });
     }
 
     async findByName(name, tenantId) {

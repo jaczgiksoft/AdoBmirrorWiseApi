@@ -19,4 +19,13 @@ const updateByRole = async (req, res) => {
     }
 };
 
-module.exports = { getByRole, updateByRole };
+const getAllModules = async (req, res) => {
+    try {
+        const result = await permissionService.getAllModules(req.user, req);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+module.exports = { getByRole, updateByRole, getAllModules };

@@ -20,6 +20,11 @@ const getOne = async (req, res) => {
 
 const create = async (req, res) => {
     try {
+        if (req.file) {
+            const normalizedPath = req.file.path.replace(/\\/g, '/');
+            const uploadIdx = normalizedPath.indexOf('uploads/');
+            req.body.image = uploadIdx !== -1 ? normalizedPath.substring(uploadIdx) : normalizedPath;
+        }
         const item = await itemService.createItem(req.body, req.user);
         res.status(201).json({ message: 'Artículo creado', item });
     } catch (err) {
@@ -29,6 +34,11 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
     try {
+        if (req.file) {
+            const normalizedPath = req.file.path.replace(/\\/g, '/');
+            const uploadIdx = normalizedPath.indexOf('uploads/');
+            req.body.image = uploadIdx !== -1 ? normalizedPath.substring(uploadIdx) : normalizedPath;
+        }
         const item = await itemService.updateItem(req.params.id, req.body, req.user);
         res.json({ message: 'Artículo actualizado', item });
     } catch (err) {

@@ -52,10 +52,27 @@ const InventoryItem = sequelize.define(
             defaultValue: 0.00,
             allowNull: false,
         },
+        sale_price: {
+            type: DataTypes.DECIMAL(10, 2),
+            defaultValue: 0.00,
+            allowNull: false,
+        },
+        lot_number: {
+            type: DataTypes.STRING(100),
+            allowNull: true,
+        },
+        expiry_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
+        },
         status: {
             type: DataTypes.ENUM('active', 'inactive'),
             defaultValue: 'active',
             allowNull: false,
+        },
+        image: {
+            type: DataTypes.STRING(255),
+            allowNull: true,
         },
     },
     {

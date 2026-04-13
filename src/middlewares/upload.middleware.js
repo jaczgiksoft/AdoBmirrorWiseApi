@@ -103,6 +103,19 @@ const patientStorage = multer.diskStorage({
     }
 });
 
+// 6️⃣ Inventario (imagen del ítem)
+const inventoryStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const tenantId = req.user?.tenant_id || "unknown";
+        const itemId = req.params.id || `temp_${Date.now()}`;
+        const dir = ensureDir(path.join(__dirname, `../../uploads/${tenantId}/inventory/${itemId}`));
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `item_${Date.now()}${path.extname(file.originalname)}`);
+    },
+});
+
 // === Inicializaciones de Multer === //
 const uploadTenantLogo = multer({
     storage: tenantStorage,
@@ -136,6 +149,12 @@ const uploadPatientPhoto = multer({
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: fileFilter("images"),
 }).single("photo");
+
+const uploadInventoryImage = multer({
+    storage: inventoryStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter("images"),
+}).single("image");
 
 // 6️⃣ Radiografías (Extracciones)
 const radiographStorage = multer.diskStorage({
@@ -209,6 +228,7 @@ module.exports = {
     uploadStoreImages,      // Tienda (campos: logo, banner)
     uploadProductImage,     // Producto (campo: image)
     uploadPatientPhoto,     // Paciente (campo: photo_url)
+    uploadInventoryImage,   // Inventario (campo: image)
     uploadRadiographs,      // Radiografías (campo: radiographs)
     uploadGalleryPhotos,    // Galería (múltiples campos)
 };

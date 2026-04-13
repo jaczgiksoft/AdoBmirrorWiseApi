@@ -4,6 +4,7 @@ const router = express.Router();
 const itemController = require('./inventory_item.controller');
 const { validateToken } = require('../../middlewares/auth.middleware');
 const { validateRequest } = require('../../middlewares/validate.middleware');
+const { uploadInventoryImage } = require('../../middlewares/upload.middleware');
 const { createItemValidator, updateItemValidator, getItemByIdValidator } = require('./inventory_item.validator');
 
 router.get(
@@ -23,6 +24,7 @@ router.get(
 router.post(
     '/',
     validateToken,
+    uploadInventoryImage,
     createItemValidator,
     validateRequest,
     itemController.create
@@ -31,6 +33,7 @@ router.post(
 router.put(
     '/:id',
     validateToken,
+    uploadInventoryImage,
     updateItemValidator,
     validateRequest,
     itemController.update
