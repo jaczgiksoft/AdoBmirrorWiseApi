@@ -97,7 +97,10 @@ class EmployeeRepository {
                 is_appointment_eligible: true,
                 status: 'active'
             },
-            attributes: ['id', 'first_name', 'last_name', 'position', 'profile_image'],
+            attributes: ['id', 'first_name', 'last_name', 'profile_image'],
+            include: [
+                { model: Position, as: 'positions', attributes: ['id', 'name'], through: { attributes: [] } }
+            ],
             order: [['first_name', 'ASC']]
         });
     }

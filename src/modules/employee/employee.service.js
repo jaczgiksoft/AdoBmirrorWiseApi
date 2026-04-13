@@ -143,7 +143,7 @@ class EmployeeService {
         const orderDir = (body['order[0][dir]'] || (body.order?.[0]?.dir ?? 'asc')).toUpperCase();
         const statusFilter = body.statusFilter || '';
 
-        const columns = [null, 'first_name', 'position', 'email', 'phone', 'status']; // Ajustar según lo que mande el front
+        const columns = [null, 'first_name', null, 'email', 'phone', 'status']; // 'position' removido porque ya no es una columna directa
         const orderColumn = columns[orderColumnIndex] || 'id';
 
         const params = {
