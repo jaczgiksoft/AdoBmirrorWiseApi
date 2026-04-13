@@ -191,6 +191,13 @@ class TenantService {
         return tenant;
     }
 
+    async getTenantByCode(code) {
+        if (!code) throw new Error('Código de tenant es requerido');
+        const tenant = await tenantRepository.findByCode(code);
+        if (!tenant) throw new Error('Código de cliente no válido');
+        return tenant;
+    }
+
     async getTenantsDatatable(body) {
         const draw = parseInt(body.draw) || 1;
         const start = parseInt(body.start) || 0;

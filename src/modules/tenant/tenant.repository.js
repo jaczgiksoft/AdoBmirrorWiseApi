@@ -13,6 +13,10 @@ class TenantRepository {
         return Tenant.findByPk(id);
     }
 
+    async findByCode(code) {
+        return Tenant.findOne({ where: { code } });
+    }
+
     async findByName(name) {
         return Tenant.findOne({ where: { name } });
     }
