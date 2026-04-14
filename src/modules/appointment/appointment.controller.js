@@ -24,7 +24,8 @@ const update = async (req, res) => {
 // 📍 Check-In de cita (Kiosco)
 const checkIn = async (req, res) => {
     try {
-        const appointment = await appointmentService.checkInAppointment(req.params.id, req.user, req);
+        const { tenant_id } = req.body;
+        const appointment = await appointmentService.checkInAppointment(req.params.id, req.user, req, tenant_id || req.query.tenant_id);
         res.json({ message: 'Check-in realizado exitosamente', appointment });
     } catch (err) {
         handleSequelizeError(res, err);
@@ -74,11 +75,11 @@ const getOne = async (req, res) => {
 // 🔍 Buscar citas para el Kiosko
 const findKioskAppointments = async (req, res) => {
     try {
-        const { phone_number } = req.query;
+        const { phone_number, tenant_id } = req.query;
         if (!phone_number) {
             return res.status(400).json({ message: 'El número de teléfono es requerido' });
         }
-        const appointments = await appointmentService.getKioskAppointments(phone_number, req.user, req);
+        const appointments = await appointmentService.getKioskAppointments(phone_number, req.user, req, tenant_id);
         res.json(appointments);
     } catch (err) {
         handleSequelizeError(res, err);

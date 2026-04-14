@@ -28,9 +28,6 @@ router.post(
 // 🔍 Buscar citas para el Kiosko (por teléfono)
 router.get(
     '/kiosk/find',
-    validateToken,
-    loadPermissions,
-    checkPermissions('read', 'appointments'),
     appointmentController.findKioskAppointments
 );
 
@@ -69,9 +66,6 @@ router.post(
 // 📍 Check-In de cita (Kiosco)
 router.patch(
     '/:id/check-in',
-    validateToken,
-    loadPermissions,
-    checkPermissions('edit', 'appointments'),
     getAppointmentByIdValidator,
     validateRequest,
     appointmentController.checkIn

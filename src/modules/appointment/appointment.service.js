@@ -157,14 +157,16 @@ class AppointmentService {
     }
 
     // 📍 Check-In de cita (Kiosco)
-    async checkInAppointment(id, currentUser, req) {
-        if (!currentUser.tenant_id) {
-            throw new Error('No autorizado: falta tenant en el usuario');
+    async checkInAppointment(id, currentUser, req, manualTenantId = null) {
+        const tenant_id = manualTenantId || currentUser?.tenant_id;
+
+        if (!tenant_id) {
+            throw new Error('No autorizado: falta tenant');
         }
 
         const t = await sequelize.transaction();
         try {
-            const appointment = await appointmentRepository.findById(id, currentUser.tenant_id);
+            const appointment = await appointmentRepository.findById(id, tenant_id);
             if (!appointment) throw new Error('Cita no encontrada');
 
             await appointmentRepository.updateAppointment(appointment, {
@@ -175,8 +177,8 @@ class AppointmentService {
             await t.commit();
 
             await createLog({
-                user_id: currentUser.id,
-                user_name: currentUser.username,
+                user_id: currentUser?.id || null,
+                user_name: currentUser?.username || 'Kiosk-Public',
                 action: 'update',
                 module: 'appointments',
                 description: `Check-In realizado para Cita ID: ${appointment.id}`,
@@ -187,9 +189,9 @@ class AppointmentService {
             // Recargar para obtener con los joins si es necesario o emitir con id
             // En este caso, emitmos lo disponible
             if (global.io) {
-                logger.info(`📢 [WebSocket] Emitiendo APPOINTMENT_STATUS_UPDATED para Cita ID: ${appointment.id} (Tenant: ${currentUser.tenant_id})`);
+                logger.info(`📢 [WebSocket] Emitiendo APPOINTMENT_STATUS_UPDATED para Cita ID: ${appointment.id} (Tenant: ${tenant_id})`);
                 global.io.emit('APPOINTMENT_STATUS_UPDATED', {
-                    tenantId: currentUser.tenant_id,
+                    tenantId: tenant_id,
                     appointment: appointment
                 });
             }
@@ -275,13 +277,15 @@ class AppointmentService {
     }
 
     // 🔍 Buscar citas para el Kiosko
-    async getKioskAppointments(phoneNumber, currentUser, req) {
-        if (!currentUser.tenant_id) {
-            throw new Error('No autorizado: falta tenant en el usuario');
+    async getKioskAppointments(phoneNumber, currentUser, req, manualTenantId = null) {
+        const tenant_id = manualTenantId || currentUser?.tenant_id;
+
+        if (!tenant_id) {
+            throw new Error('No autorizado: falta tenant');
         }
 
         try {
-            const appointments = await appointmentRepository.findKioskAppointments(phoneNumber, currentUser.tenant_id);
+            const appointments = await appointmentRepository.findKioskAppointments(phoneNumber, tenant_id);
 
             // Formatear respuesta según lo solicitado (nombre del paciente y hora)
             return appointments.map(appt => ({
