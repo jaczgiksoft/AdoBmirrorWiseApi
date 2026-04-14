@@ -8,18 +8,18 @@ const createReferralValidator = [
         .isLength({ max: 120 }).withMessage('Máximo 120 caracteres'),
 
     body('contact_name')
-        .optional().trim()
+        .optional({ checkFalsy: true }).trim()
         .isLength({ max: 120 }),
 
     body('contact_phone')
-        .optional().trim()
+        .optional({ checkFalsy: true }).trim()
         .isLength({ max: 20 }),
 
     body('contact_email')
-        .optional()
+        .optional({ checkFalsy: true })
         .isEmail().withMessage('Debe ser un correo válido'),
 
-    body('notes').optional().trim()
+    body('notes').optional({ checkFalsy: true }).trim()
 ];
 
 // 🟡 Actualizar → todo opcional

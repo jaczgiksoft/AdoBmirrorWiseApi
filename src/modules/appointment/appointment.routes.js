@@ -66,6 +66,17 @@ router.post(
     appointmentController.create
 );
 
+// 📍 Check-In de cita (Kiosco)
+router.patch(
+    '/:id/check-in',
+    validateToken,
+    loadPermissions,
+    checkPermissions('edit', 'appointments'),
+    getAppointmentByIdValidator,
+    validateRequest,
+    appointmentController.checkIn
+);
+
 // 🟡 Actualizar cita
 router.put(
     '/:id',

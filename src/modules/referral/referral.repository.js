@@ -12,9 +12,9 @@ class ReferralRepository {
         return referral.update(data, { transaction });
     }
 
-    // 🔴 Eliminar (borrado físico)
+    // 🔴 Eliminar (soft delete)
     async deleteReferral(referral, transaction) {
-        return referral.destroy({ transaction, force: true });
+        return referral.destroy({ transaction });
     }
 
     // 🔍 Buscar por ID y tenant

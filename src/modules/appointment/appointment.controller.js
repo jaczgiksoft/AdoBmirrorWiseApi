@@ -21,6 +21,16 @@ const update = async (req, res) => {
     }
 };
 
+// 📍 Check-In de cita (Kiosco)
+const checkIn = async (req, res) => {
+    try {
+        const appointment = await appointmentService.checkInAppointment(req.params.id, req.user, req);
+        res.json({ message: 'Check-in realizado exitosamente', appointment });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 // 🔴 Eliminar cita (borrado lógico)
 const remove = async (req, res) => {
     try {
@@ -82,5 +92,6 @@ module.exports = {
     getAll,
     getDatatable,
     getOne,
-    findKioskAppointments
+    findKioskAppointments,
+    checkIn
 };
