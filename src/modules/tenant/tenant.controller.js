@@ -64,6 +64,21 @@ const getSettings = async (req, res) => {
     }
 };
 
+// 🛡️ Verificar código de tenant (público)
+const verifyCode = async (req, res) => {
+    try {
+        const tenant = await tenantService.getTenantByCode(req.params.code);
+        res.json({
+            id: tenant.id,
+            name: tenant.name,
+            code: tenant.code,
+            logo_url: tenant.logo_url
+        });
+    } catch (err) {
+        res.status(404).json({ message: err.message });
+    }
+};
+
 // 📊 DataTable
 const getDatatable = async (req, res) => {
     try {
@@ -82,4 +97,5 @@ module.exports = {
     softDelete,
     getSettings,
     getDatatable,
+    verifyCode,
 };

@@ -9,8 +9,11 @@ const { createTenantValidator, updateTenantValidator, getTenantByIdValidator } =
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 
+// 🛡️ Verificar código de tenant (público para Login/Kiosko)
+router.get('/verify/:code', tenantController.verifyCode);
+
 // =========================
-// RUTAS TENANTS
+// RUTAS TENANTS (Protegidas)
 // =========================
 
 // ⚙️ Obtener configuración del tenant autenticado

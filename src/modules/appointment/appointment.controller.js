@@ -21,6 +21,16 @@ const update = async (req, res) => {
     }
 };
 
+// 📍 Check-In de cita (Kiosco)
+const checkIn = async (req, res) => {
+    try {
+        const appointment = await appointmentService.checkInAppointment(req.params.id, req.user, req);
+        res.json({ message: 'Check-in realizado exitosamente', appointment });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 // 🔴 Eliminar cita (borrado lógico)
 const remove = async (req, res) => {
     try {
@@ -61,6 +71,20 @@ const getOne = async (req, res) => {
     }
 };
 
+// 🔍 Buscar citas para el Kiosko
+const findKioskAppointments = async (req, res) => {
+    try {
+        const { phone_number } = req.query;
+        if (!phone_number) {
+            return res.status(400).json({ message: 'El número de teléfono es requerido' });
+        }
+        const appointments = await appointmentService.getKioskAppointments(phone_number, req.user, req);
+        res.json(appointments);
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 module.exports = {
     create,
     update,
@@ -68,4 +92,6 @@ module.exports = {
     getAll,
     getDatatable,
     getOne,
+    findKioskAppointments,
+    checkIn
 };

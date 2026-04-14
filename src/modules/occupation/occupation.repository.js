@@ -14,7 +14,7 @@ class OccupationRepository {
 
     // 🔴 Eliminar (borrado físico)
     async deleteOccupation(occupation, transaction) {
-        return occupation.destroy({ transaction, force: true });
+        return occupation.destroy({ transaction });
     }
 
     // 🔍 Buscar por ID y tenant
