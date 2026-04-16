@@ -34,7 +34,7 @@ class PatientGalleryService {
                 for (const file of files) {
                     // Actualizamos la ruta local para reflejar el renombramiento del directorio
                     const updatedPath = file.path.replace(tempDir, finalDir);
-                    
+
                     // Preparamos la ruta relativa para la base de datos (Ej: uploads/...)
                     const normalizedPath = updatedPath.replace(/\\/g, '/');
                     const uploadIdx = normalizedPath.indexOf('uploads/');
@@ -44,18 +44,19 @@ class PatientGalleryService {
                         folder_id: folder.id,
                         file_path: dbRelativePath,
                         file_name: file.originalname,
-                        mime_type: file.mimetype
+                        mime_type: file.mimetype,
+                        notes: folderData.notes ? folderData.notes[file.originalname] : null
                     }, transaction);
                 }
             }
 
             await transaction.commit();
-            
+
             // Retornamos la carpeta con sus imágenes
             return await patientGalleryRepository.findFolderById(folder.id, tenantId);
         } catch (error) {
             if (transaction) await transaction.rollback();
-            
+
             // Limpieza: si falló algo, intentar borrar los archivos subidos
             if (files && files.length > 0) {
                 try {
@@ -67,7 +68,7 @@ class PatientGalleryService {
                     logger.error(`Error al limpiar archivos tras fallo: ${cleanupError.message}`);
                 }
             }
-            
+
             throw error;
         }
     }
@@ -77,7 +78,7 @@ class PatientGalleryService {
      */
     async getPatientGallery(patientId, tenantId) {
         const folders = await patientGalleryRepository.findFoldersByPatient(patientId, tenantId);
-        
+
         // Formateamos las colecciones para que el frontend las use fácilmente
         return folders.map(folder => {
             const folderJson = folder.get({ plain: true });
@@ -88,11 +89,11 @@ class PatientGalleryService {
                 // Intentamos identificar si es una de las 8 fotos obligatorias por el nombre del campo original
                 // En el frontend, el campo se envía con el nombre de la llave (facial_front, etc.)
                 // multer guarda eso en fieldname
-                
+
                 // NOTA: Para que esto funcione, GalleryCreator debe enviar los fieldnames correctos.
                 // Si vienen como array genérico, los pondremos todos en x_rays o similar.
                 // Pero el requerimiento dice que debemos mostrar 8 fijos + xrays.
-                
+
                 // Por ahora, asumiremos que si el fieldname no es 'radiographs' o similar, 
                 // es una de las fotos obligatorias.
             });

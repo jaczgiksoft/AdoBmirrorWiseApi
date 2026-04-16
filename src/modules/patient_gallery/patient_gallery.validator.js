@@ -16,7 +16,11 @@ const createGalleryValidator = [
     
     body('description')
         .optional()
-        .isString().withMessage('La descripción debe ser una cadena de texto')
+        .isString().withMessage('La descripción debe ser una cadena de texto'),
+        
+    body('notes')
+        .optional()
+        .isString().withMessage('Las notas deben ser enviadas como texto JSON')
 ];
 
 module.exports = {

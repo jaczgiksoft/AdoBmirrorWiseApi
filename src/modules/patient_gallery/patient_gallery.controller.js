@@ -3,14 +3,22 @@ const patientGalleryService = require('./patient_gallery.service');
 
 const createGallery = async (req, res) => {
     try {
-        // En multipart/form-data, los campos de texto pueden venir en req.body
-        const { patient_id, name, description } = req.body;
+        const { patient_id, name, description, notes } = req.body;
         const files = req.files || [];
+
+        let parsedNotes = {};
+        if (notes) {
+            try {
+                parsedNotes = JSON.parse(notes);
+            } catch (e) {
+                console.error("Error al parsear notas:", e);
+            }
+        }
 
         const result = await patientGalleryService.createGallery(
             patient_id,
             req.user.tenant_id,
-            { name, description },
+            { name, description, notes: parsedNotes },
             files
         );
 

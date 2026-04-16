@@ -3,10 +3,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
 const PatientGalleryImage = sequelize.define('PatientGalleryImage', {
-    id: { 
-        type: DataTypes.INTEGER, 
-        primaryKey: true, 
-        autoIncrement: true 
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
     },
     folder_id: {
         type: DataTypes.INTEGER,
@@ -23,6 +23,10 @@ const PatientGalleryImage = sequelize.define('PatientGalleryImage', {
     },
     mime_type: {
         type: DataTypes.STRING,
+        allowNull: true
+    },
+    notes: {
+        type: DataTypes.JSON,
         allowNull: true
     }
 }, {
