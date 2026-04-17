@@ -6,6 +6,7 @@ const { v4: uuidv4 } = require('uuid');
 const ms = require('ms');
 
 const authRepository = require('./auth.repository');
+const patientRepository = require('../patient/patient.repository');
 const RefreshToken = require('../../models/mongo/refreshToken.model');
 const { sendMail } = require('../../utils/mail.helper');
 const { createLog } = require('../../utils/log.helper');
@@ -120,6 +121,85 @@ class AuthService {
             refresh_token: refreshTokenRaw, // 🎁 Token opaco para el cliente
             roles: roleNames,
             permissions
+        };
+    }
+
+    // =====================
+    // LOGIN PATIENT
+    // =====================
+    async loginPatient({ username, password, ip, userAgent }) {
+        const now = new Date();
+
+        const patient = await patientRepository.findByUsername(username);
+
+        // COMPARACIÓN TEXTO PLANO
+        if (!patient || patient.password !== password) {
+            throw new Error('Credenciales incorrectas.');
+        }
+
+        if (!patient.can_login) {
+            throw new Error('El acceso al portal virtual de este paciente está deshabilitado.');
+        }
+
+        const roles = ['patient'];
+
+        // Generar token JWT
+        const expiresIn = process.env.JWT_EXPIRES_IN || '1h';
+        const tokenPayload = {
+            id: patient.id,
+            username: patient.username,
+            tenant_id: patient.tenant_id,
+            tenant_code: patient.tenant?.code,
+            roles: roles,
+            role_ids: [],
+            is_superadmin: false,
+            jti: uuidv4()
+        };
+
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn });
+
+        await authRepository.createActiveToken({
+            user_id: patient.id,
+            user_type: 'patient',
+            token,
+            jti: tokenPayload.jti,
+            expires_at: new Date(Date.now() + ms(expiresIn))
+        });
+
+        // Generar Refresh Token
+        const refreshTokenRaw = crypto.randomBytes(40).toString('hex');
+        const refreshFamilyId = uuidv4();
+        const refreshExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+        const refreshExpiresDate = new Date(Date.now() + ms(refreshExpiresIn));
+
+        await authRepository.createRefreshToken({
+            token_hash: RefreshToken.hashToken(refreshTokenRaw),
+            user_id: patient.id,
+            user_type: 'patient',
+            tenant_id: patient.tenant_id,
+            family_id: refreshFamilyId,
+            expires_at: refreshExpiresDate,
+            device_info: {
+                ip,
+                user_agent: userAgent
+            }
+        });
+
+        await createLog({
+            user_id: patient.id,
+            action: 'login',
+            module: 'auth',
+            description: `Paciente ${patient.username} inició sesión`,
+            ip,
+            user_agent: userAgent
+        });
+
+        return {
+            message: 'Login exitoso',
+            token,
+            refresh_token: refreshTokenRaw,
+            roles: roles,
+            permissions: {}
         };
     }
 

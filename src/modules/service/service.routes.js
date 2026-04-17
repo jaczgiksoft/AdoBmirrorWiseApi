@@ -16,7 +16,7 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 // RUTAS SERVICIOS
 // =========================
 
-// 📊 DataTable servicios
+// 📊 DataTable servicios 
 router.post(
     '/datatable',
     validateToken,

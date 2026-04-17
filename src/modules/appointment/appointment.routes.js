@@ -8,6 +8,7 @@ const {
     createAppointmentValidator,
     updateAppointmentValidator,
     getAppointmentByIdValidator,
+    getAppointmentsByPatientValidator,
 } = require('./appointment.validator');
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
@@ -50,6 +51,17 @@ router.get(
     getAppointmentByIdValidator,
     validateRequest,
     appointmentController.getOne
+);
+
+// 🔍 Obtener citas por Paciente
+router.get(
+    '/patient/:patient_id',
+    validateToken,
+    loadPermissions,
+    checkPermissions('read', 'appointments'),
+    getAppointmentsByPatientValidator,
+    validateRequest,
+    appointmentController.getByPatient
 );
 
 // 🟢 Crear nueva cita

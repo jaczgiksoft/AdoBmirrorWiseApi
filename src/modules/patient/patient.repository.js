@@ -51,6 +51,17 @@ class PatientRepository {
         });
     }
 
+    // 🔍 Buscar paciente por username de login
+    async findByUsername(username) {
+        return Patient.findOne({
+            where: { username },
+            include: [
+                { model: Tenant, as: 'tenant', attributes: ['id', 'name', 'code'] },
+                { model: PatientStatus, as: 'status', attributes: ['id', 'name'] }
+            ]
+        });
+    }
+
     // 🟢 Crear paciente
     async createPatient(data, transaction) {
         return Patient.create(data, { transaction });

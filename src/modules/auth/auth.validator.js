@@ -67,8 +67,27 @@ const refreshTokenValidator = [
         .isHexadecimal().withMessage('Formato de token inválido')
 ];
 
+/**
+ * 🔹 LOGIN PATIENT
+ * Valida el login de pacientes (no se requiere tenant explícito)
+ */
+const patientLoginValidator = [
+    body('username')
+        .exists().withMessage('El usuario es obligatorio')
+        .bail()
+        .trim()
+        .notEmpty().withMessage('El usuario no puede estar vacío'),
+
+    body('password')
+        .exists().withMessage('La contraseña es obligatoria')
+        .bail()
+        .isString().withMessage('La contraseña debe ser texto')
+        .notEmpty().withMessage('La contraseña no puede estar vacía')
+];
+
 module.exports = {
     loginValidator,
+    patientLoginValidator,
     forgotPasswordValidator,
     resetPasswordValidator,
     refreshTokenValidator

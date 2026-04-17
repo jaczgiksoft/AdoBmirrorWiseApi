@@ -45,6 +45,7 @@
     "mysql2": "3.14.0",
     "node-windows": "^1.0.0-beta.8",
     "nodemailer": "6.10.1",
+    "openai": "^6.34.0",
     "rate-limit-redis": "4.2.2",
     "sequelize": "6.37.6",
     "socket.io": "^4.8.1",

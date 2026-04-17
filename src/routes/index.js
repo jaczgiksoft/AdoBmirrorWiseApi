@@ -62,6 +62,11 @@ router.use('/patient-clinical', require('../modules/patient_clinical/patient_cli
 router.use('/attendance', require('../modules/attendance/attendance.routes'));
 
 // ==========================
+// 🧠 AI AGENT
+// ==========================
+router.use('/ai-agent', require('../modules/ai_agent/ai_agent.routes'));
+
+// ==========================
 // 📦 INVENTORY
 // ==========================
 router.use('/inventory-providers', require('../modules/inventory_provider/inventory_provider.routes'));
