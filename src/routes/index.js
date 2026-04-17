@@ -25,6 +25,7 @@ router.use('/tenant-features', require('../modules/tenantFeature/tenantFeature.r
 // ==========================
 router.use('/notifications', require('../modules/notification/notification.routes'));
 router.use('/logs', require('../modules/log/log.routes'));
+router.use('/system', require('../modules/system/system.routes'));
 
 // ==========================
 // 🦷 BWISE DENTAL MODULES

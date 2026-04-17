@@ -22,7 +22,9 @@ const coreModules = [
     'patient_representatives',
     'services',
     'clinic_areas',
-    'budgets'
+    'budgets',
+    'employees',
+    'attendance'
 ];
 
 // =========================
@@ -40,7 +42,9 @@ const planModules = {
         'reports',
         'integrations',
         'patientPortal',
-        'processes'
+        'processes',
+        'patient_types',
+        'occupations'
     ]
 };
 
