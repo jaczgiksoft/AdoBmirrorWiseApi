@@ -10,6 +10,9 @@ const path = require('path');
 
 const app = express();
 
+// Confiar en el proxy para que express-rate-limit funcione correctamente detrás de Nginx, Ngrok, etc.
+app.set('trust proxy', 1);
+
 // 🔐 Seguridad centralizada (helmet, xss-clean, rate limit, mongo-sanitize, etc.)
 applySecurityMiddleware(app);
 
@@ -30,8 +33,13 @@ app.use(cors({
             return callback(null, true);
         }
 
-        // 3. Permitir si el origin está en la whitelist
-        if (origin && corsOrigins.includes(origin)) {
+        // 3. Permitir si el origen es un esquema móvil de Ionic/Capacitor o si hay un asterisco
+        if (corsOrigins.includes('*') || 
+            (origin && (
+                origin.startsWith('capacitor://') || 
+                origin.startsWith('ionic://') || 
+                corsOrigins.includes(origin)
+            ))) {
             return callback(null, true);
         }
 
