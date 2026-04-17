@@ -31,3 +31,7 @@ ecosystem.config.js
 /uploads/*
 !/uploads/.gitkeep
 repomix-output.txt
+
+# Ignorar todo dentro de downloads, pero mantener la carpeta
+/downloads/*
+!/downloads/.gitkeep
