@@ -85,7 +85,7 @@ const aiTools = [
 ];
 
 class AiAgentService {
-    
+
     /**
      * Procesa la entrada del chat, interactúa con el historial, define el contexto y llama a OpenAI.
      */
@@ -97,7 +97,7 @@ class AiAgentService {
 
         // 2. Recuperar historial reciente
         const rawHistory = await aiAgentRepository.getRecentMessages(patient_id, tenant_id, 15);
-        
+
         // 3. Crear Contexto del Sistema
         // IMPORTANTE: Instruimos a la IA para asumir clinic_area_id = 1 (o la principal)
         const systemPrompt = {
@@ -115,20 +115,53 @@ Reglas estrictas:
 
         // Dar formato compatible con OpenAI al historial
         const messagesToSend = [systemPrompt];
-        
-        for (const msg of rawHistory) {
+
+        const validMessages = [];
+        for (let i = 0; i < rawHistory.length; i++) {
+            const msg = rawHistory[i];
+            
+            if (msg.role === 'tool') {
+                const hasAssistant = validMessages.some(m => m.role === 'assistant' && m.tool_calls && m.tool_calls.some(tc => tc.id === msg.tool_call_id));
+                if (!hasAssistant) continue; // Skip orphaned tool message
+            }
+
+            if (msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0) {
+                let allToolsHandled = true;
+                for (const tc of msg.tool_calls) {
+                    const hasTool = rawHistory.slice(i + 1).some(m => m.role === 'tool' && m.tool_call_id === tc.id);
+                    if (!hasTool) {
+                        allToolsHandled = false;
+                        break;
+                    }
+                }
+                if (!allToolsHandled) {
+                    if (!msg.message) continue;
+                    msg.tool_calls = null;
+                }
+            }
+
             const formattedMsg = {
                 role: msg.role,
                 content: msg.message || null
             };
-            
-            // Pasar llamadas a funciones previamente hechas para preservar contexto limpio
-            if (msg.tool_calls) formattedMsg.tool_calls = msg.tool_calls;
+
+            if (msg.tool_calls) {
+                formattedMsg.tool_calls = msg.tool_calls.map(tc => ({
+                    id: tc.id,
+                    type: tc.type || "function",
+                    function: {
+                        name: tc.function?.name,
+                        arguments: tc.function?.arguments
+                    }
+                }));
+            }
             if (msg.tool_call_id) formattedMsg.tool_call_id = msg.tool_call_id;
             if (msg.name) formattedMsg.name = msg.name;
 
-            messagesToSend.push(formattedMsg);
+            validMessages.push(formattedMsg);
         }
+
+        messagesToSend.push(...validMessages);
 
         // Llamar por primera vez a OpenAI
         let response = await openai.chat.completions.create({
@@ -144,19 +177,19 @@ Reglas estrictas:
         while (responseMessage.tool_calls) {
             // Guardar la intención de OpenAI en el historial local
             await aiAgentRepository.saveMessage(
-                patient_id, 
-                tenant_id, 
-                responseMessage.role, 
-                null, 
+                patient_id,
+                tenant_id,
+                responseMessage.role,
+                null,
                 responseMessage.tool_calls
             );
-            
+
             messagesToSend.push(responseMessage); // Lo necesitamos para pasarlo devuelta al modelo
 
             for (const toolCall of responseMessage.tool_calls) {
                 const functionName = toolCall.function.name;
                 const args = JSON.parse(toolCall.function.arguments);
-                
+
                 let functionResult = null;
 
                 try {
@@ -166,12 +199,12 @@ Reglas estrictas:
                         // Reutilizamos los servicios disponibles
                         const doctors = await employeeService.getDoctors(currentUser);
                         const services = await serviceService.getAllServices(currentUser);
-                        
+
                         functionResult = JSON.stringify({
                             doctors: doctors.map(d => ({ id: d.id, name: `${d.first_name} ${d.last_name}`, specialty: d.positions?.map(p => p.name).join(', ') || 'General' })),
                             services: services.map(s => ({ id: s.id, name: s.name, price: s.price }))
                         });
-                        
+
                     } else if (functionName === 'get_patient_appointments') {
                         const appointments = await appointmentService.getAppointmentsByPatient(patient_id, currentUser, req);
                         // Filtramos un poco los datos para no ensuciar el contexto que consume OpenAI
@@ -183,7 +216,7 @@ Reglas estrictas:
                             doctor: a.employee ? `${a.employee.first_name} ${a.employee.last_name}` : 'No Asignado'
                         })));
                     } else if (functionName === 'create_appointment') {
-                        
+
                         // Preparar payload para la cita
                         const payload = {
                             patient_id: patient_id, // Forzado al paciente actual
@@ -194,6 +227,8 @@ Reglas estrictas:
                             end_time: args.end_time,
                             status: 'programada',
                             total_amount: args.price,
+                            unit_value: 15,
+                            units: 1,
                             notes: args.notes || 'Cita generada por asistente virtual (IA)',
                             services: [
                                 {
@@ -201,7 +236,7 @@ Reglas estrictas:
                                     service_name: args.service_name,
                                     price: args.price,
                                     // Calculamos duración en base a los bloques enviados
-                                    duration_minutes: 30 
+                                    duration_minutes: 30
                                 }
                             ]
                         };
@@ -221,16 +256,16 @@ Reglas estrictas:
                     name: functionName,
                     content: functionResult,
                 };
-                
+
                 messagesToSend.push(toolResponseMsg);
                 // Guardar la respuesta local
                 await aiAgentRepository.saveMessage(
-                    patient_id, 
-                    tenant_id, 
-                    'tool', 
-                    functionResult, 
-                    null, 
-                    toolCall.id, 
+                    patient_id,
+                    tenant_id,
+                    'tool',
+                    functionResult,
+                    null,
+                    toolCall.id,
                     functionName
                 );
             }
