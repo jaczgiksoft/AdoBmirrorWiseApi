@@ -3,6 +3,7 @@ const crypto = require('crypto');
 
 const activeTokenSchema = new mongoose.Schema({
     user_id: { type: Number, required: true },
+    user_type: { type: String, enum: ['employee', 'patient'], default: 'employee' },
     token: { type: String, required: true }, // 🔐 se guardará hasheado
     jti: { type: String, required: false }, // 🆔 UUID del token (opcional por compatibilidad pero recomendado)
     created_at: { type: Date, default: Date.now },

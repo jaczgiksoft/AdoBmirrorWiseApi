@@ -86,6 +86,16 @@ const findKioskAppointments = async (req, res) => {
     }
 };
 
+// 🔍 Obtener citas por Paciente
+const getByPatient = async (req, res) => {
+    try {
+        const appointments = await appointmentService.getAppointmentsByPatient(req.params.patient_id, req.user, req);
+        res.json({ success: true, data: appointments });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 module.exports = {
     create,
     update,
@@ -94,5 +104,6 @@ module.exports = {
     getDatatable,
     getOne,
     findKioskAppointments,
-    checkIn
+    checkIn,
+    getByPatient
 };

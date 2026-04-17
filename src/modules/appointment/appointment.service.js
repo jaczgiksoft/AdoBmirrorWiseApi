@@ -301,6 +301,33 @@ class AppointmentService {
             throw err;
         }
     }
+
+    // 🔍 Obtener todas las citas de un paciente
+    async getAppointmentsByPatient(patientId, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado');
+        }
+
+        try {
+            const appointments = await appointmentRepository.findAppointmentsByPatient(patientId, currentUser.tenant_id);
+
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: 'read',
+                module: 'appointments',
+                description: `Citas consultadas para el Paciente ID: ${patientId}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            return appointments;
+        } catch (err) {
+            logger.error(`Error al obtener citas por paciente: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
 }
 
 module.exports = new AppointmentService();

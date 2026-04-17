@@ -33,6 +33,35 @@ const login = async (req, res) => {
 };
 
 // =====================
+// 🏥 LOGIN PACIENTES
+// =====================
+const loginPatient = async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        const result = await authService.loginPatient({
+            username,
+            password,
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Login de paciente exitoso',
+            token: result.token,
+            refresh_token: result.refresh_token,
+            roles: result.roles,
+            permissions: result.permissions
+        });
+    } catch (err) {
+        logger.error(`❌ Error en login paciente: ${err.message}`);
+        await logApiError(req, err);
+        res.status(401).json({ success: false, message: err.message });
+    }
+};
+
+// =====================
 // 🔓 DESBLOQUEAR USUARIO
 // =====================
 const unblockUser = async (req, res) => {
@@ -155,6 +184,7 @@ const logoutAll = async (req, res) => {
 
 module.exports = {
     login,
+    loginPatient,
     unblockUser,
     me,
     forgotPassword,

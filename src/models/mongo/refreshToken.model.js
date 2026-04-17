@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const refreshTokenSchema = new mongoose.Schema({
     token_hash: { type: String, required: true }, // 🔐 token hasheado (Argaman2)
     user_id: { type: Number, required: true },
+    user_type: { type: String, enum: ['employee', 'patient'], default: 'employee' },
     tenant_id: { type: Number, required: true }, // Asegurar aislamiento
     family_id: { type: String, required: true }, // 👨‍👩‍👧‍👦 Para rotación y revocación en familia
     is_revoked: { type: Boolean, default: false },

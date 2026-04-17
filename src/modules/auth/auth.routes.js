@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 
-const { login, unblockUser, me, forgotPassword, resetPassword, refreshToken, logoutAll } = require('./auth.controller');
+const { login, loginPatient, unblockUser, me, forgotPassword, resetPassword, refreshToken, logoutAll } = require('./auth.controller');
 const { validateToken } = require('../../middlewares/auth.middleware');
 const BlacklistedToken = require('../../models/mongo/blacklistedToken.model');
 const ActiveToken = require('../../models/mongo/activeToken.model');
@@ -11,6 +11,7 @@ const { checkPermissions } = require('../../middlewares/permissions.middleware')
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const {
     loginValidator,
+    patientLoginValidator,
     forgotPasswordValidator,
     resetPasswordValidator,
     refreshTokenValidator
@@ -20,9 +21,14 @@ const { logger } = require('../../utils/logger');
 const { createLog } = require('../../utils/log.helper');
 
 // =====================
-// 🔐 LOGIN
+// 🔐 LOGIN EMPLEADOS
 // =====================
 router.post('/login', loginLimiter, loginValidator, validateRequest, login);
+
+// =====================
+// 🏥 LOGIN PACIENTES
+// =====================
+router.post('/login-patient', loginLimiter, patientLoginValidator, validateRequest, loginPatient);
 
 // =====================
 // 🔒 LOGOUT (invalida el token actual)

@@ -67,8 +67,15 @@ const getAppointmentByIdValidator = [
         .isInt().withMessage('El ID debe ser un número entero'),
 ];
 
+// 🔍 Obtener Citas por Paciente
+const getAppointmentsByPatientValidator = [
+    param('patient_id')
+        .isInt().withMessage('El ID del paciente debe ser un número entero'),
+];
+
 module.exports = {
     createAppointmentValidator,
     updateAppointmentValidator,
     getAppointmentByIdValidator,
+    getAppointmentsByPatientValidator,
 };

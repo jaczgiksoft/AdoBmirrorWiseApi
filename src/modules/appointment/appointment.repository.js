@@ -289,6 +289,11 @@ class AppointmentRepository {
             order: [['date', 'ASC'], ['start_time', 'ASC']]
         });
     }
+
+    // 🔍 Buscar todas las citas de un paciente
+    async findAppointmentsByPatient(patientId, tenantId) {
+        return await this.findAllWithFilters(tenantId, { patient_id: patientId });
+    }
 }
 
 module.exports = new AppointmentRepository();
