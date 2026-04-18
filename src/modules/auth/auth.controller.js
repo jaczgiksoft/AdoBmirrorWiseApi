@@ -1,5 +1,6 @@
 // src/modules/auth/auth.controller.js
 const authService = require('./auth.service');
+const patientElasticService = require('../patient_elastic/patient_elastic.service');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
 
@@ -156,6 +157,48 @@ const refreshToken = async (req, res) => {
 };
 
 // =====================
+// 🎯 AGREGAR HOBBY (PACIENTE)
+// =====================
+const addMyHobby = async (req, res) => {
+    try {
+        const hobby = await authService.addPatientHobby(req.user.id, req.body.name, req.user.tenant_id);
+        res.status(201).json({ success: true, data: hobby });
+    } catch (err) {
+        logger.error(`Error en addMyHobby: ${err.message}`);
+        await logApiError(req, err);
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// =====================
+// 🗑️ ELIMINAR HOBBY (PACIENTE)
+// =====================
+const deleteMyHobby = async (req, res) => {
+    try {
+        await authService.deletePatientHobby(req.params.id, req.user.id);
+        res.status(200).json({ success: true, message: 'Hobby eliminado correctamente' });
+    } catch (err) {
+        logger.error(`Error en deleteMyHobby: ${err.message}`);
+        await logApiError(req, err);
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// =====================
+// 🎯 OBTENER MIS ELÁSTICOS (PACIENTE)
+// =====================
+const getMyElastics = async (req, res) => {
+    try {
+        const elastics = await patientElasticService.getPatientElastics(req.user.id, req.user.tenant_id);
+        res.status(200).json({ success: true, data: elastics });
+    } catch (err) {
+        logger.error(`Error en getMyElastics: ${err.message}`);
+        await logApiError(req, err);
+        res.status(400).json({ success: false, message: err.message });
+    }
+};
+
+// =====================
 // 🚪 LOGOUT ALL (Cerrar todas las sesiones)
 // =====================
 const logoutAll = async (req, res) => {
@@ -187,6 +230,9 @@ module.exports = {
     loginPatient,
     unblockUser,
     me,
+    addMyHobby,
+    deleteMyHobby,
+    getMyElastics,
     forgotPassword,
     resetPassword,
     refreshToken,

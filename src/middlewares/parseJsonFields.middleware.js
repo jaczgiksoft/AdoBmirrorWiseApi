@@ -3,7 +3,8 @@ module.exports = function parseJsonFields(req, res, next) {
         "patient_type_ids",
         "billing_data",
         "legal_representatives",
-        "alerts"
+        "alerts",
+        "odontogram_data"
     ];
 
     jsonFields.forEach(field => {

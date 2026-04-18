@@ -128,6 +128,16 @@ const getNextMedicalRecord = async (req, res) => {
     }
 };
 
+// 🏠 Obtener resumen para el Home (Móvil)
+const getHomeSummary = async (req, res) => {
+    try {
+        const summary = await patientService.getPatientHomeSummary(req.params.id, req.user);
+        res.json(summary);
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 // 🟡 Actualizar paciente (General)
 const updateGeneral = async (req, res) => {
     try {
@@ -157,5 +167,6 @@ module.exports = {
     softDelete,
     getDatatable,
     getProfile,
-    getNextMedicalRecord
+    getNextMedicalRecord,
+    getHomeSummary
 };
