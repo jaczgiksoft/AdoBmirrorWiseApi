@@ -53,6 +53,15 @@ router.get(
     appointmentController.getOne
 );
 
+// 🔍 Obtener citas por Paciente (Acceso Mobile sin checkPermissions)
+router.get(
+    '/patient-mobile/:patient_id',
+    validateToken,
+    getAppointmentsByPatientValidator,
+    validateRequest,
+    appointmentController.getByPatient
+);
+
 // 🔍 Obtener citas por Paciente
 router.get(
     '/patient/:patient_id',

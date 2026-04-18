@@ -7,6 +7,7 @@ const ms = require('ms');
 
 const authRepository = require('./auth.repository');
 const patientRepository = require('../patient/patient.repository');
+const patientHobbyRepository = require('../patient_hobby/patient_hobby.repository');
 const RefreshToken = require('../../models/mongo/refreshToken.model');
 const { sendMail } = require('../../utils/mail.helper');
 const { createLog } = require('../../utils/log.helper');
@@ -291,6 +292,31 @@ class AuthService {
     // ME (Perfil del usuario autenticado)
     // =====================
     async me(currentUser) {
+        // 1️⃣ Si es un PACIENTE, retornar su perfil clínico full
+        if (currentUser.roles?.includes('patient')) {
+            const patient = await patientRepository.getFullProfile(currentUser.id, currentUser.tenant_id);
+            if (!patient) throw new Error('Paciente no encontrado');
+
+            // Mapear al mismo formato que espera el Front (o similar)
+            return {
+                id: patient.id,
+                username: patient.username,
+                email: patient.email,
+                firstName: patient.first_name,
+                lastName: patient.last_name,
+                fullName: `${patient.first_name} ${patient.last_name}`,
+                phone: patient.phone_number,
+                birthDate: patient.birth_date,
+                age: patient.age,
+                gender: patient.gender,
+                address: patient.address,
+                hobbies: patient.hobbies?.map(h => ({ id: h.id, name: h.name })) || [],
+                tenant_id: patient.tenant_id,
+                roles: ['patient']
+            };
+        }
+
+        // 2️⃣ Si es un EMPLEADO, usar la lógica existente
         const user = await authRepository.findUserWithRelations(currentUser.id);
         if (!user) throw new Error('Usuario no encontrado');
 
@@ -441,6 +467,30 @@ class AuthService {
             type: 'system'
         });
 
+        return true;
+    }
+
+    // =====================
+    // 👤 GESTIÓN DE HOBBIES (PARA EL PROPIO PACIENTE)
+    // =====================
+    async addPatientHobby(patientId, name, tenantId) {
+        const hobby = await patientHobbyRepository.createHobby({
+            patient_id: patientId,
+            name: name,
+            tenant_id: tenantId
+        });
+        return { id: hobby.id, name: hobby.name };
+    }
+
+    async deletePatientHobby(hobbyId, patientId) {
+        // Buscar el hobby y validar que pertenece al paciente logueado
+        const hobby = await patientHobbyRepository.findById(hobbyId, null); // Pasamos null a tenantId para buscar solo por ID o validar tenant después
+        
+        if (!hobby || hobby.patient_id !== patientId) {
+            throw new Error('No tienes permiso para eliminar este hobby.');
+        }
+
+        await patientHobbyRepository.deleteHobby(hobby);
         return true;
     }
 

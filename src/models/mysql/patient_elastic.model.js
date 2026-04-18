@@ -55,6 +55,11 @@ const PatientElastic = sequelize.define('PatientElastic', {
     odontogram_data: {
         type: DataTypes.JSON,
         allowNull: true
+    },
+
+    preview_image_url: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 
 }, {

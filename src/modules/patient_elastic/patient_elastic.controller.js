@@ -16,6 +16,11 @@ class PatientElasticController {
     async create(req, res, next) {
         try {
             const tenantId = req.user.tenant_id;
+            if (req.file) {
+                const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+                req.body.preview_image_url = cleanPath.replace(/\\/g, "/");
+            }
+
             const data = {
                 ...req.body,
                 tenant_id: tenantId

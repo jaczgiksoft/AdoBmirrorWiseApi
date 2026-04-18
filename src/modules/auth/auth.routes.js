@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 
-const { login, loginPatient, unblockUser, me, forgotPassword, resetPassword, refreshToken, logoutAll } = require('./auth.controller');
+const { login, loginPatient, unblockUser, me, forgotPassword, resetPassword, refreshToken, logoutAll, getMyElastics } = require('./auth.controller');
 const { validateToken } = require('../../middlewares/auth.middleware');
 const BlacklistedToken = require('../../models/mongo/blacklistedToken.model');
 const ActiveToken = require('../../models/mongo/activeToken.model');
@@ -115,6 +115,26 @@ router.post(
     validateRequest,
     refreshToken
 );
+
+// =====================
+// 👤 PERFIL DEL PACIENTE (MÓVIL)
+// =====================
+router.get('/me-patient', validateToken, me); // Reusing 'me' controller but service will handle patient
+
+// 🎯 HOBBIES DEL PACIENTE
+router.post('/me-patient/hobbies', validateToken, async (req, res) => {
+    // Controller logic will be added to auth.controller.js, but I'll hook it here for now or call controller
+    const { addMyHobby } = require('./auth.controller');
+    return addMyHobby(req, res);
+});
+
+router.delete('/me-patient/hobbies/:id', validateToken, async (req, res) => {
+    const { deleteMyHobby } = require('./auth.controller');
+    return deleteMyHobby(req, res);
+});
+
+// 🎯 ELÁSTICOS DEL PACIENTE
+router.get('/me-patient/elastics', validateToken, getMyElastics);
 
 // =====================
 // 🚪 LOGOUT ALL (Requiere Auth)

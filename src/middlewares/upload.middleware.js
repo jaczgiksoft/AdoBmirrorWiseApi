@@ -215,11 +215,41 @@ const galleryStorage = multer.diskStorage({
     },
 });
 
+// 8️⃣ Elásticos (Preview del Odontograma)
+const elasticPreviewStorage = multer.diskStorage({
+    destination: async (req, file, cb) => {
+        try {
+            const tenantId = req.user?.tenant_id || "unknown";
+            const patientId = req.body.patient_id;
+            let folderMRN = "temp";
+
+            if (patientId) {
+                const patient = await Patient.findByPk(patientId);
+                if (patient) folderMRN = patient.medical_record_number;
+            }
+
+            const dir = ensureDir(path.join(__dirname, `../../uploads/${tenantId}/patients/${folderMRN}/elastics`));
+            cb(null, dir);
+        } catch (error) {
+            cb(error);
+        }
+    },
+    filename: (req, file, cb) => {
+        cb(null, `elastic_preview_${Date.now()}${path.extname(file.originalname)}`);
+    },
+});
+
 const uploadGalleryPhotos = multer({
     storage: galleryStorage,
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
     fileFilter: fileFilter("images"),
 }).any(); // Aceptamos cualquier campo (para los 8 fijos + radiografías)
+
+const uploadElasticPreview = multer({
+    storage: elasticPreviewStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: fileFilter("images"),
+}).single("preview_image");
 
 // === Exportaciones === //
 module.exports = {
@@ -231,4 +261,5 @@ module.exports = {
     uploadInventoryImage,   // Inventario (campo: image)
     uploadRadiographs,      // Radiografías (campo: radiographs)
     uploadGalleryPhotos,    // Galería (múltiples campos)
+    uploadElasticPreview,   // Elásticos (campo: preview_image)
 };

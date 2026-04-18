@@ -1,11 +1,14 @@
 // src/modules/patient/patient.service.js
 const sequelize = require('../../config/database');
 const patientRepository = require('./patient.repository');
+const appointmentRepository = require('../appointment/appointment.repository');
+const patientAlertRepository = require('../patient_alert/patient_alert.repository');
 const { createLog } = require('../../utils/log.helper');
 const { logApiError } = require('../../utils/logApiError');
 const { logger } = require('../../utils/logger');
 const { notifyUser } = require('../../utils/notify.helper');
 const Patient = require('../../models/mysql/patient.model'); // 👈 necesario para setTypes()
+const { Op } = require('sequelize');
 
 class PatientService {
     // 📋 Obtener todos los pacientes por tenant
@@ -329,6 +332,65 @@ class PatientService {
         const nextNumber = String(lastNumber + 1).padStart(4, '0');
 
         return `${prefix}${nextNumber}`;
+    }
+
+    // 🏠 Obtener resumen para el Home (Móvil)
+    async getPatientHomeSummary(patientId, currentUser) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No se encontró tenant en el token');
+        }
+
+        const tenantId = currentUser.tenant_id;
+
+        // 1. Datos básicos del paciente
+        const patient = await patientRepository.findById(patientId, tenantId);
+        if (!patient) throw new Error('Paciente no encontrado');
+
+        // 2. Próxima cita (futura y pendiente)
+        const today = new Date().toISOString().split('T')[0];
+        const appointments = await appointmentRepository.findAllWithFilters(tenantId, {
+            patient_id: patientId,
+            date_from: today,
+            status: 'pendiente' // Asegurarse que coincida con el ENUM del modelo (en appointment.repository vi 'pendiente')
+        });
+
+        // Ordenar por fecha y hora para obtener la más cercana
+        const sortedAppointments = appointments.sort((a, b) => {
+            const dateA = new Date(`${a.date}T${a.start_time || '00:00:00'}`);
+            const dateB = new Date(`${b.date}T${b.start_time || '00:00:00'}`);
+            return dateA - dateB;
+        });
+
+        const nextAppt = sortedAppointments[0] || null;
+
+        // 3. Conteo de alertas activas
+        // En patient_alert.repository hay findByPatientId
+        const alerts = await patientAlertRepository.findByPatientId(patientId, tenantId);
+        const activeAlertsCount = alerts.length;
+
+        // 4. Armar respuesta
+        // Combinamos fecha y hora en formato ISO si existe cita
+        let nextAppointmentDate = null;
+        let nextAppointmentReason = null;
+
+        if (nextAppt) {
+            // Unir fecha y hora para toLocaleDateString en el front
+            // appt.date suele ser YYYY-MM-DD y appt.start_time HH:mm:ss
+            nextAppointmentDate = new Date(`${nextAppt.date}T${nextAppt.start_time || '00:00:00'}`).toISOString();
+            
+            // Buscar motivo (ej. primer servicio o notas)
+            nextAppointmentReason = nextAppt.services?.[0]?.name || nextAppt.notes || 'Consulta General';
+        }
+
+        return {
+            patientId,
+            patientFirstName: patient.first_name,
+            nextAppointmentDate,
+            nextAppointmentReason,
+            activeAlertsCount,
+            treatmentStatus: 'En curso', // Mock
+            treatmentProgress: 65        // Mock
+        };
     }
 
 }

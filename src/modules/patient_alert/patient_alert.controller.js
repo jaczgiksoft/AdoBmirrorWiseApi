@@ -30,10 +30,21 @@ const remove = async (req, res) => {
     }
 };
 
-// 📋 Obtener todas las alertas de un paciente
+// 📋 Obtener todas las alertas de un paciente (Uso administrativo)
 const getByPatient = async (req, res) => {
     try {
         const alerts = await patientAlertService.getAlertsByPatientId(req.params.patient_id, req.user);
+        res.json(alerts);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// 📋 Obtener todas las alertas del paciente autenticado (Portal Paciente)
+const getMyAlerts = async (req, res) => {
+    try {
+        // En el login de paciente (auth.service.js), el req.user.id es el patient.id
+        const alerts = await patientAlertService.getAlertsByPatientId(req.user.id, req.user);
         res.json(alerts);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -45,4 +56,5 @@ module.exports = {
     update,
     remove,
     getByPatient,
+    getMyAlerts,
 };

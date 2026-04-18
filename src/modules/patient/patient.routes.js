@@ -117,4 +117,13 @@ router.get(
     patientController.getProfile
 );
 
+// 🏠 Obtener resumen para el Home (Móvil)
+router.get(
+    '/:id/home-summary',
+    validateToken,
+    getPatientByIdValidator,
+    validateRequest,
+    patientController.getHomeSummary
+);
+
 module.exports = router;

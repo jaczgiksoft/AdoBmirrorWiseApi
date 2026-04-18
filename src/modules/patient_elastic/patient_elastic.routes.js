@@ -4,6 +4,8 @@ const patientElasticController = require('./patient_elastic.controller');
 const { validateGetByPatient, validateSave, validateId } = require('./patient_elastic.validator');
 const { validateToken } = require('../../middlewares/auth.middleware');
 const { validateRequest } = require('../../middlewares/validate.middleware');
+const { uploadElasticPreview } = require('../../middlewares/upload.middleware');
+const parseJsonFields = require('../../middlewares/parseJsonFields.middleware');
 
 router.get('/patient/:patientId',
     validateToken,
@@ -14,6 +16,8 @@ router.get('/patient/:patientId',
 
 router.post('/',
     validateToken,
+    uploadElasticPreview,
+    parseJsonFields,
     validateSave,
     validateRequest,
     patientElasticController.create

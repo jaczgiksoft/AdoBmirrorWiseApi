@@ -26,6 +26,13 @@ router.get(
     patientAlertController.getByPatient
 );
 
+// 📋 Obtener MIS alertas (Portal Paciente)
+router.get(
+    '/my-alerts',
+    validateToken,
+    patientAlertController.getMyAlerts
+);
+
 // 🟢 Crear nueva alerta
 router.post(
     '/',
