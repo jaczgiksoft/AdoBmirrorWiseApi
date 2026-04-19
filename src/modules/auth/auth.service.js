@@ -200,7 +200,18 @@ class AuthService {
             token,
             refresh_token: refreshTokenRaw,
             roles: roles,
-            permissions: {}
+            permissions: {},
+            user: {
+                id: patient.id,
+                first_name: patient.first_name,
+                last_name: patient.last_name,
+                username: patient.username,
+                email: patient.email,
+                phone_number: patient.phone_number,
+                tenant_id: patient.tenant_id,
+                first_login: patient.first_login,
+                photo_url: patient.photo_url
+            }
         };
     }
 

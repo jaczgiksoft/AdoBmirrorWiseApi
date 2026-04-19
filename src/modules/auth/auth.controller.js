@@ -53,7 +53,8 @@ const loginPatient = async (req, res) => {
             token: result.token,
             refresh_token: result.refresh_token,
             roles: result.roles,
-            permissions: result.permissions
+            permissions: result.permissions,
+            user: result.user
         });
     } catch (err) {
         logger.error(`❌ Error en login paciente: ${err.message}`);
