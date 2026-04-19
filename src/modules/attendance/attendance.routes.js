@@ -7,33 +7,36 @@ const { checkPermissions } = require('../../middlewares/permissions.middleware')
 
 const router = express.Router();
 
-// All routes are protected
+// 📲 QR Check-In público (sin autenticación de empleado — accedido por escaner o app móvil del paciente)
+router.post('/qr-checkin', attendanceController.qrCheckIn);
+
+// All routes below are protected
 router.use(validateToken);
 router.use(loadPermissions);
 
-router.get('/', 
+router.get('/',
     checkPermissions('read', 'attendance'),
     attendanceController.getAttendances
 );
 
-router.get('/:id', 
+router.get('/:id',
     checkPermissions('read', 'attendance'),
     attendanceController.getAttendance
 );
 
-router.post('/', 
+router.post('/',
     checkPermissions('write', 'attendance'),
-    attendanceValidator.createAttendance, 
+    attendanceValidator.createAttendance,
     attendanceController.createAttendance
 );
 
-router.put('/:id', 
+router.put('/:id',
     checkPermissions('edit', 'attendance'),
-    attendanceValidator.updateAttendance, 
+    attendanceValidator.updateAttendance,
     attendanceController.updateAttendance
 );
 
-router.delete('/:id', 
+router.delete('/:id',
     checkPermissions('delete', 'attendance'),
     attendanceController.deleteAttendance
 );
