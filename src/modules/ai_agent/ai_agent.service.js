@@ -119,7 +119,7 @@ Reglas estrictas:
         const validMessages = [];
         for (let i = 0; i < rawHistory.length; i++) {
             const msg = rawHistory[i];
-            
+
             if (msg.role === 'tool') {
                 const hasAssistant = validMessages.some(m => m.role === 'assistant' && m.tool_calls && m.tool_calls.some(tc => tc.id === msg.tool_call_id));
                 if (!hasAssistant) continue; // Skip orphaned tool message
@@ -225,7 +225,7 @@ Reglas estrictas:
                             date: args.date,
                             start_time: args.start_time,
                             end_time: args.end_time,
-                            status: 'programada',
+                            status: 'pendiente',
                             total_amount: args.price,
                             unit_value: 15,
                             units: 1,
