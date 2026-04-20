@@ -37,8 +37,8 @@ app.use(cors({
 
         // 3. Permitir si el origen es un esquema móvil de Ionic/Capacitor o está en la lista
         if (origin && (
-            origin.startsWith('capacitor://') || 
-            origin.startsWith('ionic://') || 
+            origin.startsWith('capacitor://') ||
+            origin.startsWith('ionic://') ||
             corsOrigins.includes(origin)
         )) {
             return callback(null, true);
@@ -71,13 +71,18 @@ app.use('/uploads', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, '../uploads')));
 app.use("/downloads", require("express").static("downloads"));
-// 🔀 Rutas
-app.use('/api', routes);
 
-// ✔ Ruta base
-app.get('/', (req, res) => {
+// ✔ Health & base antes
+app.get('/api', (req, res) => {
     res.json({ message: 'API funcionando 🎉' });
 });
+
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+// 🔀 Rutas principales
+app.use('/api', routes);
 
 // ❌ Ruta no encontrada
 app.use((req, res, next) => {

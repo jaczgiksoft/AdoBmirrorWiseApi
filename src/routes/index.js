@@ -5,10 +5,6 @@ const router = Router();
 // 🔐 AUTH & USERS
 // ==========================
 router.use('/auth', require('../modules/auth/auth.routes'));
-// ==========================
-// 🔐 AUTH & USERS
-// ==========================
-router.use('/auth', require('../modules/auth/auth.routes'));
 router.use('/users', require('../modules/user/user.routes'));
 router.use('/employees', require('../modules/employee/employee.routes'));
 router.use('/roles', require('../modules/role/role.routes'));
