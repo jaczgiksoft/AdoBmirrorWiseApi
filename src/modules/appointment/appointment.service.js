@@ -156,6 +156,58 @@ class AppointmentService {
         }
     }
 
+    // 🔵 Actualizar solo el estado de la cita
+    async updateAppointmentStatus(id, status, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado: falta tenant en el usuario');
+        }
+
+        const allowedStatuses = ['pendiente', 'confirmada', 'en_espera', 'en_tratamiento', 'finalizada', 'cancelada'];
+        if (!allowedStatuses.includes(status)) {
+            throw new Error('Estado no permitido');
+        }
+
+        const t = await sequelize.transaction();
+        try {
+            const appointment = await appointmentRepository.findById(id, currentUser.tenant_id);
+            if (!appointment) throw new Error('Cita no encontrada');
+
+            // Seguridad: Si el usuario es paciente, solo puede modificar sus propias citas
+            if (currentUser.role === 'patient' && appointment.patient_id !== currentUser.id) {
+                throw new Error('No autorizado para modificar esta cita');
+            }
+
+            await appointmentRepository.updateAppointment(appointment, { status }, t);
+
+            await t.commit();
+
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: 'update',
+                module: 'appointments',
+                description: `Estado de cita actualizado a "${status}" ID: ${id}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            // Emitir evento WebSocket
+            if (global.io) {
+                global.io.emit('APPOINTMENT_STATUS_UPDATED', {
+                    tenantId: currentUser.tenant_id,
+                    appointment: appointment
+                });
+            }
+
+            return appointment;
+        } catch (err) {
+            await t.rollback();
+            logger.error(`Error al actualizar estado de la cita: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
+
     // 📍 Check-In de cita (Kiosco)
     async checkInAppointment(id, currentUser, req, manualTenantId = null) {
         const tenant_id = manualTenantId || currentUser?.tenant_id;
@@ -277,7 +329,7 @@ class AppointmentService {
     }
 
     // 🔍 Buscar citas para el Kiosko
-    async getKioskAppointments(phoneNumber, currentUser, req, manualTenantId = null) {
+    async getKioskAppointments(phoneNumber, currentUser, req, manualTenantId = null, filters = {}) {
         const tenant_id = manualTenantId || currentUser?.tenant_id;
 
         if (!tenant_id) {
@@ -285,7 +337,7 @@ class AppointmentService {
         }
 
         try {
-            const appointments = await appointmentRepository.findKioskAppointments(phoneNumber, tenant_id);
+            const appointments = await appointmentRepository.findKioskAppointments(phoneNumber, tenant_id, filters);
 
             // Formatear respuesta según lo solicitado (nombre del paciente y hora)
             return appointments.map(appt => ({
@@ -293,6 +345,7 @@ class AppointmentService {
                 patient: `${appt.patient.first_name} ${appt.patient.last_name}`,
                 time: appt.start_time,
                 date: appt.date,
+                status: appt.status,
                 doctor: appt.employee ? `Dr. ${appt.employee.last_name}` : 'N/A'
             }));
         } catch (err) {

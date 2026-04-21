@@ -239,8 +239,8 @@ class AppointmentRepository {
         });
     }
 
-    // 🔍 Buscar citas para el Kiosko por Teléfono
-    async findKioskAppointments(phoneNumber, tenantId) {
+    // 🔍 Buscar citas para el Kiosko
+    async findKioskAppointments(phoneNumber, tenantId, filters = {}) {
         // 1. Buscar Pacientes directamente por teléfono
         const patientsDirect = await Patient.findAll({
             where: { phone_number: phoneNumber, tenant_id: tenantId },
@@ -272,16 +272,30 @@ class AppointmentRepository {
 
         if (allPatientIds.length === 0) return [];
 
-        // 5. Buscar citas pendientes (status = 'pendiente') desde hoy para esos pacientes
+        // 5. Construir filtros de búsqueda
         const today = new Date().toISOString().split('T')[0];
+        const where = {
+            patient_id: { [Op.in]: allPatientIds },
+            tenant_id: tenantId
+        };
+
+        // Estado: si viene null/undefined explícitamente se ignora el filtro de estado (para traer todos)
+        // Por defecto para el Kiosco sigue siendo 'pendiente' si no se especifica filtros.status
+        if (filters.status !== undefined && filters.status !== null) {
+            where.status = filters.status;
+        } else if (filters.status === undefined) {
+             where.status = 'pendiente'; // Default behavior
+        }
+
+        // Fecha: si viene date se usa, sino >= today (default behavior)
+        if (filters.date) {
+            where.date = filters.date;
+        } else {
+            where.date = { [Op.gte]: today };
+        }
 
         return Appointment.findAll({
-            where: {
-                patient_id: { [Op.in]: allPatientIds },
-                tenant_id: tenantId,
-                status: 'pendiente', // Según model ENUM: pendiente
-                date: { [Op.gte]: today }
-            },
+            where,
             include: [
                 { model: Patient, as: 'patient', attributes: ['first_name', 'last_name'] },
                 { model: Employee, as: 'employee', attributes: ['first_name', 'last_name'] }

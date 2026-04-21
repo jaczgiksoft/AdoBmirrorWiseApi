@@ -103,6 +103,13 @@ router.put(
     appointmentController.update
 );
 
+// 🔵 Actualizar solo el estado de la cita
+router.patch(
+    '/:id/status',
+    validateToken,
+    appointmentController.updateStatus
+);
+
 // 🔴 Eliminar cita
 router.delete(
     '/:id',

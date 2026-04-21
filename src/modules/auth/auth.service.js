@@ -50,7 +50,7 @@ class AuthService {
                     user_agent: userAgent
                 });
             }
-
+ 
             throw new Error('Credenciales incorrectas o tenant inválido.');
         }
 
