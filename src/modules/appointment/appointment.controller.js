@@ -21,6 +21,17 @@ const update = async (req, res) => {
     }
 };
 
+// 🔵 Actualizar solo el estado de la cita
+const updateStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const appointment = await appointmentService.updateAppointmentStatus(req.params.id, status, req.user, req);
+        res.json({ message: 'Estado de la cita actualizado exitosamente', appointment });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 // 📍 Check-In de cita (Kiosco)
 const checkIn = async (req, res) => {
     try {
@@ -105,5 +116,6 @@ module.exports = {
     getOne,
     findKioskAppointments,
     checkIn,
-    getByPatient
+    getByPatient,
+    updateStatus
 };

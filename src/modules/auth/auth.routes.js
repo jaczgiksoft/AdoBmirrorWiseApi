@@ -25,7 +25,7 @@ const { createLog } = require('../../utils/log.helper');
 // =====================
 router.post('/login', loginLimiter, loginValidator, validateRequest, login);
 
-// =====================
+// ===================== 
 // 🏥 LOGIN PACIENTES
 // =====================
 router.post('/login-patient', loginLimiter, patientLoginValidator, validateRequest, loginPatient);

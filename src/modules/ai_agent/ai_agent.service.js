@@ -92,6 +92,12 @@ class AiAgentService {
     async processChat(patient_id, message, currentUser, req) {
         const tenant_id = currentUser.tenant_id;
 
+        // --- NUEVA LÍNEA: Obtener fecha actual ---
+        const now = new Date();
+        const currentDateTime = now.toLocaleString(); // Ejemplo: "20/4/2024, 14:30:00"
+        const today = now.toISOString().split('T')[0];
+        // -----------------------------------------
+
         // 1. Guardar mensaje del usuario
         await aiAgentRepository.saveMessage(patient_id, tenant_id, 'user', message);
 
@@ -104,6 +110,11 @@ class AiAgentService {
             role: "system",
             content: `Eres un asistente virtual avanzado y amigable de una clínica odontológica. 
 Tu trabajo es ayudar al paciente a consultar sobre sus citas agendadas y, si lo desea, agendar una nueva.
+
+CONTEXTO TEMPORAL:
+- La fecha de hoy es: ${today}. 
+- Si el paciente menciona un día y mes pero no el año, asume que se refiere al año actual (${today.split('-')[0]}), a menos que esa fecha ya haya pasado, en cuyo caso asume el año siguiente.
+
 Reglas estrictas:
 - Respuestas cortas, empáticas y claras.
 - Si el paciente quiere agendar una cita y no sabes qué servicio, qué doctor o qué fecha quiere, PREGÚNTALE. 

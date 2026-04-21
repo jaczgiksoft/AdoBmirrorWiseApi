@@ -102,19 +102,47 @@ const qrCheckIn = async (req, res) => {
     }
 
     try {
-        // — Buscar citas de hoy para ese teléfono y tenant
-        const appointments = await appointmentService.getKioskAppointments(phoneNumber, null, req, tenant_id);
+        const today = new Date().toISOString().split('T')[0];
+
+        // — 1. Buscar TODAS las citas de HOY para ese teléfono (sin filtro de estado)
+        const appointments = await appointmentService.getKioskAppointments(
+            phoneNumber,
+            null,
+            req,
+            tenant_id,
+            { date: today, status: null } // status: null para traer todos los estados
+        );
 
         if (!appointments || appointments.length === 0) {
             return res.status(404).json({
                 success: false,
-                message: 'No se encontraron citas para hoy con ese número de teléfono'
+                message: 'No hay citas hoy'
             });
         }
 
-        // — Ejecutar check-in en cada cita encontrada
+        // — 2. Filtrar las que son válidas para Check-In (Pendiente o Confirmada)
+        // Nota: El query original devuelve objetos formateados. Necesitamos el objeto real o el ID.
+        // getKioskAppointments ya aplanó los datos, pero conservó el ID.
+        // Los estados que buscamos en el modelo original son 'pendiente' y 'confirmada'.
+        // Sin embargo, getKioskAppointments devuelve lo que viene del repo.
+        // Vuelvo a consultar al repo para tener los estados originales o confío en la data.
+
+        const validForCheckIn = appointments.filter(appt =>
+            ['pendiente', 'confirmada'].includes(appt.status)
+        );
+
+        if (validForCheckIn.length === 0) {
+            // Si no hay válidas, informamos el estado de la primera encontrada
+            const firstAppt = appointments[0];
+            return res.status(400).json({
+                success: false,
+                message: `La cita ya está en estado: ${firstAppt.status}`
+            });
+        }
+
+        // — 3. Ejecutar check-in en las citas válidas
         const checkedIn = await Promise.all(
-            appointments.map(appt =>
+            validForCheckIn.map(appt =>
                 appointmentService.checkInAppointment(appt.id, null, req, tenant_id)
             )
         );

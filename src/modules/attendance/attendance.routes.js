@@ -10,7 +10,7 @@ const router = express.Router();
 // 📲 QR Check-In público (sin autenticación de empleado — accedido por escaner o app móvil del paciente)
 router.post('/qr-checkin', attendanceController.qrCheckIn);
 
-// All routes below are protected
+// All routes below are protected 
 router.use(validateToken);
 router.use(loadPermissions);
 
