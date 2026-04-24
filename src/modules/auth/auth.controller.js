@@ -54,6 +54,7 @@ const loginPatient = async (req, res) => {
             refresh_token: result.refresh_token,
             roles: result.roles,
             permissions: result.permissions,
+            profiles: result.profiles,
             user: result.user
         });
     } catch (err) {
@@ -89,7 +90,8 @@ const unblockUser = async (req, res) => {
 // =====================
 const me = async (req, res) => {
     try {
-        const user = await authService.me(req.user);
+        const patientId = req.query.patientId;
+        const user = await authService.me(req.user, patientId);
         res.status(200).json({ success: true, data: user });
     } catch (err) {
         logger.error(`Error en /auth/me: ${err.message}`);
@@ -162,7 +164,8 @@ const refreshToken = async (req, res) => {
 // =====================
 const addMyHobby = async (req, res) => {
     try {
-        const hobby = await authService.addPatientHobby(req.user.id, req.body.name, req.user.tenant_id);
+        const patientId = req.body.patientId || req.user.id;
+        const hobby = await authService.addPatientHobby(patientId, req.body.name, req.user.tenant_id);
         res.status(201).json({ success: true, data: hobby });
     } catch (err) {
         logger.error(`Error en addMyHobby: ${err.message}`);
@@ -176,7 +179,8 @@ const addMyHobby = async (req, res) => {
 // =====================
 const deleteMyHobby = async (req, res) => {
     try {
-        await authService.deletePatientHobby(req.params.id, req.user.id);
+        const patientId = req.query.patientId || req.user.id;
+        await authService.deletePatientHobby(req.params.id, patientId);
         res.status(200).json({ success: true, message: 'Hobby eliminado correctamente' });
     } catch (err) {
         logger.error(`Error en deleteMyHobby: ${err.message}`);

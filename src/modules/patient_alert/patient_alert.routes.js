@@ -26,6 +26,14 @@ router.get(
     patientAlertController.getByPatient
 );
 
+// 🔍 Obtener alertas por Paciente (Acceso Mobile sin checkPermissions)
+router.get(
+    '/patient-mobile/:patient_id',
+    validateToken,
+    validateRequest,
+    patientAlertController.getByPatient
+);
+
 // 📋 Obtener MIS alertas (Portal Paciente)
 router.get(
     '/my-alerts',
