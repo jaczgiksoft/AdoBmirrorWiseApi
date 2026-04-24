@@ -7,6 +7,7 @@ const ms = require('ms');
 
 const authRepository = require('./auth.repository');
 const patientRepository = require('../patient/patient.repository');
+const patientRepresentativeRepository = require('../patient_representative/patient_representative.repository');
 const patientHobbyRepository = require('../patient_hobby/patient_hobby.repository');
 const RefreshToken = require('../../models/mongo/refreshToken.model');
 const { sendMail } = require('../../utils/mail.helper');
@@ -126,20 +127,83 @@ class AuthService {
     }
 
     // =====================
-    // LOGIN PATIENT
+    // LOGIN PATIENT / REPRESENTATIVE
     // =====================
     async loginPatient({ username, password, ip, userAgent }) {
         const now = new Date();
 
         const patient = await patientRepository.findByUsername(username);
+        const representative = await patientRepresentativeRepository.findByUsernameWithPatients(username);
 
-        // COMPARACIÓN TEXTO PLANO
-        if (!patient || patient.password !== password) {
+        let validPatient = false;
+        let validRepresentative = false;
+
+        if (patient && patient.password === password) {
+            validPatient = true;
+        }
+
+        if (representative && representative.password === password) {
+            validRepresentative = true;
+        }
+
+        if (!validPatient && !validRepresentative) {
             throw new Error('Credenciales incorrectas.');
         }
 
-        if (!patient.can_login) {
-            throw new Error('El acceso al portal virtual de este paciente está deshabilitado.');
+        const profiles = [];
+        let tenantId = null;
+        let tenantCode = null;
+        let mainUserId = null;
+
+        if (validPatient) {
+            if (!patient.can_login) {
+                // If they have no valid representative login either, block them
+                if (!validRepresentative) {
+                    throw new Error('El acceso al portal virtual de este paciente está deshabilitado.');
+                }
+            } else {
+                profiles.push({
+                    id: patient.id,
+                    name: `${patient.first_name} ${patient.last_name}`,
+                    photo: patient.photo_url || null,
+                    type: 'self'
+                });
+                tenantId = patient.tenant_id;
+                tenantCode = patient.tenant?.code;
+                mainUserId = patient.id;
+            }
+        }
+
+        if (validRepresentative) {
+            if (!representative.can_login) {
+                if (!validPatient) {
+                    throw new Error('El acceso al portal virtual de este representante está deshabilitado.');
+                }
+            } else {
+                if (!tenantId) {
+                    tenantId = representative.tenant_id;
+                    tenantCode = representative.tenant?.code;
+                    mainUserId = username; // User specified using phone number (username) as ID for representative
+                }
+                
+                if (representative.patients && representative.patients.length > 0) {
+                    representative.patients.forEach(p => {
+                        // Evitar duplicados si el representante también es el mismo paciente
+                        if (!profiles.find(prof => prof.id === p.id)) {
+                            profiles.push({
+                                id: p.id,
+                                name: `${p.first_name} ${p.last_name}`,
+                                photo: p.photo_url || null,
+                                type: 'represented'
+                            });
+                        }
+                    });
+                }
+            }
+        }
+
+        if (profiles.length === 0) {
+            throw new Error('No se encontraron perfiles asociados o el acceso está deshabilitado.');
         }
 
         const roles = ['patient'];
@@ -147,10 +211,10 @@ class AuthService {
         // Generar token JWT
         const expiresIn = process.env.JWT_EXPIRES_IN || '1h';
         const tokenPayload = {
-            id: patient.id,
-            username: patient.username,
-            tenant_id: patient.tenant_id,
-            tenant_code: patient.tenant?.code,
+            id: mainUserId, // Phone number for representative, or patient ID for self
+            username: username,
+            tenant_id: tenantId,
+            tenant_code: tenantCode,
             roles: roles,
             role_ids: [],
             is_superadmin: false,
@@ -160,8 +224,8 @@ class AuthService {
         const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn });
 
         await authRepository.createActiveToken({
-            user_id: patient.id,
-            user_type: 'patient',
+            user_id: mainUserId,
+            user_type: 'patient', // 'patient' because they act in the patient app
             token,
             jti: tokenPayload.jti,
             expires_at: new Date(Date.now() + ms(expiresIn))
@@ -175,9 +239,9 @@ class AuthService {
 
         await authRepository.createRefreshToken({
             token_hash: RefreshToken.hashToken(refreshTokenRaw),
-            user_id: patient.id,
+            user_id: mainUserId,
             user_type: 'patient',
-            tenant_id: patient.tenant_id,
+            tenant_id: tenantId,
             family_id: refreshFamilyId,
             expires_at: refreshExpiresDate,
             device_info: {
@@ -187,10 +251,10 @@ class AuthService {
         });
 
         await createLog({
-            user_id: patient.id,
+            user_id: mainUserId,
             action: 'login',
             module: 'auth',
-            description: `Paciente ${patient.username} inició sesión`,
+            description: `Paciente/Representante ${username} inició sesión`,
             ip,
             user_agent: userAgent
         });
@@ -201,7 +265,8 @@ class AuthService {
             refresh_token: refreshTokenRaw,
             roles: roles,
             permissions: {},
-            user: {
+            profiles,
+            user: validPatient ? {
                 id: patient.id,
                 first_name: patient.first_name,
                 last_name: patient.last_name,
@@ -211,6 +276,16 @@ class AuthService {
                 tenant_id: patient.tenant_id,
                 first_login: patient.first_login,
                 photo_url: patient.photo_url
+            } : {
+                id: username, // Fallback for representative only
+                first_name: representative.full_name,
+                last_name: '',
+                username: representative.username,
+                email: representative.email,
+                phone_number: representative.phone,
+                tenant_id: representative.tenant_id,
+                first_login: representative.first_login,
+                photo_url: null
             }
         };
     }
@@ -302,10 +377,11 @@ class AuthService {
     // =====================
     // ME (Perfil del usuario autenticado)
     // =====================
-    async me(currentUser) {
+    async me(currentUser, patientId = null) {
         // 1️⃣ Si es un PACIENTE, retornar su perfil clínico full
         if (currentUser.roles?.includes('patient')) {
-            const patient = await patientRepository.getFullProfile(currentUser.id, currentUser.tenant_id);
+            const targetId = patientId || currentUser.id;
+            const patient = await patientRepository.getFullProfile(targetId, currentUser.tenant_id);
             if (!patient) throw new Error('Paciente no encontrado');
 
             // Mapear al mismo formato que espera el Front (o similar)

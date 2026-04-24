@@ -1,5 +1,6 @@
 const PatientRepresentative = require('../../models/mysql/patient_representative.model');
 const Tenant = require('../../models/mysql/tenant.model');
+const Patient = require('../../models/mysql/patient.model');
 
 class PatientRepresentativeRepository {
 
@@ -15,6 +16,21 @@ class PatientRepresentativeRepository {
             where: { id, tenant_id: tenantId },
             include: [
                 { model: Tenant, as: 'tenant', attributes: ['id', 'name'] }
+            ]
+        });
+    }
+
+    async findByUsernameWithPatients(username) {
+        return PatientRepresentative.findOne({
+            where: { username },
+            include: [
+                { model: Tenant, as: 'tenant', attributes: ['id', 'name', 'code'] },
+                {
+                    model: Patient,
+                    as: 'patients',
+                    attributes: ['id', 'first_name', 'last_name', 'photo_url', 'tenant_id'],
+                    through: { attributes: [] }
+                }
             ]
         });
     }
