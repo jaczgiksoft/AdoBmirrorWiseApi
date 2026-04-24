@@ -3,6 +3,8 @@ const aiAgentRepository = require('./ai_agent.repository');
 const appointmentService = require('../appointment/appointment.service');
 const employeeService = require('../employee/employee.service');
 const serviceService = require('../service/service.service');
+const patientRepresentativeRepository = require('../patient_representative/patient_representative.repository');
+const patientRepository = require('../patient/patient.repository');
 const { createLog } = require('../../utils/log.helper');
 const { logger } = require('../../utils/logger');
 
@@ -29,10 +31,15 @@ const aiTools = [
         type: "function",
         function: {
             name: "get_patient_appointments",
-            description: "Obtiene el historial clínico y las citas (pasadas y futuras) del paciente actual.",
+            description: "Obtiene el historial clínico y las citas (pasadas y futuras) de un paciente. Si no se especifica, usa el paciente actual.",
             parameters: {
                 type: "object",
-                properties: {},
+                properties: {
+                    patient_id: {
+                        type: "integer",
+                        description: "El ID del paciente a consultar. Por defecto es el paciente actual si no se especifica otro."
+                    }
+                },
                 required: []
             }
         }
@@ -41,10 +48,14 @@ const aiTools = [
         type: "function",
         function: {
             name: "create_appointment",
-            description: "Agenda una nueva cita para el paciente actual. Es obligatorio proveer todos los datos requeridos. Si falta alguno, pregúntaselo al paciente antes de usar esta función.",
+            description: "Agenda una nueva cita para el paciente especificado. Es obligatorio proveer todos los datos requeridos. Si falta alguno, pregúntaselo al paciente antes de usar esta función.",
             parameters: {
                 type: "object",
                 properties: {
+                    patient_id: {
+                        type: "integer",
+                        description: "El ID del paciente para el cual se agenda la cita. Debe ser el ID del perfil actual o el ID de uno de sus representados."
+                    },
                     date: {
                         type: "string",
                         description: "Fecha de la cita en formato YYYY-MM-DD"
@@ -78,7 +89,7 @@ const aiTools = [
                         description: "Notas adicionales que dejó el paciente para la cita (opcional)"
                     }
                 },
-                required: ["date", "start_time", "end_time", "employee_id", "service_id", "service_name", "price"]
+                required: ["patient_id", "date", "start_time", "end_time", "employee_id", "service_id", "service_name", "price"]
             }
         }
     }
@@ -105,6 +116,21 @@ class AiAgentService {
         const rawHistory = await aiAgentRepository.getRecentMessages(patient_id, tenant_id, 15);
 
         // 3. Crear Contexto del Sistema
+        // Obtener los perfiles (representados) si los hay
+        const representative = await patientRepresentativeRepository.findByUsernameWithPatients(currentUser.username);
+        let representedInfo = "";
+        let validPatientIds = [parseInt(patient_id, 10)]; // For validation
+
+        if (representative && representative.patients && representative.patients.length > 0) {
+            const names = representative.patients.map(p => `${p.first_name} ${p.last_name} (ID: ${p.id})`).join(', ');
+            representedInfo = `\nAdemás, el usuario es representante de los siguientes pacientes: ${names}.`;
+            representative.patients.forEach(p => validPatientIds.push(p.id));
+        }
+
+        // Obtener el paciente actual (puede ser el perfil del padre o del hijo)
+        const currentPatient = await patientRepository.findById(patient_id, tenant_id);
+        const currentPatientName = currentPatient ? `${currentPatient.first_name} ${currentPatient.last_name}` : "el paciente actual";
+
         // IMPORTANTE: Instruimos a la IA para asumir clinic_area_id = 1 (o la principal)
         const systemPrompt = {
             role: "system",
@@ -115,13 +141,16 @@ CONTEXTO TEMPORAL:
 - La fecha de hoy es: ${today}. 
 - Si el paciente menciona un día y mes pero no el año, asume que se refiere al año actual (${today.split('-')[0]}), a menos que esa fecha ya haya pasado, en cuyo caso asume el año siguiente.
 
+CONTEXTO DE USUARIO:
+- Estás hablando desde el perfil de: ${currentPatientName} (ID: ${patient_id}).${representedInfo}
+- IMPORTANTE: Si el usuario te pide agendar para otra persona y coincide con uno de sus representados, debes usar el ID del representado para la cita. Si el usuario no especifica para quién es la cita, usa siempre el activePatientId (ID: ${patient_id}). Si dice "para mi hijo" y hay varios representados, pregúntale cuál de ellos.
+
 Reglas estrictas:
 - Respuestas cortas, empáticas y claras.
 - Si el paciente quiere agendar una cita y no sabes qué servicio, qué doctor o qué fecha quiere, PREGÚNTALE. 
 - Antes de agendar una cita con "create_appointment", debes CONOCER el servicio y el doctor deseados. Si no sabes los IDs, EJECUTA la función "get_available_services_and_doctors".
 - El campo "price" que te devuelve la herramienta de servicios será el "total_amount" para "create_appointment".
-- Asume que "clinic_area_id" es por defecto 1 si necesitas agendar (se maneja en el backend internamente, pero ignóralo o asume 1).
-- El id del paciente ya es conocido en el sistema, no lo pidas (es el paciente actual con el que interactúas).`
+- Asume que "clinic_area_id" es por defecto 1 si necesitas agendar (se maneja en el backend internamente, pero ignóralo o asume 1).`
         };
 
         // Dar formato compatible con OpenAI al historial
@@ -217,7 +246,12 @@ Reglas estrictas:
                         });
 
                     } else if (functionName === 'get_patient_appointments') {
-                        const appointments = await appointmentService.getAppointmentsByPatient(patient_id, currentUser, req);
+                        const targetPatientId = args.patient_id ? parseInt(args.patient_id, 10) : parseInt(patient_id, 10);
+                        if (!validPatientIds.includes(targetPatientId)) {
+                            throw new Error("Acceso denegado: No tienes permiso para consultar las citas de este paciente.");
+                        }
+
+                        const appointments = await appointmentService.getAppointmentsByPatient(targetPatientId, currentUser, req);
                         // Filtramos un poco los datos para no ensuciar el contexto que consume OpenAI
                         functionResult = JSON.stringify(appointments.map(a => ({
                             id: a.id,
@@ -227,10 +261,14 @@ Reglas estrictas:
                             doctor: a.employee ? `${a.employee.first_name} ${a.employee.last_name}` : 'No Asignado'
                         })));
                     } else if (functionName === 'create_appointment') {
+                        const targetPatientId = args.patient_id ? parseInt(args.patient_id, 10) : parseInt(patient_id, 10);
+                        if (!validPatientIds.includes(targetPatientId)) {
+                            throw new Error("Acceso denegado: No tienes permiso para agendar citas para este paciente.");
+                        }
 
                         // Preparar payload para la cita
                         const payload = {
-                            patient_id: patient_id, // Forzado al paciente actual
+                            patient_id: targetPatientId,
                             employee_id: args.employee_id,
                             clinic_area_id: 1, // Por defecto como pidió el scope de la regla
                             date: args.date,
