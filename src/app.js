@@ -25,20 +25,22 @@ const allowNullOrigin = process.env.ALLOW_NULL_ORIGIN === 'true';
 
 app.use(cors({
     origin: (origin, callback) => {
-        // 1. Si no hay configuración o incluye *, permitir todo
-        if (corsOrigins.length === 0 || corsOrigins.includes('*')) {
-            return callback(null, true);
-        }
-
-        // 2. Permitir origen = null solo si está habilitado (Electron, Postman)
+        // 1. Permitir origen = null solo si está habilitado (Electron, Postman)
         if (!origin && allowNullOrigin) {
             return callback(null, true);
         }
 
-        // 3. Permitir si el origen es un esquema móvil de Ionic/Capacitor o está en la lista
+        // 2. Si no hay configuración o incluye *, permitir todo
+        if (corsOrigins.length === 0 || corsOrigins.includes('*')) {
+            return callback(null, true);
+        }
+
+        // 3. Permitir si el origen es un esquema móvil de Ionic/Capacitor o es localhost
         if (origin && (
             origin.startsWith('capacitor://') ||
             origin.startsWith('ionic://') ||
+            origin.startsWith('http://localhost') ||
+            origin.startsWith('https://localhost') ||
             corsOrigins.includes(origin)
         )) {
             return callback(null, true);

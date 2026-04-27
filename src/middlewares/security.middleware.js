@@ -29,7 +29,8 @@ const applySecurityMiddleware = (app) => {
                     upgradeInsecureRequests: [],
                 },
             },
-            crossOriginEmbedderPolicy: false
+            crossOriginEmbedderPolicy: false,
+            crossOriginResourcePolicy: { policy: "cross-origin" }
         })
     );
 
