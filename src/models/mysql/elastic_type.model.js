@@ -2,10 +2,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
 const ElasticType = sequelize.define('ElasticType', {
-    id: { 
-        type: DataTypes.INTEGER, 
-        primaryKey: true, 
-        autoIncrement: true 
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
     },
 
     // 🏢 Multi-tenant
