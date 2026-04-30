@@ -31,6 +31,7 @@ router.use('/occupations', require('../modules/occupation/occupation.routes'));
 router.use('/positions', require('../modules/positions/position.routes'));
 router.use('/patient-types', require('../modules/patient_type/patient_type.routes'));
 router.use('/bracket-types', require('../modules/bracket_type/bracket_type.routes'));
+router.use('/elastic-types', require('../modules/elastic_type/elastic_type.routes'));
 // router.use('/patient-professions', require('../modules/patientProfession/patientProfession.routes'));
 router.use('/patients', require('../modules/patient/patient.routes'));
 router.use('/patient-alerts', require('../modules/patient_alert/patient_alert.routes'));
