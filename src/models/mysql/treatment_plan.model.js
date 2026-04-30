@@ -43,7 +43,18 @@ const TreatmentPlan = sequelize.define('TreatmentPlan', {
     status: {
         type: DataTypes.STRING(50),
         defaultValue: 'planned'
+    },
+
+    diagnosis_content: {
+        type: DataTypes.TEXT('long'),
+        allowNull: true
+    },
+
+    diagnosis_content_html: {
+        type: DataTypes.TEXT('long'),
+        allowNull: true
     }
+
 }, {
     tableName: 'treatment_plans',
     timestamps: true,
