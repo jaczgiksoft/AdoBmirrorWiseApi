@@ -31,9 +31,9 @@ const Patient = sequelize.define('Patient', {
 
     // ☎️ Contacto
     phone_number: { type: DataTypes.STRING(20), allowNull: false },
-    email: { 
-        type: DataTypes.STRING(120), 
-        allowNull: true, 
+    email: {
+        type: DataTypes.STRING(120),
+        allowNull: true,
         validate: { isEmail: true },
         set(value) {
             this.setDataValue('email', value === '' ? null : value);
@@ -142,7 +142,14 @@ const Patient = sequelize.define('Patient', {
     password: { type: DataTypes.STRING, allowNull: true },
     can_login: { type: DataTypes.BOOLEAN, defaultValue: false },
     push_token: { type: DataTypes.STRING, allowNull: true },
-    first_login: { type: DataTypes.BOOLEAN, defaultValue: true }
+    first_login: { type: DataTypes.BOOLEAN, defaultValue: true },
+
+    // Origen del registro
+    created_source: {
+        type: DataTypes.ENUM('system', 'user'),
+        allowNull: false,
+        defaultValue: 'user'
+    }
 
 }, {
     tableName: 'patients',
