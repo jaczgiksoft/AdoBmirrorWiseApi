@@ -31,7 +31,14 @@ const Patient = sequelize.define('Patient', {
 
     // ☎️ Contacto
     phone_number: { type: DataTypes.STRING(20), allowNull: false },
-    email: { type: DataTypes.STRING(120), allowNull: true, validate: { isEmail: true } },
+    email: { 
+        type: DataTypes.STRING(120), 
+        allowNull: true, 
+        validate: { isEmail: true },
+        set(value) {
+            this.setDataValue('email', value === '' ? null : value);
+        }
+    },
 
     // 🔗 Relaciones externas
     referral_id: {
