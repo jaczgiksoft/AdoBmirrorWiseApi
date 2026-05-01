@@ -30,4 +30,14 @@ router.delete('/:id',
     patientElasticController.remove
 );
 
+router.put('/:id',
+    validateToken,
+    uploadElasticPreview,
+    parseJsonFields,
+    validateId,
+    validateSave,
+    validateRequest,
+    patientElasticController.update
+);
+
 module.exports = router;

@@ -53,6 +53,31 @@ class PatientElasticController {
             next(error);
         }
     }
+
+    async update(req, res, next) {
+        try {
+            const { id } = req.params;
+            const tenantId = req.user.tenant_id;
+
+            if (req.file) {
+                const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+                req.body.preview_image_url = cleanPath.replace(/\\/g, "/");
+            }
+
+            const data = {
+                ...req.body
+            };
+
+            await patientElasticService.updatePatientElastic(id, data, tenantId);
+
+            res.json({
+                success: true,
+                message: 'Instrucción actualizada correctamente'
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 module.exports = new PatientElasticController();
