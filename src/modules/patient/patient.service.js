@@ -285,12 +285,14 @@ class PatientService {
         const draw = parseInt(body.draw) || 1;
         const start = parseInt(body.start) || 0;
         const length = parseInt(body.length) || 10;
-        const searchValue = body['search[value]'] || (body.search?.value ?? '');
-        const orderColumnIndex = body['order[0][column]'] || (body.order?.[0]?.column ?? 0);
-        const orderDir = (body['order[0][dir]'] || (body.order?.[0]?.dir ?? 'asc')).toUpperCase();
+        const searchValue = body.searchValue || body['search[value]'] || (body.search?.value ?? '');
+        const orderColumnValue = body.orderColumn || body['order[0][column]'] || body.order?.[0]?.column;
+        const orderDir = (body.orderDir || body['order[0][dir]'] || body.order?.[0]?.dir || 'asc').toUpperCase();
 
         const columns = [null, 'first_name', 'last_name', 'medical_record_number', 'birth_date'];
-        const orderColumn = columns[orderColumnIndex] || 'id';
+        const orderColumn = (typeof orderColumnValue === 'string' && orderColumnValue) 
+            ? orderColumnValue 
+            : (columns[parseInt(orderColumnValue)] || 'first_name');
 
         const params = { start, length, searchValue, orderColumn, orderDir, tenant_id: currentUser.tenant_id };
 

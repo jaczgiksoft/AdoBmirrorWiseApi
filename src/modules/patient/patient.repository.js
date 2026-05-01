@@ -87,6 +87,7 @@ class PatientRepository {
             where[Op.or] = [
                 { first_name: { [Op.like]: `%${searchValue}%` } },
                 { last_name: { [Op.like]: `%${searchValue}%` } },
+                { middle_name: { [Op.like]: `%${searchValue}%` } },
                 { medical_record_number: { [Op.like]: `%${searchValue}%` } },
                 { phone_number: { [Op.like]: `%${searchValue}%` } },
                 { email: { [Op.like]: `%${searchValue}%` } }
