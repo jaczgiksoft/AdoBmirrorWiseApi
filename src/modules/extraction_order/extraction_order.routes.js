@@ -7,6 +7,7 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 const { checkPermissions } = require('../../middlewares/permissions.middleware');
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const { uploadRadiographs } = require('../../middlewares/upload.middleware');
+const parseMultipartData = require('../../middlewares/parseMultipartData');
 const { createExtractionOrderValidator } = require('./extraction_order.validator');
 
 // Routes definitions
@@ -15,6 +16,7 @@ router.post('/',
     loadPermissions,
     checkPermissions('write', 'patients'),
     uploadRadiographs,
+    parseMultipartData,
     createExtractionOrderValidator,
     validateRequest,
     controller.createOrder
