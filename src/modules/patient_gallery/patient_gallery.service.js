@@ -105,6 +105,56 @@ class PatientGalleryService {
     async getFolders(patientId, tenantId) {
         return await patientGalleryRepository.findFoldersByPatient(patientId, tenantId);
     }
+
+    /**
+     * Actualiza (sobrescribe) una imagen existente en la galería.
+     */
+    async updateImage(imageId, tenantId, file) {
+        // 1. Buscar la imagen en la base de datos
+        const imageRecord = await patientGalleryRepository.findImageById(imageId);
+        
+        if (!imageRecord) {
+            throw new Error('Imagen no encontrada.');
+        }
+
+        if (imageRecord.folder.tenant_id !== tenantId) {
+            throw new Error('No tienes permiso para editar esta imagen.');
+        }
+
+        // 2. Mover el nuevo archivo al destino final (sobrescribiendo el original)
+        const tempPath = file.path;
+        // Obtenemos la ruta absoluta del archivo original
+        const originalAbsolutePath = path.join(__dirname, '../../../', imageRecord.file_path);
+
+        try {
+            // Asegurar que el directorio destino existe
+            const destDir = path.dirname(originalAbsolutePath);
+            if (!fs.existsSync(destDir)) {
+                fs.mkdirSync(destDir, { recursive: true });
+            }
+
+            // Sobrescribir el archivo
+            fs.copyFileSync(tempPath, originalAbsolutePath);
+            
+            // Eliminar el archivo temporal y su carpeta temporal (creada por multer galleryStorage)
+            fs.unlinkSync(tempPath);
+            const tempDir = path.dirname(tempPath);
+            if (fs.existsSync(tempDir)) {
+                fs.rmdirSync(tempDir); // Intentamos borrar el dir temp si quedó vacío
+            }
+        } catch (error) {
+            logger.error(`Error al sobrescribir imagen: ${error.message}`);
+            throw new Error('No se pudo guardar la imagen editada.');
+        }
+
+        // 3. (Opcional) Actualizar metadata en DB si es necesario, 
+        // pero como mantenemos la misma ruta, no es estrictamente obligatorio 
+        // a menos que queramos actualizar updatedAt o similar.
+        imageRecord.changed('updated_at', true);
+        await imageRecord.save();
+
+        return { message: 'Imagen actualizada exitosamente', image: imageRecord };
+    }
 }
 
 module.exports = new PatientGalleryService();

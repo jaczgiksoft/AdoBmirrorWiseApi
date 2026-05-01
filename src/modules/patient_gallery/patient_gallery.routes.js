@@ -31,4 +31,14 @@ router.get(
     controller.getPatientGallery
 );
 
+/**
+ * @route POST /api/patient-gallery/image/:imageId/edit
+ * @desc Sobrescribe una imagen existente en la galería
+ */
+router.post(
+    '/image/:imageId/edit',
+    uploadGalleryPhotos,
+    controller.updateImage
+);
+
 module.exports = router;

@@ -35,6 +35,17 @@ class PatientGalleryRepository {
             ]
         });
     }
+
+    async findImageById(id) {
+        return await PatientGalleryImage.findByPk(id, {
+            include: [
+                {
+                    model: PatientGalleryFolder,
+                    as: 'folder' // Need to check if alias is 'folder'
+                }
+            ]
+        });
+    }
 }
 
 module.exports = new PatientGalleryRepository();
