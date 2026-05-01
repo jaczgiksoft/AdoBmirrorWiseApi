@@ -48,7 +48,7 @@ const createPatientValidator = [
         .isString().isLength({ min: 8, max: 20 }).withMessage('Debe ser un teléfono válido'),
 
     body('email')
-        .optional()
+        .optional({ values: 'falsy' })
         .isEmail().withMessage('El correo debe tener un formato válido'),
 
     // 🔗 Relaciones externas (FK)
@@ -141,7 +141,7 @@ const updatePatientGeneralValidator = [
     body('birth_date').optional().isDate(),
     body('marital_status').optional().trim(),
     body('phone_number').optional().isString().isLength({ min: 8, max: 20 }),
-    body('email').optional().isEmail(),
+    body('email').optional({ values: 'falsy' }).isEmail(),
     body('referral_id').optional().isInt(),
     body('address_street_name').optional().trim(),
     body('address_street_number').optional().trim(),
