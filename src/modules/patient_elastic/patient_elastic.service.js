@@ -28,6 +28,15 @@ class PatientElasticService {
             throw error;
         }
     }
+
+    async updatePatientElastic(id, data, tenantId) {
+        try {
+            return await patientElasticRepository.update(id, data, tenantId);
+        } catch (error) {
+            logger.error(`[PatientElasticService] Error al actualizar elástico: ${error.message}`);
+            throw error;
+        }
+    }
 }
 
 module.exports = new PatientElasticService();
