@@ -65,6 +65,11 @@ router.use('/attendance', require('../modules/attendance/attendance.routes'));
 router.use('/ai-agent', require('../modules/ai_agent/ai_agent.routes'));
 
 // ==========================
+// 🤖 CHAT ASSISTANT
+// ==========================
+router.use('/chat-assistant', require('../modules/chat_assistant/chat_assistant.routes'));
+
+// ==========================
 // 📦 INVENTORY
 // ==========================
 router.use('/inventory-providers', require('../modules/inventory_provider/inventory_provider.routes'));
