@@ -34,6 +34,13 @@ const getOne = async (req, res) => {
 // 🟢 Crear
 const create = async (req, res) => {
     try {
+        // 🖼️ Manejo de foto (Solo por archivo, no base64)
+        delete req.body.profile_image;
+        if (req.file) {
+            const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+            req.body.profile_image = cleanPath.replace(/\\/g, "/");
+        }
+
         const result = await employeeService.createEmployee(req.body, req.user, req);
         res.status(201).json({ message: 'Empleado creado correctamente', data: result });
     } catch (err) {
@@ -44,6 +51,13 @@ const create = async (req, res) => {
 // 🟡 Actualizar
 const update = async (req, res) => {
     try {
+        // 🖼️ Manejo de foto (Solo por archivo, no base64)
+        delete req.body.profile_image;
+        if (req.file) {
+            const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
+            req.body.profile_image = cleanPath.replace(/\\/g, "/");
+        }
+
         const result = await employeeService.updateEmployee(req.params.id, req.body, req.user, req);
         res.json({ message: 'Empleado actualizado correctamente', data: result });
     } catch (err) {

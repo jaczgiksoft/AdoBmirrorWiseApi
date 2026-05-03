@@ -69,7 +69,7 @@ router.post(
     patientController.create
 );
 
-// 🟡 Actualizar paciente
+// 🟡 Actualizar paciente 
 router.put(
     '/:id',
     validateToken,

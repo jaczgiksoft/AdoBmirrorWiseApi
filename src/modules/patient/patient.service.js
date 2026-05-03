@@ -59,34 +59,10 @@ class PatientService {
             // ------------------------------
             // 🔥 GENERAR ACCESO AUTOMÁTICO
             // ------------------------------
-            function calculateAge(birthDate) {
-                const today = new Date();
-                const dob = new Date(birthDate);
-
-                let age = today.getFullYear() - dob.getFullYear();
-                const m = today.getMonth() - dob.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                    age--;
-                }
-                return age;
-            }
-
-            const age = calculateAge(cleanData.birth_date);
-
-            // Paciente MAYOR de edad
-            if (age >= 18) {
-                cleanData.can_login = true;
-                cleanData.username = cleanData.phone_number;
-                cleanData.password = cleanData.phone_number;
-                cleanData.first_login = true; // fuerza cambio de contraseña
-            }
-            // Paciente MENOR de edad
-            else {
-                cleanData.can_login = false;
-                cleanData.username = null;
-                cleanData.password = null;
-                cleanData.first_login = false;
-            }
+            cleanData.can_login = true;
+            cleanData.username = cleanData.phone_number;
+            cleanData.password = cleanData.phone_number;
+            cleanData.first_login = true; // fuerza cambio de contraseña
 
             cleanData.tenant_id = tenantId;
             // Convertir IDs numéricos

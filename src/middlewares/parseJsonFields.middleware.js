@@ -4,7 +4,8 @@ module.exports = function parseJsonFields(req, res, next) {
         "billing_data",
         "legal_representatives",
         "alerts",
-        "odontogram_data"
+        "odontogram_data",
+        "positionIds"
     ];
 
     jsonFields.forEach(field => {

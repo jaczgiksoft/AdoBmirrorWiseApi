@@ -44,12 +44,11 @@ const create = async (req, res) => {
             }
         });
 
-        // Si viene foto
+        // 🖼️ Manejo de foto (Solo por archivo, no base64)
+        delete req.body.photo_url;
         if (req.file) {
-            // Remover ruta absoluta (Windows o Linux) y dejar solo /uploads/...
             const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
-
-            req.body.photo_url = cleanPath.replace(/\\/g, "/"); // ← Normaliza slashes en Windows
+            req.body.photo_url = cleanPath.replace(/\\/g, "/");
         }
 
         const patient = await patientService.createPatient(req.body, req.user, req);
@@ -68,7 +67,8 @@ const create = async (req, res) => {
 // 🟡 Actualizar paciente
 const update = async (req, res) => {
     try {
-        // Si viene foto nueva 
+        // 🖼️ Manejo de foto (Solo por archivo, no base64)
+        delete req.body.photo_url;
         if (req.file) {
             const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
             req.body.photo_url = cleanPath.replace(/\\/g, "/");
@@ -141,7 +141,8 @@ const getHomeSummary = async (req, res) => {
 // 🟡 Actualizar paciente (General)
 const updateGeneral = async (req, res) => {
     try {
-        // Si viene foto nueva
+        // 🖼️ Manejo de foto (Solo por archivo, no base64)
+        delete req.body.photo_url;
         if (req.file) {
             const cleanPath = req.file.path.replace(/^.*uploads[\\/]/, "uploads/");
             req.body.photo_url = cleanPath.replace(/\\/g, "/");

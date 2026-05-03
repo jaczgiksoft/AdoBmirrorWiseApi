@@ -116,6 +116,18 @@ const inventoryStorage = multer.diskStorage({
     },
 });
 
+// 7️⃣ Empleados (foto de perfil)
+const employeeStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const tenantId = req.user?.tenant_id || "unknown";
+        const dir = ensureDir(path.join(__dirname, `../../uploads/${tenantId}/employees/profile`));
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `employee_${Date.now()}${path.extname(file.originalname)}`);
+    },
+});
+
 // === Inicializaciones de Multer === //
 const uploadTenantLogo = multer({
     storage: tenantStorage,
@@ -155,6 +167,12 @@ const uploadInventoryImage = multer({
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: fileFilter("images"),
 }).single("image");
+
+const uploadEmployeePhoto = multer({
+    storage: employeeStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: fileFilter("images"),
+}).single("profile_image");
 
 // 6️⃣ Radiografías (Extracciones)
 const radiographStorage = multer.diskStorage({
@@ -262,4 +280,5 @@ module.exports = {
     uploadRadiographs,      // Radiografías (campo: radiographs)
     uploadGalleryPhotos,    // Galería (múltiples campos)
     uploadElasticPreview,   // Elásticos (campo: preview_image)
+    uploadEmployeePhoto,    // Empleado (campo: profile_image)
 };

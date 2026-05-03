@@ -10,6 +10,9 @@ const {
     employeeIdValidator
 } = require('./employee.validator');
 
+const { uploadEmployeePhoto } = require('../../middlewares/upload.middleware');
+const parseJsonFields = require('../../middlewares/parseJsonFields.middleware');
+
 // =========================
 // RUTAS EMPLEADOS
 // =========================
@@ -63,6 +66,8 @@ router.post(
     validateToken,
     loadPermissions,
     checkPermissions('write', 'employees'),
+    uploadEmployeePhoto,
+    parseJsonFields,
     employeeValidationRules,
     validateRequest,
     employeeController.create
@@ -74,6 +79,8 @@ router.put(
     validateToken,
     loadPermissions,
     checkPermissions('edit', 'employees'),
+    uploadEmployeePhoto,
+    parseJsonFields,
     employeeIdValidator,
     employeeValidationRules,
     validateRequest,
