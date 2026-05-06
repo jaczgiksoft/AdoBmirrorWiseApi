@@ -52,6 +52,10 @@ const PatientRepresentativeLink = require('./patient_representative_link.model')
 const PatientGalleryFolder = require('./patient_gallery_folder.model');
 const PatientGalleryImage = require('./patient_gallery_image.model');
 const Attendance = require('./attendance.model');
+const EmployeeChat = require('./employee_chat.model');
+const EmployeeChatParticipant = require('./employee_chat_participant.model');
+const ChatMessage = require('./chat_message.model');
+const ChatMessageRead = require('./chat_message_read.model');
 
 // =====================
 // TENANTS
@@ -1455,3 +1459,32 @@ Attendance.belongsTo(Employee, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
 });
+
+// =============================================================
+// RELACIONES PARA EL SISTEMA DE CHAT
+// =============================================================
+
+// 1. Relaciones con Tenant (Multitenancy)
+Tenant.hasMany(EmployeeChat, { foreignKey: 'tenant_id' });
+EmployeeChat.belongsTo(Tenant, { foreignKey: 'tenant_id' });
+
+// 2. Relaciones de EmployeeChat y sus Participantes
+EmployeeChat.hasMany(EmployeeChatParticipant, { foreignKey: 'chat_id', as: 'participants' });
+EmployeeChatParticipant.belongsTo(EmployeeChat, { foreignKey: 'chat_id' });
+
+User.hasMany(EmployeeChatParticipant, { foreignKey: 'user_id' });
+EmployeeChatParticipant.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// 3. Relaciones de Mensajes
+EmployeeChat.hasMany(ChatMessage, { foreignKey: 'chat_id', as: 'messages' });
+ChatMessage.belongsTo(EmployeeChat, { foreignKey: 'chat_id' });
+
+User.hasMany(ChatMessage, { foreignKey: 'sender_id', as: 'sentMessages' });
+ChatMessage.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+
+// 4. Relaciones de Lectura de Mensajes
+ChatMessage.hasMany(ChatMessageRead, { foreignKey: 'message_id', as: 'reads' });
+ChatMessageRead.belongsTo(ChatMessage, { foreignKey: 'message_id' });
+
+User.hasMany(ChatMessageRead, { foreignKey: 'user_id' });
+ChatMessageRead.belongsTo(User, { foreignKey: 'user_id' });
