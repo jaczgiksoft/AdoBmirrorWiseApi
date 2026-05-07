@@ -60,6 +60,11 @@ router.use('/patient-clinical', require('../modules/patient_clinical/patient_cli
 router.use('/attendance', require('../modules/attendance/attendance.routes'));
 
 // ==========================
+// 💬 CHAT MÓDULO
+// ==========================
+router.use('/chats', require('../modules/chat/chat.routes'));
+
+// ==========================
 // 🧠 AI AGENT
 // ==========================
 router.use('/ai-agent', require('../modules/ai_agent/ai_agent.routes'));
