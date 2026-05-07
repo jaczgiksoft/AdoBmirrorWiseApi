@@ -13,19 +13,16 @@ const app = express();
 // Confiar en el proxy para que express-rate-limit funcione correctamente detrás de Nginx, Ngrok, etc.
 app.set('trust proxy', 1);
 
-// 🔐 Seguridad centralizada (helmet, xss-clean, rate limit, mongo-sanitize, etc.)
-applySecurityMiddleware(app);
-
-// 🌐 Configuración de CORS dinámica
+// 🌐 Configuración de CORS dinámica (DEBE ir ANTES de helmet para no ser sobreescrito)
 const corsOrigins = process.env.CORS_ALLOWED_ORIGINS
     ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : [];
 
 const allowNullOrigin = process.env.ALLOW_NULL_ORIGIN === 'true';
 
-app.use(cors({
+const corsOptions = {
     origin: (origin, callback) => {
-        // 1. Permitir origen = null solo si está habilitado (Electron, Postman)
+        // 1. Permitir origen = null (Electron app empaquetada, Postman)
         if (!origin && allowNullOrigin) {
             return callback(null, true);
         }
@@ -35,12 +32,14 @@ app.use(cors({
             return callback(null, true);
         }
 
-        // 3. Permitir si el origen es un esquema móvil de Ionic/Capacitor o es localhost
+        // 3. Permitir esquemas móviles, localhost y dominios ngrok
         if (origin && (
             origin.startsWith('capacitor://') ||
             origin.startsWith('ionic://') ||
             origin.startsWith('http://localhost') ||
             origin.startsWith('https://localhost') ||
+            origin.endsWith('.ngrok-free.app') ||
+            origin.endsWith('.ngrok.io') ||
             corsOrigins.includes(origin)
         )) {
             return callback(null, true);
@@ -50,8 +49,17 @@ app.use(cors({
         logger.warn(`❌ Bloqueado intento de acceso CORS desde: ${origin}`);
         return callback(new Error('No autorizado por CORS'));
     },
-    credentials: true
-}));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning', 'x-requested-with'],
+};
+
+// ✅ Responder preflight OPTIONS antes de cualquier otro middleware
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
+// 🔐 Seguridad centralizada (helmet, xss-clean, rate limit, mongo-sanitize, etc.)
+applySecurityMiddleware(app);
 
 // 📜 Logs HTTP solo si no estamos en test
 if (process.env.NODE_ENV !== 'test') {

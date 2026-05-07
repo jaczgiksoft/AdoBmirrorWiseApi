@@ -49,6 +49,9 @@ class ChatService {
                 type: 'text'
             }, t);
 
+            // 3. Actualizar fecha de actividad del chat
+            await chat.update({ updatedAt: new Date() }, { transaction: t });
+
             await t.commit();
 
             // 🚀 Emitir por Socket.IO (Tiempo Real)
@@ -80,7 +83,7 @@ class ChatService {
     // 👁️ Marcar mensajes como leídos
     async markAsRead(chatId, currentUser) {
         if (!currentUser.tenant_id) throw new Error('No autorizado: falta tenant');
-        
+
         const isParticipant = await chatRepository.isParticipant(chatId, currentUser.id);
         if (!isParticipant) throw new Error('No autorizado');
 

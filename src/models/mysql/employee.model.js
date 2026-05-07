@@ -38,6 +38,12 @@ const Employee = sequelize.define('Employee', {
     status: {
         type: DataTypes.ENUM('active', 'inactive'),
         defaultValue: 'active'
+    },
+    full_name: {
+        type: DataTypes.VIRTUAL,
+        get() {
+            return `${this.first_name} ${this.last_name} ${this.second_last_name || ''}`.trim();
+        }
     }
 }, {
     tableName: 'employees',

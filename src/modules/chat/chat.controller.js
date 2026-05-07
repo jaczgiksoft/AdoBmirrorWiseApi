@@ -11,7 +11,7 @@ const getUserChats = async (req, res) => {
     }
 };
 
-// 📜 Obtener historial de un chat
+// 📜 Obtener historial de un chat 
 const getHistory = async (req, res) => {
     try {
         const history = await chatService.getHistory(req.params.id, req.query, req.user);

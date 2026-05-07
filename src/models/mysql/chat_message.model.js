@@ -20,7 +20,7 @@ const ChatMessage = sequelize.define('ChatMessage', {
         allowNull: false
     },
     type: {
-        type: DataTypes.ENUM('text'),
+        type: DataTypes.ENUM('text', 'image', 'file', 'audio', 'video', 'system'),
         defaultValue: 'text',
         allowNull: false
     }

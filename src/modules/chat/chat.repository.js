@@ -1,41 +1,23 @@
 const { Op } = require('sequelize');
+const sequelize = require('../../config/database');
 const EmployeeChat = require('../../models/mysql/employee_chat.model');
 const EmployeeChatParticipant = require('../../models/mysql/employee_chat_participant.model');
 const ChatMessage = require('../../models/mysql/chat_message.model');
 const ChatMessageRead = require('../../models/mysql/chat_message_read.model');
 const User = require('../../models/mysql/user.model');
+const Employee = require('../../models/mysql/employee.model');
 
 class ChatRepository {
     // 🔍 Buscar o crear un chat privado entre dos usuarios
     async findOrCreatePrivateChat(user1Id, user2Id, tenantId, transaction) {
-        // Buscar si ya existe un chat privado donde ambos participen
-        const existingChat = await EmployeeChat.findOne({
-            where: {
-                tenant_id: tenantId,
-                type: 'private'
-            },
-            include: [
-                {
-                    model: EmployeeChatParticipant,
-                    as: 'participants',
-                    where: { user_id: [user1Id, user2Id] },
-                    required: true
-                }
-            ],
-            group: ['EmployeeChat.id'],
-            having: sequelize.literal(`COUNT(DISTINCT participants.user_id) = 2`)
-        });
-
-        // NOTA: El literal anterior asume que 'sequelize' está disponible o usa la instancia del modelo.
-        // Mejor hacerlo con una subconsulta o buscando los chats del usuario 1 y filtrando por usuario 2.
-        
-        // Refactor para ser más robusto:
+        // 1. Buscar los chats donde participa el usuario 1
         const chatsUser1 = await EmployeeChatParticipant.findAll({
             where: { user_id: user1Id },
             attributes: ['chat_id']
         });
         const chatIdsUser1 = chatsUser1.map(c => c.chat_id);
 
+        // 2. Buscar entre esos chats uno que sea privado y donde también participe el usuario 2
         const commonChat = await EmployeeChat.findOne({
             where: {
                 id: chatIdsUser1,
@@ -49,7 +31,8 @@ class ChatRepository {
                     where: { user_id: user2Id },
                     required: true
                 }
-            ]
+            ],
+            transaction
         });
 
         if (commonChat) return commonChat;
@@ -125,19 +108,47 @@ class ChatRepository {
     // 📋 Listar chats del usuario con el último mensaje
     async findUserChats(userId, tenantId) {
         return EmployeeChat.findAll({
-            where: { tenant_id: tenantId },
+            attributes: {
+                include: [
+                    [
+                        sequelize.literal(`(
+                            SELECT COUNT(*)
+                            FROM chat_messages AS m
+                            LEFT JOIN chat_messages_read AS r ON m.id = r.message_id AND r.user_id = ${userId}
+                            WHERE m.chat_id = EmployeeChat.id
+                              AND m.sender_id != ${userId}
+                              AND r.id IS NULL
+                        )`),
+                        'unreadCount'
+                    ]
+                ]
+            },
+            where: { 
+                tenant_id: tenantId,
+                // Filtrar chats donde el usuario participa
+                id: {
+                    [Op.in]: sequelize.literal(`(SELECT chat_id FROM employee_chat_participants WHERE user_id = ${userId})`)
+                }
+            },
             include: [
                 {
                     model: EmployeeChatParticipant,
                     as: 'participants',
-                    where: { user_id: userId },
-                    required: true
-                },
-                {
-                    model: EmployeeChatParticipant,
-                    as: 'participants',
                     attributes: ['user_id'],
-                    include: [{ model: User, as: 'user', attributes: ['id', 'username'] }]
+                    include: [
+                        { 
+                            model: User, 
+                            as: 'user', 
+                            attributes: ['id', 'username'],
+                            include: [
+                                { 
+                                    model: Employee, 
+                                    as: 'employee', 
+                                    attributes: ['first_name', 'last_name', 'profile_image'] 
+                                }
+                            ]
+                        }
+                    ]
                 },
                 {
                     model: ChatMessage,
@@ -147,7 +158,9 @@ class ChatRepository {
                     include: [{ model: User, as: 'sender', attributes: ['id', 'username'] }]
                 }
             ],
-            order: [[{ model: ChatMessage, as: 'messages' }, 'createdAt', 'DESC']]
+            // Ordenar por la fecha de actualización del chat (actividad más reciente)
+            order: [['updatedAt', 'DESC']],
+            subQuery: false
         });
     }
 
