@@ -1,6 +1,8 @@
 // src/bootstrap/index.js
 const http = require("http");
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
+const EmployeeChatParticipant = require("../models/mysql/employee_chat_participant.model");
 const app = require("../app");
 const sequelize = require("../config/database");
 const connectMongo = require("../config/mongo");
@@ -52,12 +54,49 @@ async function bootstrap() {
                 },
             });
 
+
+            // 🔐 Middleware de autenticación para Socket.IO
+            io.use(async (socket, next) => {
+                const token = socket.handshake.auth?.token;
+                if (!token) {
+                    return next(new Error("No autorizado: Falta token"));
+                }
+                try {
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                    socket.user = decoded;
+                    next();
+                } catch (err) {
+                    logger.error(`❌ Error de auth en Socket: ${err.message}`);
+                    next(new Error("No autorizado: Token inválido"));
+                }
+            });
+
             // 🔌 Manejo de conexión
-            io.on("connection", (socket) => {
-                logger.info(`🧩 Cliente WebSocket conectado: ${socket.id}`);
+            io.on("connection", async (socket) => {
+                const userId = socket.user.id;
+                logger.info(`🧩 Cliente WebSocket conectado: ${socket.id} (User: ${userId})`);
+
+                // 🏠 Unirse a sala personal (para notificaciones directas)
+                socket.join(`user:${userId}`);
+
+                // 💬 Unirse a todas las salas de chat donde participa
+                try {
+                    const chats = await EmployeeChatParticipant.findAll({
+                        where: { user_id: userId },
+                        attributes: ["chat_id"]
+                    });
+                    
+                    chats.forEach(c => {
+                        socket.join(`chat:${c.chat_id}`);
+                    });
+                    
+                    logger.info(`✅ Usuario ${userId} unido a ${chats.length} salas de chat`);
+                } catch (err) {
+                    logger.error(`❌ Error al unir usuario ${userId} a salas: ${err.message}`);
+                }
 
                 socket.on("disconnect", () => {
-                    logger.info(`🔌 Cliente desconectado: ${socket.id}`);
+                    logger.info(`🔌 Cliente desconectado: ${socket.id} (User: ${userId})`);
                 });
             });
 
