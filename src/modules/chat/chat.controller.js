@@ -11,7 +11,7 @@ const getUserChats = async (req, res) => {
     }
 };
 
-// 📜 Obtener historial de un chat 
+// 📜 Obtener historial de un chat (incluye reads por mensaje)
 const getHistory = async (req, res) => {
     try {
         const history = await chatService.getHistory(req.params.id, req.query, req.user);
@@ -31,7 +31,7 @@ const sendMessage = async (req, res) => {
     }
 };
 
-// 👁️ Marcar como leído
+// 👁️ Marcar como leído (emite messages_seen por WebSocket)
 const markAsRead = async (req, res) => {
     try {
         await chatService.markAsRead(req.params.id, req.user);
@@ -41,9 +41,42 @@ const markAsRead = async (req, res) => {
     }
 };
 
+// 👥 Crear grupo
+const createGroup = async (req, res) => {
+    try {
+        const group = await chatService.createGroup(req.body, req.user);
+        res.status(201).json({ message: 'Grupo creado', data: group });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
+// ➕ Agregar participante a un grupo
+const addParticipant = async (req, res) => {
+    try {
+        const participant = await chatService.addParticipant(req.params.id, req.body, req.user);
+        res.status(201).json({ message: 'Participante agregado', data: participant });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
+// ➖ Eliminar participante de un grupo
+const removeParticipant = async (req, res) => {
+    try {
+        await chatService.removeParticipant(req.params.id, req.params.userId, req.user);
+        res.json({ message: 'Participante eliminado del grupo' });
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 module.exports = {
     getUserChats,
     getHistory,
     sendMessage,
-    markAsRead
+    markAsRead,
+    createGroup,
+    addParticipant,
+    removeParticipant
 };
