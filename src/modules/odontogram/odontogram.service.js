@@ -42,7 +42,8 @@ class OdontogramService {
                 ...Object.keys(data.brackets || {}),
                 ...Object.keys(data.surfaceStates || {}),
                 ...Object.keys(data.periodontalData || {}),
-                ...Object.keys(data.toothNotes || {})
+                ...Object.keys(data.toothNotes || {}),
+                ...Object.keys(data.attachments || {})
             ]);
 
             for (const toothId of toothIds) {
@@ -50,13 +51,14 @@ class OdontogramService {
                     toothState: data.toothStates?.[toothId] || null,
                     brackets: data.brackets?.[toothId] || null,
                     periodontalData: data.periodontalData?.[toothId] || null,
-                    toothNote: data.toothNotes?.[toothId] || null
+                    toothNote: data.toothNotes?.[toothId] || null,
+                    attachments: data.attachments?.[toothId] || null
                 };
 
                 const caras = data.surfaceStates?.[toothId] || null;
 
                 // Solo guardar si hay algo relevante
-                if (status.toothState || status.brackets || status.periodontalData || status.toothNote || caras) {
+                if (status.toothState || status.brackets || status.periodontalData || status.toothNote || status.attachments || caras) {
                     details.push({
                         odontogram_id: odontogram.id,
                         tooth_id: parseInt(toothId),

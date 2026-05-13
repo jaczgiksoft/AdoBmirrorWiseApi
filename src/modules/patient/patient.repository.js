@@ -195,7 +195,7 @@ class PatientRepository {
     async getLastMedicalRecord(tenantId) {
         return Patient.findOne({
             where: { tenant_id: tenantId },
-            order: [['medical_record_number', 'DESC']],
+            order: [['id', 'DESC']],
             attributes: ['medical_record_number']
         });
     }
