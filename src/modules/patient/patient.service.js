@@ -371,6 +371,55 @@ class PatientService {
         };
     }
 
+    async getReferralStats(currentUser) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No se encontró tenant en el token');
+        }
+
+        const { stats, recentPatients } = await patientRepository.getReferralStats(currentUser.tenant_id);
+
+        // 1. Procesar estadísticas para gráficas
+        const formattedStats = stats.map(s => ({
+            id: s.referral_id,
+            name: s.referral ? s.referral.name : 'Desconocido',
+            count: parseInt(s.get('count')) || 0
+        }));
+
+        // 2. Identificar mayor y menor impacto
+        let highest = null;
+        let lowest = null;
+        if (formattedStats.length > 0) {
+            highest = formattedStats[0]; // El repo ya los ordena DESC por count
+            lowest = formattedStats[formattedStats.length - 1];
+        }
+
+        // 3. Obtener el histórico de las últimas 5 referencias únicas (sin repetir)
+        const uniqueRecent = [];
+        const seenIds = new Set();
+
+        for (const p of recentPatients) {
+            if (p.referral && !seenIds.has(p.referral.id)) {
+                uniqueRecent.push({
+                    id: p.referral.id,
+                    name: p.referral.name,
+                    patient_id: p.id,
+                    date: p.createdAt
+                });
+                seenIds.add(p.referral.id);
+            }
+            if (uniqueRecent.length === 5) break;
+        }
+
+        return {
+            stats: formattedStats,
+            summary: {
+                highest,
+                lowest
+            },
+            recent: uniqueRecent
+        };
+    }
+
 }
 
 module.exports = new PatientService();
