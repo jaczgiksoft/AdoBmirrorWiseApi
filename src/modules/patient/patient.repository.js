@@ -286,6 +286,49 @@ class PatientRepository {
         }
     }
 
+    async getReferralStats(tenantId) {
+        // 1. Obtener conteos agrupados por referido
+        const stats = await Patient.findAll({
+            where: {
+                tenant_id: tenantId,
+                referral_id: { [Op.ne]: null }
+            },
+            attributes: [
+                'referral_id',
+                [Patient.sequelize.fn('COUNT', Patient.sequelize.col('Patient.id')), 'count']
+            ],
+            include: [
+                {
+                    model: Referral,
+                    as: 'referral',
+                    attributes: ['id', 'name']
+                }
+            ],
+            group: ['referral_id', 'referral.id', 'referral.name'],
+            order: [[Patient.sequelize.literal('count'), 'DESC']]
+        });
+
+        // 2. Obtener muestra de pacientes recientes para encontrar los últimos 5 referidos únicos
+        const recentPatients = await Patient.findAll({
+            where: {
+                tenant_id: tenantId,
+                referral_id: { [Op.ne]: null }
+            },
+            attributes: ['id', 'createdAt'],
+            include: [
+                {
+                    model: Referral,
+                    as: 'referral',
+                    attributes: ['id', 'name']
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+            limit: 30 // Muestra suficiente para garantizar encontrar 5 distintos
+        });
+
+        return { stats, recentPatients };
+    }
+
 }
 
 module.exports = new PatientRepository();

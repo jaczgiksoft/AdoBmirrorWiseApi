@@ -45,6 +45,15 @@ router.get(
     patientController.getNextMedicalRecord
 );
 
+// 📊 Estadísticas de Referidos
+router.get(
+    '/referrals-stats',
+    validateToken,
+    loadPermissions,
+    checkPermissions('read', 'patients'),
+    patientController.getReferralStats
+);
+
 // 🔍 Obtener un paciente por ID
 router.get(
     '/:id',

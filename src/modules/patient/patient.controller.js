@@ -138,6 +138,16 @@ const getHomeSummary = async (req, res) => {
     }
 };
 
+// 📊 Obtener estadísticas de referidos
+const getReferralStats = async (req, res) => {
+    try {
+        const stats = await patientService.getReferralStats(req.user);
+        res.json(stats);
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 // 🟡 Actualizar paciente (General)
 const updateGeneral = async (req, res) => {
     try {
@@ -169,5 +179,6 @@ module.exports = {
     getDatatable,
     getProfile,
     getNextMedicalRecord,
-    getHomeSummary
+    getHomeSummary,
+    getReferralStats
 };
