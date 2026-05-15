@@ -54,6 +54,7 @@ router.use('/budgets', require('../modules/budget/budget.routes'));
 router.use('/billing-data', require('../modules/billing_data/billing_data.routes'));
 router.use('/patient-billing-data', require('../modules/patient_billing_data/patient_billing_data.routes'));
 router.use('/odontograms', require('../modules/odontogram/odontogram.routes'));
+router.use('/periodontograms', require('../modules/periodontogram/periodontogram.routes'));
 router.use('/patient-elastics', require('../modules/patient_elastic/patient_elastic.routes'));
 router.use('/patient-gallery', require('../modules/patient_gallery/patient_gallery.routes'));
 router.use('/patient-clinical', require('../modules/patient_clinical/patient_clinical.routes'));

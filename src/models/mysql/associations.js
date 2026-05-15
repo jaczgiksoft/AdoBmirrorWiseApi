@@ -43,6 +43,8 @@ const EmployeePosition = require('./employee_position.model');
 const BillingData = require('./billing_data.model');
 const PatientBillingData = require('./patient_billing_data.model');
 
+const Periodontogram = require('./periodontogram.model');
+
 const InventoryProvider = require('./inventory_provider.model');
 const InventoryItem = require('./inventory_item.model');
 const InventoryMovement = require('./inventory_movement.model');
@@ -436,6 +438,33 @@ PatientProfession.hasMany(Patient, {
     as: 'patients',
     onDelete: 'SET NULL',
     onUpdate: 'CASCADE',
+});
+
+// PERIODONTOGRAMS
+Tenant.hasMany(Periodontogram, {
+    foreignKey: 'tenant_id',
+    as: 'periodontograms',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Periodontogram.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Patient.hasMany(Periodontogram, {
+    foreignKey: 'patient_id',
+    as: 'periodontograms',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Periodontogram.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 });
 
 // PATIENT ALERTS
