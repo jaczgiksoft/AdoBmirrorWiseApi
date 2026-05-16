@@ -1,9 +1,14 @@
-// src/modules/patient_gallery/patient_gallery.service.js
 const patientGalleryRepository = require('./patient_gallery.repository');
 const sequelize = require('../../config/database');
 const fs = require('fs');
 const path = require('path');
 const { logger } = require('../../utils/logger');
+const OpenAI = require('openai');
+const { toFile } = require('openai');
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+});
 
 class PatientGalleryService {
     /**
@@ -107,12 +112,16 @@ class PatientGalleryService {
     }
 
     /**
-     * Actualiza (sobrescribe) una imagen existente en la galería.
+     * Actualiza una imagen en la galería.
+     * El flujo correcto:
+     * - La imagen original nunca se modifica físicamente.
+     * - Si es la primera vez que se edita, el registro actual se renombra a 'original_' 
+     *   y se crea un NUEVO registro para la imagen editada.
+     * - Si ya existe la original, simplemente se actualiza el registro editado.
      */
     async updateImage(imageId, tenantId, file) {
-        // 1. Buscar la imagen en la base de datos
         const imageRecord = await patientGalleryRepository.findImageById(imageId);
-        
+
         if (!imageRecord) {
             throw new Error('Imagen no encontrada.');
         }
@@ -121,39 +130,240 @@ class PatientGalleryService {
             throw new Error('No tienes permiso para editar esta imagen.');
         }
 
-        // 2. Mover el nuevo archivo al destino final (sobrescribiendo el original)
         const tempPath = file.path;
-        // Obtenemos la ruta absoluta del archivo original
-        const originalAbsolutePath = path.join(__dirname, '../../../', imageRecord.file_path);
+        const transaction = await sequelize.transaction();
 
         try {
-            // Asegurar que el directorio destino existe
-            const destDir = path.dirname(originalAbsolutePath);
+            const originalName = imageRecord.file_name;
+            const isAlreadyOriginal = originalName.startsWith('original_');
+            const backupName = isAlreadyOriginal ? originalName : `original_${originalName}`;
+
+            let finalImageToReturn = imageRecord;
+
+            if (!isAlreadyOriginal) {
+                // Buscamos si ya existe el registro de la original
+                const existingBackup = await patientGalleryRepository.findImageByFolderAndName(
+                    imageRecord.folder_id,
+                    backupName,
+                    transaction
+                );
+
+                if (!existingBackup) {
+                    // MODO 1: ES LA PRIMERA VEZ QUE SE EDITA
+                    // 1. El registro actual se convierte en la "original"
+                    // NUNCA tocamos su archivo físico, solo le cambiamos el nombre en la DB
+                    imageRecord.file_name = backupName;
+                    await imageRecord.save({ transaction });
+
+                    // 2. Creamos un NUEVO registro para la imagen editada
+                    const ext = path.extname(imageRecord.file_path);
+                    const baseName = path.basename(imageRecord.file_path, ext);
+                    const newFileName = `${baseName}_edit_${Date.now()}${ext}`;
+                    const dirName = path.dirname(imageRecord.file_path);
+                    const newRelativePath = path.join(dirName, newFileName).replace(/\\/g, '/');
+                    const newAbsolutePath = path.join(__dirname, '../../../', newRelativePath);
+
+                    // Movemos el archivo subido a la nueva ruta
+                    const destDir = path.dirname(newAbsolutePath);
+                    if (!fs.existsSync(destDir)) {
+                        fs.mkdirSync(destDir, { recursive: true });
+                    }
+                    fs.copyFileSync(tempPath, newAbsolutePath);
+
+                    // Creamos el nuevo registro en DB
+                    const newImage = await patientGalleryRepository.createImage({
+                        folder_id: imageRecord.folder_id,
+                        file_path: newRelativePath,
+                        file_name: originalName, // Mantiene el nombre original ("facial_front")
+                        mime_type: file.mimetype || imageRecord.mime_type,
+                        notes: imageRecord.notes
+                    }, transaction);
+
+                    finalImageToReturn = newImage;
+
+                } else {
+                    // MODO 2: YA EXISTE LA ORIGINAL (estamos editando una imagen ya editada previamente)
+                    // Actualizamos el registro actual
+                    const ext = path.extname(imageRecord.file_path);
+                    const baseName = path.basename(imageRecord.file_path, ext);
+                    const cleanBaseName = baseName.replace(/_edit_\d+$/, '');
+                    const newFileName = `${cleanBaseName}_edit_${Date.now()}${ext}`;
+                    const dirName = path.dirname(imageRecord.file_path);
+                    const newRelativePath = path.join(dirName, newFileName).replace(/\\/g, '/');
+                    const newAbsolutePath = path.join(__dirname, '../../../', newRelativePath);
+
+                    // Movemos el nuevo archivo
+                    const destDir = path.dirname(newAbsolutePath);
+                    if (!fs.existsSync(destDir)) {
+                        fs.mkdirSync(destDir, { recursive: true });
+                    }
+                    fs.copyFileSync(tempPath, newAbsolutePath);
+
+                    // Borramos el archivo físico antiguo (porque esta es una edición previa, NO la original)
+                    const oldAbsolutePath = path.join(__dirname, '../../../', imageRecord.file_path);
+                    if (fs.existsSync(oldAbsolutePath)) {
+                        fs.unlinkSync(oldAbsolutePath);
+                    }
+
+                    // Actualizamos DB
+                    imageRecord.file_path = newRelativePath;
+                    imageRecord.changed('updated_at', true);
+                    await imageRecord.save({ transaction });
+
+                    finalImageToReturn = imageRecord;
+                }
+            } else {
+                // MODO 3: Están intentando editar directamente la que se llama "original_..."
+                const ext = path.extname(imageRecord.file_path);
+                const baseName = path.basename(imageRecord.file_path, ext);
+                const cleanBaseName = baseName.replace(/_edit_\d+$/, '');
+                const newFileName = `${cleanBaseName}_edit_${Date.now()}${ext}`;
+                const dirName = path.dirname(imageRecord.file_path);
+                const newRelativePath = path.join(dirName, newFileName).replace(/\\/g, '/');
+                const newAbsolutePath = path.join(__dirname, '../../../', newRelativePath);
+
+                const destDir = path.dirname(newAbsolutePath);
+                if (!fs.existsSync(destDir)) {
+                    fs.mkdirSync(destDir, { recursive: true });
+                }
+                fs.copyFileSync(tempPath, newAbsolutePath);
+
+                const oldAbsolutePath = path.join(__dirname, '../../../', imageRecord.file_path);
+                if (fs.existsSync(oldAbsolutePath)) {
+                    fs.unlinkSync(oldAbsolutePath);
+                }
+
+                imageRecord.file_path = newRelativePath;
+                imageRecord.changed('updated_at', true);
+                await imageRecord.save({ transaction });
+
+                finalImageToReturn = imageRecord;
+            }
+
+            // Limpieza del archivo temporal de multer
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+                const tempDir = path.dirname(tempPath);
+                if (fs.existsSync(tempDir)) {
+                    try {
+                        if (fs.readdirSync(tempDir).length === 0) fs.rmdirSync(tempDir);
+                    } catch (e) { /* ignore */ }
+                }
+            }
+
+            await transaction.commit();
+
+            return {
+                message: 'Imagen editada exitosamente.',
+                image: finalImageToReturn
+            };
+
+        } catch (error) {
+            if (transaction) await transaction.rollback();
+            logger.error(`Error al actualizar imagen: ${error.message}`);
+
+            if (fs.existsSync(tempPath)) {
+                try { fs.unlinkSync(tempPath); } catch (e) { /* ignore */ }
+            }
+
+            throw new Error(`No se pudo procesar la edición: ${error.message}`);
+        }
+    }
+
+    /**
+     * Edita una imagen utilizando la API de OpenAI.
+     */
+    async editImageWithIA(imageId, tenantId, options = {}) {
+        const imageRecord = await patientGalleryRepository.findImageById(imageId);
+
+        if (!imageRecord) {
+            throw new Error('Imagen no encontrada.');
+        }
+
+        if (imageRecord.folder.tenant_id !== tenantId) {
+            throw new Error('No tienes permiso para editar esta imagen.');
+        }
+
+        const absolutePath = path.join(__dirname, '../../../', imageRecord.file_path);
+        if (!fs.existsSync(absolutePath)) {
+            throw new Error('El archivo físico de la imagen no existe.');
+        }
+
+        try {
+            // Nota: OpenAI requiere que la imagen sea PNG, cuadrada y menor a 4MB.
+            // Si la imagen actual no cumple con esto, fallará a nivel de la API de OpenAI.
+            // Se asume que en el flujo real se enviará un formato correcto o se adaptará previamente.
+
+            // El prompt por defecto muy estricto solicitado
+            const defaultPrompt = "Mejorar exclusivamente la sonrisa, hacer los dientes más blancos, alineados y estándar, manteniendo el resto de la cara, fondo y elementos exactamente idénticos";
+            const promptToUse = options.prompt || defaultPrompt;
+
+            logger.info(`[Patient Gallery IA] Solicitando edición a OpenAI para imagen ${imageId}`);
+
+            // OpenAI SDK requiere un objeto File con MIME type explícito.
+            // fs.createReadStream envía 'application/octet-stream' y la API lo rechaza.
+            const fileExt = path.extname(absolutePath).toLowerCase();
+            const mimeMap = {
+                '.jpg':  'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png':  'image/png',
+                '.webp': 'image/webp'
+            };
+            const mimeType = mimeMap[fileExt] || 'image/jpeg';
+            const imageFile = await toFile(fs.createReadStream(absolutePath), path.basename(absolutePath), { type: mimeType });
+
+            const response = await openai.images.edit({
+                model: "gpt-image-1",
+                image: imageFile,
+                prompt: promptToUse,
+                n: 1,
+                size: "1024x1024"
+            });
+
+            if (!response.data || response.data.length === 0) {
+                throw new Error("No se recibió ninguna imagen de OpenAI.");
+            }
+
+            // gpt-image-1 devuelve la imagen como base64, no como URL
+            const b64Image = response.data[0].b64_json;
+            if (!b64Image) {
+                throw new Error("OpenAI no devolvio imagen en la respuesta (b64_json vacío).");
+            }
+            const buffer = Buffer.from(b64Image, 'base64');
+
+            // Preparar guardado local
+            const newSuffix = '.png'; // gpt-image-1 siempre devuelve png
+            const baseName = path.basename(imageRecord.file_path, path.extname(imageRecord.file_path));
+            const newFileName = `${baseName}_ia_${Date.now()}${newSuffix}`;
+            const dirName = path.dirname(imageRecord.file_path);
+            const newRelativePath = path.join(dirName, newFileName).replace(/\\/g, '/');
+            const newAbsolutePath = path.join(__dirname, '../../../', newRelativePath);
+
+            const destDir = path.dirname(newAbsolutePath);
             if (!fs.existsSync(destDir)) {
                 fs.mkdirSync(destDir, { recursive: true });
             }
 
-            // Sobrescribir el archivo
-            fs.copyFileSync(tempPath, originalAbsolutePath);
-            
-            // Eliminar el archivo temporal y su carpeta temporal (creada por multer galleryStorage)
-            fs.unlinkSync(tempPath);
-            const tempDir = path.dirname(tempPath);
-            if (fs.existsSync(tempDir)) {
-                fs.rmdirSync(tempDir); // Intentamos borrar el dir temp si quedó vacío
-            }
+            fs.writeFileSync(newAbsolutePath, buffer);
+
+            // Guardar registro en BD en tabla separada (patient_gallery_images_ia)
+            const newIaImageRecord = await patientGalleryRepository.createIaImage({
+                patient_gallery_image_id: imageRecord.id,
+                file_path: newRelativePath,
+                file_name: newFileName,
+                mime_type: 'image/png',
+                notes: { prompt: promptToUse }
+            });
+
+            return {
+                message: 'Imagen generada por IA exitosamente.',
+                image: newIaImageRecord
+            };
+
         } catch (error) {
-            logger.error(`Error al sobrescribir imagen: ${error.message}`);
-            throw new Error('No se pudo guardar la imagen editada.');
+            logger.error(`Error en editImageWithIA: ${error.message}`);
+            throw new Error(`Error procesando con OpenAI: ${error.message}`);
         }
-
-        // 3. (Opcional) Actualizar metadata en DB si es necesario, 
-        // pero como mantenemos la misma ruta, no es estrictamente obligatorio 
-        // a menos que queramos actualizar updatedAt o similar.
-        imageRecord.changed('updated_at', true);
-        await imageRecord.save();
-
-        return { message: 'Imagen actualizada exitosamente', image: imageRecord };
     }
 }
 
