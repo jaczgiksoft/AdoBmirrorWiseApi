@@ -56,8 +56,19 @@ const updateImage = async (req, res) => {
     }
 };
 
+const editImageWithIA = async (req, res) => {
+    try {
+        const { imageId } = req.params;
+        const result = await patientGalleryService.editImageWithIA(imageId, req.user.tenant_id, req.body);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createGallery,
     getPatientGallery,
-    updateImage
+    updateImage,
+    editImageWithIA
 };

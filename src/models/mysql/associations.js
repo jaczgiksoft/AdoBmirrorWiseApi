@@ -53,6 +53,7 @@ const PatientRepresentative = require('./patient_representative.model');
 const PatientRepresentativeLink = require('./patient_representative_link.model');
 const PatientGalleryFolder = require('./patient_gallery_folder.model');
 const PatientGalleryImage = require('./patient_gallery_image.model');
+const PatientGalleryImageIA = require('./patient_gallery_image_ia.model');
 const Attendance = require('./attendance.model');
 const EmployeeChat = require('./employee_chat.model');
 const EmployeeChatParticipant = require('./employee_chat_participant.model');
@@ -1359,6 +1360,18 @@ PatientGalleryFolder.hasMany(PatientGalleryImage, {
 PatientGalleryImage.belongsTo(PatientGalleryFolder, {
     foreignKey: 'folder_id',
     as: 'folder'
+});
+
+// Image -> Image IA
+PatientGalleryImage.hasMany(PatientGalleryImageIA, {
+    foreignKey: 'patient_gallery_image_id',
+    as: 'ia_images',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientGalleryImageIA.belongsTo(PatientGalleryImage, {
+    foreignKey: 'patient_gallery_image_id',
+    as: 'original_image'
 });
 
 // =====================

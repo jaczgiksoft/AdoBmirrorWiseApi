@@ -41,4 +41,13 @@ router.post(
     controller.updateImage
 );
 
+/**
+ * @route POST /api/patient-gallery/image/:imageId/ia-edit
+ * @desc Genera una edición de IA para una imagen existente en la galería
+ */
+router.post(
+    '/image/:imageId/ia-edit',
+    controller.editImageWithIA
+);
+
 module.exports = router;
