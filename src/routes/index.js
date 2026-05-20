@@ -35,6 +35,8 @@ router.use('/elastic-types', require('../modules/elastic_type/elastic_type.route
 // router.use('/patient-professions', require('../modules/patientProfession/patientProfession.routes'));
 router.use('/patients', require('../modules/patient/patient.routes'));
 router.use('/patient-alerts', require('../modules/patient_alert/patient_alert.routes'));
+router.use('/notification-types', require('../modules/notification_type/notification_type.routes'));
+router.use('/patient-notifications', require('../modules/patient_notification/patient_notification.routes'));
 router.use('/patient-extractions', require('../modules/patient_extraction/patient_extraction.routes'));
 router.use('/extraction-orders', require('../modules/extraction_order/extraction_order.routes'));
 router.use('/patient-hobbies', require('../modules/patient_hobby/patient_hobby.routes'));
