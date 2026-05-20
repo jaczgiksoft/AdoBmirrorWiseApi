@@ -59,6 +59,8 @@ const EmployeeChat = require('./employee_chat.model');
 const EmployeeChatParticipant = require('./employee_chat_participant.model');
 const ChatMessage = require('./chat_message.model');
 const ChatMessageRead = require('./chat_message_read.model');
+const NotificationType = require('./notification_type.model');
+const PatientNotification = require('./patient_notification.model');
 
 // =====================
 // TENANTS
@@ -1530,3 +1532,78 @@ ChatMessageRead.belongsTo(ChatMessage, { foreignKey: 'message_id' });
 
 User.hasMany(ChatMessageRead, { foreignKey: 'user_id' });
 ChatMessageRead.belongsTo(User, { foreignKey: 'user_id' });
+
+// =============================================================
+// RELACIONES DE NOTIFICACIONES (NOTIFICATION SYSTEM)
+// =============================================================
+
+// 1. Relaciones de NotificationType con Tenant (Multitenancy)
+Tenant.hasMany(NotificationType, {
+    foreignKey: 'tenant_id',
+    as: 'notification_types',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+NotificationType.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// 2. Relaciones de PatientNotification
+// Con Tenant (Multitenancy)
+Tenant.hasMany(PatientNotification, {
+    foreignKey: 'tenant_id',
+    as: 'patient_notifications',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientNotification.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Con Patient
+Patient.hasMany(PatientNotification, {
+    foreignKey: 'patient_id',
+    as: 'notifications',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientNotification.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Con NotificationType
+NotificationType.hasMany(PatientNotification, {
+    foreignKey: 'notification_type_id',
+    as: 'patient_notifications',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientNotification.belongsTo(NotificationType, {
+    foreignKey: 'notification_type_id',
+    as: 'notification_type',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+// Con User (Creador de la notificación)
+User.hasMany(PatientNotification, {
+    foreignKey: 'created_by',
+    as: 'created_notifications',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+PatientNotification.belongsTo(User, {
+    foreignKey: 'created_by',
+    as: 'creator',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
