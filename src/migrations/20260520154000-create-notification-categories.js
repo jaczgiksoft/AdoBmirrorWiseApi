@@ -2,7 +2,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('notification_types', {
+    await queryInterface.createTable('notification_categories', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -36,16 +36,6 @@ module.exports = {
         allowNull: true
       },
 
-      template_title: {
-        type: Sequelize.STRING(255),
-        allowNull: true
-      },
-
-      template_message: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-
       is_system: {
         type: Sequelize.BOOLEAN,
         allowNull: false,
@@ -56,11 +46,6 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         allowNull: false,
         defaultValue: true
-      },
-
-      metadata: {
-        type: Sequelize.JSON,
-        allowNull: true
       },
 
       created_at: {
@@ -76,18 +61,24 @@ module.exports = {
       }
     });
 
-    // Índices
     await queryInterface.addIndex(
-      'notification_types',
+      'notification_categories',
       ['tenant_id'],
       {
-        name: 'idx_notification_types_tenant'
+        name: 'idx_notification_categories_tenant'
       }
     );
 
+    await queryInterface.addIndex(
+      'notification_categories',
+      ['is_active'],
+      {
+        name: 'idx_notification_categories_active'
+      }
+    );
   },
 
-  async down(queryInterface) {
-    await queryInterface.dropTable('notification_types');
+  async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('notification_categories');
   }
 };

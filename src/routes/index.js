@@ -35,8 +35,9 @@ router.use('/elastic-types', require('../modules/elastic_type/elastic_type.route
 // router.use('/patient-professions', require('../modules/patientProfession/patientProfession.routes'));
 router.use('/patients', require('../modules/patient/patient.routes'));
 router.use('/patient-alerts', require('../modules/patient_alert/patient_alert.routes'));
-router.use('/notification-types', require('../modules/notification_type/notification_type.routes'));
-router.use('/patient-notifications', require('../modules/patient_notification/patient_notification.routes'));
+router.use('/notification-catalog', require('../modules/notification_catalog/notification_catalog.routes'));
+router.use('/patient-notification-rules', require('../modules/patient_notification_rules/patient_notification_rules.routes'));
+router.use('/patient-notifications-history', require('../modules/patient_notifications_history/patient_notifications_history.routes'));
 router.use('/patient-extractions', require('../modules/patient_extraction/patient_extraction.routes'));
 router.use('/extraction-orders', require('../modules/extraction_order/extraction_order.routes'));
 router.use('/patient-hobbies', require('../modules/patient_hobby/patient_hobby.routes'));
@@ -60,6 +61,7 @@ router.use('/periodontograms', require('../modules/periodontogram/periodontogram
 router.use('/patient-elastics', require('../modules/patient_elastic/patient_elastic.routes'));
 router.use('/patient-gallery', require('../modules/patient_gallery/patient_gallery.routes'));
 router.use('/patient-clinical', require('../modules/patient_clinical/patient_clinical.routes'));
+router.use('/patient-movil', require('../modules/patient_movil/patient_movil.routes'));
 router.use('/attendance', require('../modules/attendance/attendance.routes'));
 
 // ==========================

@@ -2,7 +2,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('patient_notifications', {
+    await queryInterface.createTable('patient_notification_rules', {
       id: {
         type: Sequelize.BIGINT,
         primaryKey: true,
@@ -32,23 +32,23 @@ module.exports = {
         onDelete: 'CASCADE'
       },
 
-      notification_type_id: {
+      template_id: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
-          model: 'notification_types',
+          model: 'notification_templates',
           key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'SET NULL'
       },
 
-      title: {
+      custom_title: {
         type: Sequelize.STRING(255),
         allowNull: true
       },
 
-      message: {
+      custom_message: {
         type: Sequelize.TEXT,
         allowNull: true
       },
@@ -74,19 +74,18 @@ module.exports = {
       },
 
       repeat_type: {
-        type: Sequelize.ENUM(
-          'once',
-          'daily',
-          'weekly',
-          'monthly',
-          'custom'
-        ),
+        type: Sequelize.ENUM('once', 'daily', 'weekly', 'monthly', 'custom'),
         allowNull: false,
-        defaultValue: 'daily'
+        defaultValue: 'once'
       },
 
       repeat_days: {
         type: Sequelize.JSON,
+        allowNull: true
+      },
+
+      next_run_at: {
+        type: Sequelize.DATE,
         allowNull: true
       },
 
@@ -96,12 +95,7 @@ module.exports = {
         defaultValue: true
       },
 
-      next_run_at: {
-        type: Sequelize.DATE,
-        allowNull: true
-      },
-
-      metadata: {
+      context_data: {
         type: Sequelize.JSON,
         allowNull: true
       },
@@ -130,56 +124,53 @@ module.exports = {
       }
     });
 
-    // Índices
     await queryInterface.addIndex(
-      'patient_notifications',
+      'patient_notification_rules',
       ['tenant_id'],
       {
-        name: 'idx_patient_notifications_tenant'
+        name: 'idx_patient_notification_rules_tenant'
       }
     );
 
     await queryInterface.addIndex(
-      'patient_notifications',
+      'patient_notification_rules',
       ['patient_id'],
       {
-        name: 'idx_patient_notifications_patient'
+        name: 'idx_patient_notification_rules_patient'
       }
     );
 
     await queryInterface.addIndex(
-      'patient_notifications',
-      ['notification_type_id'],
+      'patient_notification_rules',
+      ['template_id'],
       {
-        name: 'idx_patient_notifications_type'
+        name: 'idx_patient_notification_rules_template'
       }
     );
 
     await queryInterface.addIndex(
-      'patient_notifications',
+      'patient_notification_rules',
       ['is_active'],
       {
-        name: 'idx_patient_notifications_active'
+        name: 'idx_patient_notification_rules_active'
       }
     );
 
-    // MUY IMPORTANTE para scheduler
     await queryInterface.addIndex(
-      'patient_notifications',
+      'patient_notification_rules',
       ['next_run_at'],
       {
-        name: 'idx_patient_notifications_next_run'
+        name: 'idx_patient_notification_rules_next_run'
       }
     );
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('patient_notifications');
+    await queryInterface.dropTable('patient_notification_rules');
 
-    // Limpia ENUM en PostgreSQL
     if (queryInterface.sequelize.getDialect() === 'postgres') {
       await queryInterface.sequelize.query(
-        'DROP TYPE IF EXISTS "enum_patient_notifications_repeat_type";'
+        'DROP TYPE IF EXISTS "enum_patient_notification_rules_repeat_type";'
       );
     }
   }

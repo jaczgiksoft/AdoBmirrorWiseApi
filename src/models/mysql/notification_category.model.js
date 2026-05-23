@@ -1,11 +1,12 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
-const NotificationType = sequelize.define('NotificationType', {
+const NotificationCategory = sequelize.define('NotificationCategory', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
-        autoIncrement: true
+        autoIncrement: true,
+        allowNull: false
     },
 
     tenant_id: {
@@ -19,6 +20,11 @@ const NotificationType = sequelize.define('NotificationType', {
         onDelete: 'CASCADE'
     },
 
+    name: {
+        type: DataTypes.STRING(255),
+        allowNull: false
+    },
+
     icon: {
         type: DataTypes.STRING(100),
         allowNull: true
@@ -26,16 +32,6 @@ const NotificationType = sequelize.define('NotificationType', {
 
     color: {
         type: DataTypes.STRING(50),
-        allowNull: true
-    },
-
-    default_title: {
-        type: DataTypes.STRING(255),
-        allowNull: true
-    },
-
-    default_message: {
-        type: DataTypes.TEXT,
         allowNull: true
     },
 
@@ -49,19 +45,15 @@ const NotificationType = sequelize.define('NotificationType', {
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: true
-    },
-
-    metadata: {
-        type: DataTypes.JSON,
-        allowNull: true
     }
 }, {
-    tableName: 'notification_types',
+    tableName: 'notification_categories',
     timestamps: true,
     underscored: true,
     indexes: [
-        { fields: ['tenant_id'], name: 'idx_notification_types_tenant' }
+        { fields: ['tenant_id'], name: 'idx_notification_categories_tenant' },
+        { fields: ['is_active'], name: 'idx_notification_categories_active' }
     ]
 });
 
-module.exports = NotificationType;
+module.exports = NotificationCategory;
