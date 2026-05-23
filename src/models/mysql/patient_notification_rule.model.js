@@ -1,11 +1,12 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/database');
 
-const PatientNotification = sequelize.define('PatientNotification', {
+const PatientNotificationRule = sequelize.define('PatientNotificationRule', {
     id: {
         type: DataTypes.BIGINT,
         primaryKey: true,
-        autoIncrement: true
+        autoIncrement: true,
+        allowNull: false
     },
 
     tenant_id: {
@@ -30,25 +31,25 @@ const PatientNotification = sequelize.define('PatientNotification', {
         onDelete: 'CASCADE'
     },
 
-    notification_type_id: {
+    template_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
-            model: 'notification_types',
+            model: 'notification_templates',
             key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE'
+        onDelete: 'SET NULL'
     },
 
-    title: {
+    custom_title: {
         type: DataTypes.STRING(255),
-        allowNull: false
+        allowNull: true
     },
 
-    message: {
+    custom_message: {
         type: DataTypes.TEXT,
-        allowNull: false
+        allowNull: true
     },
 
     start_time: {
@@ -74,11 +75,16 @@ const PatientNotification = sequelize.define('PatientNotification', {
     repeat_type: {
         type: DataTypes.ENUM('once', 'daily', 'weekly', 'monthly', 'custom'),
         allowNull: false,
-        defaultValue: 'daily'
+        defaultValue: 'once'
     },
 
     repeat_days: {
         type: DataTypes.JSON,
+        allowNull: true
+    },
+
+    next_run_at: {
+        type: DataTypes.DATE,
         allowNull: true
     },
 
@@ -88,12 +94,7 @@ const PatientNotification = sequelize.define('PatientNotification', {
         defaultValue: true
     },
 
-    next_run_at: {
-        type: DataTypes.DATE,
-        allowNull: true
-    },
-
-    metadata: {
+    context_data: {
         type: DataTypes.JSON,
         allowNull: true
     },
@@ -109,15 +110,16 @@ const PatientNotification = sequelize.define('PatientNotification', {
         onDelete: 'SET NULL'
     }
 }, {
-    tableName: 'patient_notifications',
+    tableName: 'patient_notification_rules',
     timestamps: true,
     underscored: true,
     indexes: [
-        { fields: ['tenant_id'], name: 'idx_patient_notifications_tenant' },
-        { fields: ['patient_id'], name: 'idx_patient_notifications_patient' },
-        { fields: ['notification_type_id'], name: 'idx_patient_notifications_type' },
-        { fields: ['is_active'], name: 'idx_patient_notifications_active' }
+        { fields: ['tenant_id'], name: 'idx_patient_notification_rules_tenant' },
+        { fields: ['patient_id'], name: 'idx_patient_notification_rules_patient' },
+        { fields: ['template_id'], name: 'idx_patient_notification_rules_template' },
+        { fields: ['is_active'], name: 'idx_patient_notification_rules_active' },
+        { fields: ['next_run_at'], name: 'idx_patient_notification_rules_next_run' }
     ]
 });
 
-module.exports = PatientNotification;
+module.exports = PatientNotificationRule;

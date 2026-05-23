@@ -2,6 +2,10 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    await queryInterface.dropTable('notification_types');
+  },
+
+  async down(queryInterface, Sequelize) {
     await queryInterface.createTable('notification_types', {
       id: {
         type: Sequelize.INTEGER,
@@ -84,10 +88,5 @@ module.exports = {
         name: 'idx_notification_types_tenant'
       }
     );
-
-  },
-
-  async down(queryInterface) {
-    await queryInterface.dropTable('notification_types');
   }
 };

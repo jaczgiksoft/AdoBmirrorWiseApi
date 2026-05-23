@@ -2,6 +2,17 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    await queryInterface.dropTable('patient_notifications');
+    
+    // Limpia ENUM en PostgreSQL si existe
+    if (queryInterface.sequelize.getDialect() === 'postgres') {
+      await queryInterface.sequelize.query(
+        'DROP TYPE IF EXISTS "enum_patient_notifications_repeat_type";'
+      );
+    }
+  },
+
+  async down(queryInterface, Sequelize) {
     await queryInterface.createTable('patient_notifications', {
       id: {
         type: Sequelize.BIGINT,
@@ -163,7 +174,6 @@ module.exports = {
       }
     );
 
-    // MUY IMPORTANTE para scheduler
     await queryInterface.addIndex(
       'patient_notifications',
       ['next_run_at'],
@@ -171,16 +181,5 @@ module.exports = {
         name: 'idx_patient_notifications_next_run'
       }
     );
-  },
-
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('patient_notifications');
-
-    // Limpia ENUM en PostgreSQL
-    if (queryInterface.sequelize.getDialect() === 'postgres') {
-      await queryInterface.sequelize.query(
-        'DROP TYPE IF EXISTS "enum_patient_notifications_repeat_type";'
-      );
-    }
   }
 };

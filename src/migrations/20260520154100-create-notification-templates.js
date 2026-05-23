@@ -2,7 +2,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('notification_types', {
+    await queryInterface.createTable('notification_templates', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -10,55 +10,39 @@ module.exports = {
         allowNull: false
       },
 
-      tenant_id: {
+      category_id: {
         type: Sequelize.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
-          model: 'tenants',
+          model: 'notification_categories',
           key: 'id'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
       },
 
-      name: {
+      code: {
+        type: Sequelize.STRING(100),
+        allowNull: false
+      },
+
+      title_template: {
         type: Sequelize.STRING(255),
         allowNull: false
       },
 
-      icon: {
-        type: Sequelize.STRING(100),
-        allowNull: true
-      },
-
-      color: {
-        type: Sequelize.STRING(50),
-        allowNull: true
-      },
-
-      template_title: {
-        type: Sequelize.STRING(255),
-        allowNull: true
-      },
-
-      template_message: {
+      message_template: {
         type: Sequelize.TEXT,
-        allowNull: true
+        allowNull: false
       },
 
-      is_system: {
-        type: Sequelize.BOOLEAN,
+      language: {
+        type: Sequelize.STRING(10),
         allowNull: false,
-        defaultValue: false
+        defaultValue: 'es'
       },
 
-      is_active: {
-        type: Sequelize.BOOLEAN,
-        allowNull: false,
-        defaultValue: true
-      },
-
-      metadata: {
+      allowed_placeholders: {
         type: Sequelize.JSON,
         allowNull: true
       },
@@ -76,18 +60,24 @@ module.exports = {
       }
     });
 
-    // Índices
     await queryInterface.addIndex(
-      'notification_types',
-      ['tenant_id'],
+      'notification_templates',
+      ['category_id'],
       {
-        name: 'idx_notification_types_tenant'
+        name: 'idx_notification_templates_category'
       }
     );
 
+    await queryInterface.addIndex(
+      'notification_templates',
+      ['code'],
+      {
+        name: 'idx_notification_templates_code'
+      }
+    );
   },
 
-  async down(queryInterface) {
-    await queryInterface.dropTable('notification_types');
+  async down(queryInterface, Sequelize) {
+    await queryInterface.dropTable('notification_templates');
   }
 };
