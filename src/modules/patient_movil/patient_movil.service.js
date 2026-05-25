@@ -1,43 +1,93 @@
-const PatientMovil = require('../../models/mysql/patient_movil.model');
+const sequelize = require('../../config/database');
+const patientMovilRepository = require('./patient_movil.repository');
+const { createLog } = require('../../utils/log.helper');
+const { logApiError } = require('../../utils/logApiError');
+const { logger } = require('../../utils/logger');
 
-/**
- * Register a new push token for a patient or update existing
- * We might just insert it, or check if it exists so we don't have duplicates.
- */
-const registerToken = async (tenant_id, patient_id, token) => {
-    // Check if token already exists for this patient
-    const existing = await PatientMovil.findOne({
-        where: { tenant_id, patient_id, token }
-    });
+class PatientMovilService {
+    // 🟢 Registrar o actualizar token
+    async registerToken(data, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado: falta tenant en el usuario');
+        }
 
-    if (existing) {
-        // Token is already registered, just return it or update its timestamp
-        existing.changed('updated_at', true);
-        await existing.save();
-        return existing;
+        const t = await sequelize.transaction();
+        try {
+            const { token } = data;
+            const patient_id = data.patient_id || currentUser.id;
+
+            const existing = await patientMovilRepository.findByToken(currentUser.tenant_id, patient_id, token);
+
+            if (existing) {
+                existing.changed('updated_at', true);
+                await existing.save({ transaction: t });
+                await t.commit();
+                return existing;
+            }
+
+            const newRecord = await patientMovilRepository.createToken({
+                tenant_id: currentUser.tenant_id,
+                patient_id,
+                token
+            }, t);
+            
+            await t.commit();
+
+            // 🪵 Log de auditoría
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: 'create',
+                module: 'patient_movil',
+                description: `Token registrado para paciente #${patient_id}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            return newRecord;
+        } catch (err) {
+            await t.rollback();
+            logger.error(`Error al registrar token: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
     }
 
-    // Optionally check if token is registered to another user and delete it or move it
-    // For now we'll just create a new record
-    const newRecord = await PatientMovil.create({
-        tenant_id,
-        patient_id,
-        token
-    });
+    // 🔴 Remover token
+    async removeToken(data, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado');
+        }
 
-    return newRecord;
-};
+        const t = await sequelize.transaction();
+        try {
+            const { token } = data;
+            const patient_id = data.patient_id || currentUser.id;
 
-/**
- * Remove a push token
- */
-const removeToken = async (tenant_id, patient_id, token) => {
-    await PatientMovil.destroy({
-        where: { tenant_id, patient_id, token }
-    });
-};
+            const existing = await patientMovilRepository.findByToken(currentUser.tenant_id, patient_id, token);
+            if (!existing) throw new Error('Token no encontrado');
 
-module.exports = {
-    registerToken,
-    removeToken
-};
+            await patientMovilRepository.deleteToken(existing, t);
+            await t.commit();
+
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: 'delete',
+                module: 'patient_movil',
+                description: `Token removido para paciente #${patient_id}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            return true;
+        } catch (err) {
+            await t.rollback();
+            logger.error(`Error al remover token: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
+}
+
+module.exports = new PatientMovilService();
