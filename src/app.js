@@ -103,4 +103,7 @@ app.use((req, res, next) => {
 // 🛠️ Middleware global de errores
 app.use(errorHandler);
 
+// 🔔 IMPORTAR EL WORKER DE NOTIFICACIONES PARA QUE EMPIECE A CORRER EN SEGUNDO PLANO
+require('./job/notificationWorker');
+
 module.exports = app;

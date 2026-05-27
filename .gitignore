@@ -35,3 +35,7 @@ repomix-output.txt
 # Ignorar todo dentro de downloads, pero mantener la carpeta
 /downloads/*
 !/downloads/.gitkeep
+
+
+# Firebase Private Key
+src/config/bwises-firebase-adminsdk-fbsvc-dcc488f005.json
