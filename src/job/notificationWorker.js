@@ -3,12 +3,11 @@ const cron = require('node-cron');
 const { Op } = require('sequelize');
 const pushService = require('../services/push.service');
 // Importa tus modelos de Sequelize
-const {
-    patient_notification_rules: PatientRule,
-    notification_templates: Template,
-    patient_notifications_history: NotificationHistory,
-    patients: Patient // Supongamos que aquí guardas el fcm_token
-} = require('../models/mysql');
+const PatientRule = require('../models/mysql/patient_notification_rule.model');
+const Template = require('../models/mysql/notification_template.model');
+const NotificationHistory = require('../models/mysql/patient_notifications_history.model');
+const Patient = require('../models/mysql/patient.model');
+const PatientMovil = require('../models/mysql/patient_movil.model');
 
 // Tarea programada: Ejecutar CADA MINUTO
 cron.schedule('* * * * *', async () => {
@@ -27,7 +26,14 @@ cron.schedule('* * * * *', async () => {
             },
             include: [
                 { model: Template, as: 'template' },
-                { model: Patient, as: 'patient', attributes: ['id', 'fcm_token', 'first_name'] } // Traer el token del paciente
+                { 
+                    model: Patient, 
+                    as: 'patient', 
+                    attributes: ['id', 'first_name'],
+                    include: [
+                        { model: PatientMovil, as: 'movil_tokens', attributes: ['token'] }
+                    ]
+                } // Traer el token del paciente
             ]
         });
 
@@ -60,7 +66,7 @@ cron.schedule('* * * * *', async () => {
             finalMessage = replacePlaceholders(finalMessage, context);
 
             // 4. Verificar si el paciente tiene el Token de la App Móvil guardado
-            const deviceToken = rule.patient?.fcm_token;
+            const deviceToken = rule.patient?.movil_tokens && rule.patient.movil_tokens.length > 0 ? rule.patient.movil_tokens[0].token : null;
 
             if (!deviceToken) {
                 // Si no hay token, registramos el fallo en el historial y desactivamos la regla

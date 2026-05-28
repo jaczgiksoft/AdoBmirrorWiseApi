@@ -1661,3 +1661,33 @@ PatientNotificationHistory.belongsTo(NotificationTemplate, {
     onDelete: 'SET NULL',
     onUpdate: 'CASCADE'
 });
+
+// =============================================================
+// RELACIONES DE APP MOVIL (PATIENT MOVIL)
+// =============================================================
+
+Tenant.hasMany(PatientMovil, {
+    foreignKey: 'tenant_id',
+    as: 'patient_movils',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientMovil.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+
+Patient.hasMany(PatientMovil, {
+    foreignKey: 'patient_id',
+    as: 'movil_tokens',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+PatientMovil.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
