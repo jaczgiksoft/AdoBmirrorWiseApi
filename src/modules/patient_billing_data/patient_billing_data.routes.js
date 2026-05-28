@@ -19,7 +19,7 @@ router.get(
     '/patient/:patient_id',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'billing_data'),
+    checkPermissions('read', 'billing'),
     patientIdValidator,
     validateRequest,
     controller.list
@@ -30,7 +30,7 @@ router.post(
     '/',
     validateToken,
     loadPermissions,
-    checkPermissions('write', 'billing_data'),
+    checkPermissions('write', 'billing'),
     addValidator,
     validateRequest,
     controller.add
@@ -41,7 +41,7 @@ router.post(
     '/link-or-create',
     validateToken,
     loadPermissions,
-    checkPermissions('write', 'billing_data'),
+    checkPermissions('write', 'billing'),
     linkOrCreateValidator,
     validateRequest,
     controller.linkOrCreate
@@ -52,7 +52,7 @@ router.put(
     '/link-or-create/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('edit', 'billing_data'),
+    checkPermissions('edit', 'billing'),
     updateLinkOrCreateValidator,
     validateRequest,
     controller.updateLinkOrCreate
@@ -63,7 +63,7 @@ router.delete(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('delete', 'billing_data'),
+    checkPermissions('delete', 'billing'),
     idValidator,
     validateRequest,
     controller.remove
@@ -74,7 +74,7 @@ router.put(
     '/set-primary/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('edit', 'billing_data'),
+    checkPermissions('edit', 'billing'),
     idValidator,
     validateRequest,
     controller.setPrimary
