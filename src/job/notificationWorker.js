@@ -1,6 +1,7 @@
 // src/jobs/notificationWorker.js
 const cron = require('node-cron');
 const { Op } = require('sequelize');
+const { DateTime } = require('luxon');
 const pushService = require('../services/push.service');
 // Importa tus modelos de Sequelize
 const PatientRule = require('../models/mysql/patient_notification_rule.model');
@@ -8,27 +9,22 @@ const Template = require('../models/mysql/notification_template.model');
 const NotificationHistory = require('../models/mysql/patient_notifications_history.model');
 const Patient = require('../models/mysql/patient.model');
 const PatientMovil = require('../models/mysql/patient_movil.model');
+const Tenant = require('../models/mysql/tenant.model');
 
 // Tarea programada: Ejecutar CADA MINUTO
 cron.schedule('* * * * *', async () => {
     console.log('--- Iniciando verificación de notificaciones push programadas ---');
 
     try {
-        const ahora = new Date();
-
-        // 1. Buscar reglas que ya deban ejecutarse (next_run_at <= ahora) y estén activas
+        // 1. Buscamos todas las reglas activas (sin filtrar por hora aún en la query, o trayendo el Tenant obligado)
         const rulesToProcess = await PatientRule.findAll({
-            where: {
-                is_active: true,
-                next_run_at: {
-                    [Op.lte]: ahora
-                }
-            },
+            where: { is_active: true },
             include: [
                 { model: Template, as: 'template' },
-                { 
-                    model: Patient, 
-                    as: 'patient', 
+                { model: Tenant, as: 'tenant' }, // Incluir el Tenant con su timezone
+                {
+                    model: Patient,
+                    as: 'patient',
                     attributes: ['id', 'first_name'],
                     include: [
                         { model: PatientMovil, as: 'movil_tokens', attributes: ['token'] }
@@ -43,6 +39,15 @@ cron.schedule('* * * * *', async () => {
         }
 
         for (const rule of rulesToProcess) {
+            const tenantTimezone = rule.tenant?.timezone || 'UTC';
+            const ahoraEnTenant = DateTime.now().setZone(tenantTimezone).toJSDate();
+            const nextRunAt = new Date(rule.next_run_at);
+
+            // Verificar si corresponde ejecutar en la hora de SU zona horaria
+            if (nextRunAt > ahoraEnTenant) {
+                continue; // Aún no es hora para este Tenant particular
+            }
+
             let finalTitle = '';
             let finalMessage = '';
 
@@ -101,7 +106,7 @@ cron.schedule('* * * * *', async () => {
             });
 
             // 7. Calcular la siguiente ejecución (Recurrencia)
-            await updateNextRunDate(rule);
+            await updateNextRunDate(rule, tenantTimezone);
         }
 
     } catch (error) {
@@ -117,26 +122,20 @@ function replacePlaceholders(text, data) {
 }
 
 // Función para calcular cuándo se vuelve a disparar según el repeat_type
-async function updateNextRunDate(rule) {
+async function updateNextRunDate(rule, timezone) {
     if (rule.repeat_type === 'once') {
-        // Si era de una sola vez, la desactivamos para que no se vuelva a enviar
         await rule.update({ is_active: false, next_run_at: null });
     } else {
-        let nextRun = new Date(rule.next_run_at);
-
-        if (rule.repeat_type === 'daily') {
-            nextRun.setDate(nextRun.getDate() + 1);
-        } else if (rule.repeat_type === 'weekly') {
-            nextRun.setDate(nextRun.getDate() + 7);
-        } else if (rule.repeat_type === 'monthly') {
-            nextRun.setMonth(nextRun.getMonth() + 1);
-        }
-
-        // Verificar si ya superó la fecha límite (end_date) si es que existe
-        if (rule.end_date && nextRun > new Date(rule.end_date + 'T' + rule.start_time)) {
+        // Usamos Luxon para añadir días/meses respetando cambios de horario de verano locales (DST)
+        let nextRunDT = DateTime.fromJSDate(new Date(rule.next_run_at)).setZone(timezone);
+        if (rule.repeat_type === 'daily') nextRunDT = nextRunDT.plus({ days: 1 });
+        else if (rule.repeat_type === 'weekly') nextRunDT = nextRunDT.plus({ weeks: 1 });
+        else if (rule.repeat_type === 'monthly') nextRunDT = nextRunDT.plus({ months: 1 });
+        const nextRunJS = nextRunDT.toJSDate();
+        if (rule.end_date && nextRunJS > new Date(rule.end_date + 'T' + rule.start_time)) {
             await rule.update({ is_active: false, next_run_at: null });
         } else {
-            await rule.update({ next_run_at: nextRun });
+            await rule.update({ next_run_at: nextRunJS });
         }
     }
 }
