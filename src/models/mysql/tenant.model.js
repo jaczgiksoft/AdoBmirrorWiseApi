@@ -52,8 +52,13 @@ const Tenant = sequelize.define('Tenant', {
     // 🌐 Configuración regional y monetaria
     timezone: {
         type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: 'America/Hermosillo',
+        allowNull: false,
+        defaultValue: 'America/Mexico_City',
+    },
+    date_format: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'YYYY-MM-DD',
     },
     currency: { type: DataTypes.STRING, defaultValue: 'MXN' },
     exchange_rate: { type: DataTypes.DECIMAL(10, 4), allowNull: true },
