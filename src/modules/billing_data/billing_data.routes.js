@@ -21,7 +21,7 @@ router.get(
     '/',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'billing_data'),
+    checkPermissions('read', 'billing'),
     billingController.getAll
 );
 
@@ -30,7 +30,7 @@ router.get(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('read', 'billing_data'),
+    checkPermissions('read', 'billing'),
     getBillingByIdValidator,
     validateRequest,
     billingController.getOne
@@ -41,7 +41,7 @@ router.post(
     '/',
     validateToken,
     loadPermissions,
-    checkPermissions('write', 'billing_data'),
+    checkPermissions('write', 'billing'),
     createBillingValidator,
     validateRequest,
     billingController.create
@@ -52,7 +52,7 @@ router.put(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('edit', 'billing_data'),
+    checkPermissions('edit', 'billing'),
     updateBillingValidator,
     validateRequest,
     billingController.update
@@ -63,7 +63,7 @@ router.delete(
     '/:id',
     validateToken,
     loadPermissions,
-    checkPermissions('delete', 'billing_data'),
+    checkPermissions('delete', 'billing'),
     getBillingByIdValidator,
     validateRequest,
     billingController.remove
