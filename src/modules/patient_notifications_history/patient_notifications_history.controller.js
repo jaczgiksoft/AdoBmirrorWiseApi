@@ -24,7 +24,31 @@ const getById = async (req, res, next) => {
     }
 };
 
+const markAsRead = async (req, res, next) => {
+    try {
+        const record = await patientNotificationsHistoryService.markAsRead(req.params.id, req.user.tenant_id);
+        res.status(200).json(record);
+    } catch (err) {
+        logger.error(`Error al marcar notificación como leída: ${err.message}`);
+        await logApiError(req, err);
+        next(err);
+    }
+};
+
+const markAllAsRead = async (req, res, next) => {
+    try {
+        const result = await patientNotificationsHistoryService.markAllAsRead(req.params.patient_id, req.user.tenant_id);
+        res.status(200).json(result);
+    } catch (err) {
+        logger.error(`Error al marcar todas como leídas: ${err.message}`);
+        await logApiError(req, err);
+        next(err);
+    }
+};
+
 module.exports = {
     getByPatient,
-    getById
+    getById,
+    markAsRead,
+    markAllAsRead
 };

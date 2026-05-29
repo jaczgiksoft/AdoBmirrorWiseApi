@@ -12,6 +12,19 @@ class PatientNotificationsHistoryService {
         }
         return history;
     }
+
+    async markAsRead(id, tenantId) {
+        const [affected] = await patientNotificationsHistoryRepository.markAsRead(id, tenantId);
+        if (affected === 0) {
+            throw new Error('Registro no encontrado o ya estaba marcado como leído');
+        }
+        return this.getById(id, tenantId);
+    }
+
+    async markAllAsRead(patientId, tenantId) {
+        const [affected] = await patientNotificationsHistoryRepository.markAllAsRead(patientId, tenantId);
+        return { affected };
+    }
 }
 
 module.exports = new PatientNotificationsHistoryService();

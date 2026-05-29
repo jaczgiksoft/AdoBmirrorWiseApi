@@ -22,6 +22,20 @@ class PatientNotificationsHistoryRepository {
             ]
         });
     }
+
+    async markAsRead(id, tenantId) {
+        return PatientNotificationHistory.update(
+            { is_read: true, read_at: new Date() },
+            { where: { id, tenant_id: tenantId, is_read: false } }
+        );
+    }
+
+    async markAllAsRead(patientId, tenantId) {
+        return PatientNotificationHistory.update(
+            { is_read: true, read_at: new Date() },
+            { where: { patient_id: patientId, tenant_id: tenantId, is_read: false } }
+        );
+    }
 }
 
 module.exports = new PatientNotificationsHistoryRepository();
