@@ -9,4 +9,7 @@ router.use(validateToken); // Todos los endpoints requieren autenticación
 router.get('/:id', patientNotificationsHistoryController.getById);
 router.get('/patient/:patient_id', patientNotificationsHistoryController.getByPatient);
 
+router.patch('/:id/read', patientNotificationsHistoryController.markAsRead);
+router.patch('/patient/:patient_id/read-all', patientNotificationsHistoryController.markAllAsRead);
+
 module.exports = router;
