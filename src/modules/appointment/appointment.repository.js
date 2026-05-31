@@ -9,6 +9,7 @@ const AppointmentProcess = require('../../models/mysql/appointment_process.model
 const AppointmentProcessStep = require('../../models/mysql/appointment_process_step.model');
 const PatientRepresentative = require('../../models/mysql/patient_representative.model');
 const PatientRepresentativeLink = require('../../models/mysql/patient_representative_link.model');
+const PatientAlert = require('../../models/mysql/patient_alert.model');
 
 class AppointmentRepository {
     // 🟢 Crear cita
@@ -45,7 +46,7 @@ class AppointmentRepository {
             where: { id, tenant_id: tenantId },
             include: [
                 { model: AppointmentService, as: 'services' },
-                { model: Patient, as: 'patient' },
+                { model: Patient, as: 'patient', include: [{ model: PatientAlert, as: 'alerts' }] },
                 { model: Employee, as: 'employee' },
                 { model: ClinicArea, as: 'clinic_area' },
                 {
@@ -95,6 +96,16 @@ class AppointmentRepository {
             where.clinic_area_id = filters.clinic_area_id;
         }
 
+        // 7. Filtro por Doctor
+        if (filters.employee_id) {
+            where.employee_id = filters.employee_id;
+        }
+
+        // 8. Filtro por Fecha Exacta (sobrescribe date_from/date_to si se usa)
+        if (filters.date) {
+            where.date = filters.date;
+        }
+
         // Configuración de Include para Servicios
         const serviceInclude = {
             model: AppointmentService,
@@ -121,15 +132,10 @@ class AppointmentRepository {
             where,
             order: [['date', 'DESC'], ['start_time', 'ASC']],
             include: [
-                { model: Patient, as: 'patient' },
-                { model: Employee, as: 'employee' },
-                { model: ClinicArea, as: 'clinic_area' },
-                serviceInclude, // Include dinámico
-                {
-                    model: AppointmentProcess,
-                    as: 'process_snapshot',
-                    include: [{ model: AppointmentProcessStep, as: 'steps' }]
-                }
+                { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'middle_name', 'medical_record_number', 'photo_url'] },
+                { model: Employee, as: 'employee', attributes: ['id', 'first_name', 'last_name', 'second_last_name'] },
+                { model: ClinicArea, as: 'clinic_area', attributes: ['id', 'name'] },
+                serviceInclude // Include dinámico
             ]
         });
 
