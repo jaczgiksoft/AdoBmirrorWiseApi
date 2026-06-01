@@ -1,12 +1,14 @@
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 const Appointment = require('../../models/mysql/appointment.model');
 const AppointmentService = require('../../models/mysql/appointment_service.model');
 const Patient = require('../../models/mysql/patient.model');
 const Employee = require('../../models/mysql/employee.model');
 const ClinicArea = require('../../models/mysql/clinic_area.model');
 const Service = require('../../models/mysql/service.model');
+const ActivityCatalog = require('../../models/mysql/activity_catalog.model');
 const AppointmentProcess = require('../../models/mysql/appointment_process.model');
 const AppointmentProcessStep = require('../../models/mysql/appointment_process_step.model');
+const AppointmentActivity = require('../../models/mysql/appointment_activity.model');
 const PatientRepresentative = require('../../models/mysql/patient_representative.model');
 const PatientRepresentativeLink = require('../../models/mysql/patient_representative_link.model');
 const PatientAlert = require('../../models/mysql/patient_alert.model');
@@ -35,6 +37,20 @@ class AppointmentRepository {
         });
     }
 
+    // 🟢 Crear actividades de la cita (Pivot)
+    async addActivities(activitiesData, transaction) {
+        return AppointmentActivity.bulkCreate(activitiesData, { transaction });
+    }
+
+    // 🟡 Limpiar actividades de una cita (hard-delete para evitar conflicto unique)
+    async removeActivities(appointmentId, transaction) {
+        return AppointmentActivity.destroy({
+            where: { appointment_id: appointmentId },
+            force: true,
+            transaction
+        });
+    }
+
     // 🔴 Eliminar cita (soft delete)
     async deleteAppointment(appointment, transaction) {
         return appointment.destroy({ transaction });
@@ -46,6 +62,7 @@ class AppointmentRepository {
             where: { id, tenant_id: tenantId },
             include: [
                 { model: AppointmentService, as: 'services' },
+                { model: AppointmentActivity, as: 'activity_records', include: [{ model: ActivityCatalog, as: 'catalog_item' }] },
                 { model: Patient, as: 'patient', include: [{ model: PatientAlert, as: 'alerts' }] },
                 { model: Employee, as: 'employee' },
                 { model: ClinicArea, as: 'clinic_area' },
@@ -132,7 +149,7 @@ class AppointmentRepository {
             where,
             order: [['date', 'DESC'], ['start_time', 'ASC']],
             include: [
-                { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'middle_name', 'medical_record_number', 'photo_url'] },
+                { model: Patient, as: 'patient', attributes: ['id', 'first_name', 'last_name', 'middle_name', 'medical_record_number', 'photo_url', [literal('(SELECT COUNT(*) > 0 FROM patient_alerts WHERE patient_alerts.patient_id = patient.id)'), 'has_alerts']] },
                 { model: Employee, as: 'employee', attributes: ['id', 'first_name', 'last_name', 'second_last_name'] },
                 { model: ClinicArea, as: 'clinic_area', attributes: ['id', 'name'] },
                 serviceInclude // Include dinámico

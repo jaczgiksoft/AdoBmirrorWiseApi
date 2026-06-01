@@ -908,6 +908,8 @@ ClinicArea.belongsTo(Tenant, {
 const Appointment = require('./appointment.model');
 const AppointmentService = require('./appointment_service.model');
 const AppointmentDoctorTime = require('./appointment_doctor_time.model');
+const AppointmentActivity = require('./appointment_activity.model');
+const ActivityCatalog = require('./activity_catalog.model');
 
 // Appointment Relationships
 Appointment.belongsTo(Tenant, {
@@ -971,6 +973,26 @@ Appointment.hasMany(AppointmentDoctorTime, {
 AppointmentDoctorTime.belongsTo(Appointment, {
     foreignKey: 'appointment_id',
     as: 'appointment',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+
+// Pivot: AppointmentActivity
+Appointment.hasMany(AppointmentActivity, {
+    foreignKey: 'appointment_id',
+    as: 'activity_records',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentActivity.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentActivity.belongsTo(ActivityCatalog, {
+    foreignKey: 'activity_catalog_id',
+    as: 'catalog_item',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
 });
@@ -1677,6 +1699,29 @@ PatientMovil.belongsTo(Tenant, {
     as: 'tenant',
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE'
+});
+
+// =====================
+// ACTIVITY CATALOGS
+// =====================
+
+Tenant.hasMany(ActivityCatalog, {
+    foreignKey: 'tenant_id',
+    as: 'activity_catalogs',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+ActivityCatalog.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+ActivityCatalog.hasMany(AppointmentActivity, {
+    foreignKey: 'activity_catalog_id',
+    as: 'appointment_activities',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
 });
 
 Patient.hasMany(PatientMovil, {

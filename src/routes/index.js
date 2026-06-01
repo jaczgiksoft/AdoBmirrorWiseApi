@@ -51,6 +51,7 @@ router.use('/services', require('../modules/service/service.routes'));
 router.use('/processes', require('../modules/process/process.routes'));
 router.use('/steps', require('../modules/step/step.routes'));
 router.use('/clinic-areas', require('../modules/clinic_area/clinic_area.routes'));
+router.use('/activity-catalogs', require('../modules/activity_catalog/activity_catalog.routes'));
 router.use('/treatment-catalogs', require('../modules/treatment_catalog/treatment_catalog.routes'));
 router.use('/treatment-plans', require('../modules/treatment_plan/treatment_plan.routes'));
 router.use('/budgets', require('../modules/budget/budget.routes'));

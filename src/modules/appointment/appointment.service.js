@@ -50,7 +50,27 @@ class AppointmentService {
 
             }
 
-            // 3. Insertar Process Snapshot (si existe)
+            // 3. Insertar Actividades (Pivot)
+            if (data.activity_records && Array.isArray(data.activity_records) && data.activity_records.length > 0) {
+                const seen = new Set();
+                const activitiesData = data.activity_records
+                    .filter(act => {
+                        if (!act.activity_catalog_id || seen.has(act.activity_catalog_id)) return false;
+                        seen.add(act.activity_catalog_id);
+                        return true;
+                    })
+                    .map(act => ({
+                        appointment_id: newAppointment.id,
+                        activity_catalog_id: act.activity_catalog_id,
+                        activity_name: act.activity_name || null,
+                        tenant_id: currentUser.tenant_id,
+                    }));
+                if (activitiesData.length > 0) {
+                    await appointmentRepository.addActivities(activitiesData, t);
+                }
+            }
+
+            // 4. Insertar Process Snapshot (si existe)
             if (data.process) {
                 await appointmentRepository.saveProcessSnapshot(newAppointment.id, data.process, t);
             }
@@ -127,7 +147,30 @@ class AppointmentService {
                 }
             }
 
-            // 3. Actualizar Process Snapshot (si viene en el payload)
+            // 3. Actualizar Actividades (si viene en el payload como array)
+            if (data.activity_records && Array.isArray(data.activity_records)) {
+                await appointmentRepository.removeActivities(appointment.id, t);
+                if (data.activity_records.length > 0) {
+                    const seen = new Set();
+                    const activitiesData = data.activity_records
+                        .filter(act => {
+                            if (!act.activity_catalog_id || seen.has(act.activity_catalog_id)) return false;
+                            seen.add(act.activity_catalog_id);
+                            return true;
+                        })
+                        .map(act => ({
+                            appointment_id: appointment.id,
+                            activity_catalog_id: act.activity_catalog_id,
+                            activity_name: act.activity_name || null,
+                            tenant_id: currentUser.tenant_id,
+                        }));
+                    if (activitiesData.length > 0) {
+                        await appointmentRepository.addActivities(activitiesData, t);
+                    }
+                }
+            }
+
+            // 4. Actualizar Process Snapshot (si viene en el payload)
             if (data.process) {
                 // Borrar anterior
                 await appointmentRepository.removeProcessSnapshot(appointment.id, t);
@@ -136,6 +179,8 @@ class AppointmentService {
             }
 
             await t.commit();
+
+            const updatedAppointment = await appointmentRepository.findById(appointment.id, currentUser.tenant_id);
 
             await createLog({
                 user_id: currentUser.id,
@@ -147,7 +192,7 @@ class AppointmentService {
                 user_agent: req.headers['user-agent']
             });
 
-            return appointment;
+            return updatedAppointment;
         } catch (err) {
             await t.rollback();
             logger.error(`Error al actualizar cita: ${err.message}`);
