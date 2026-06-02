@@ -16,8 +16,6 @@ const loadPermissions = require('../../middlewares/loadPermissions.middleware');
 router.get(
     '/',
     validateToken,
-    loadPermissions,
-    checkPermissions('read', 'appointments'),
     validateRequest,
     activityCatalogController.getAll
 );
@@ -26,8 +24,6 @@ router.get(
 router.get(
     '/:id',
     validateToken,
-    loadPermissions,
-    checkPermissions('read', 'appointments'),
     getByIdValidator,
     validateRequest,
     activityCatalogController.getOne

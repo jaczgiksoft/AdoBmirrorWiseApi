@@ -46,8 +46,7 @@ router.get(
 router.get(
     '/:id',
     validateToken,
-    loadPermissions,
-    checkPermissions('read', 'appointments'),
+
     getAppointmentByIdValidator,
     validateRequest,
     appointmentController.getOne
