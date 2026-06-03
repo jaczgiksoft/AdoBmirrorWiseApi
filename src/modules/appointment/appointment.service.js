@@ -427,6 +427,49 @@ class AppointmentService {
         }
     }
 
+    // 🔍 Historial clínico de paciente
+    async getPatientClinicalHistory(patientId, query, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado');
+        }
+
+        const limit = Math.min(parseInt(query.limit) || 10, 50);
+        const page = parseInt(query.page) || 1;
+        const offset = (page - 1) * limit;
+
+        const options = {
+            limit,
+            offset,
+            currentAppointmentId: query.current_appointment_id ? parseInt(query.current_appointment_id) : undefined,
+            excludeAppointmentId: query.exclude_appointment_id ? parseInt(query.exclude_appointment_id) : undefined,
+            excludeCurrent: query.exclude_current === 'true' || query.exclude_current === true,
+            status: query.status || undefined,
+        };
+
+        const result = await appointmentRepository.findPatientClinicalHistory(patientId, currentUser.tenant_id, options);
+
+        await createLog({
+            user_id: currentUser.id,
+            user_name: currentUser.username,
+            action: 'read',
+            module: 'appointments',
+            description: `Historial clínico consultado para el Paciente ID: ${patientId}`,
+            ip: req.ip,
+            user_agent: req.headers['user-agent']
+        });
+
+        return {
+            success: true,
+            data: result.rows,
+            pagination: {
+                page,
+                limit,
+                total: result.total,
+                totalPages: Math.ceil(result.total / limit),
+            }
+        };
+    }
+
     // 🔍 Obtener evaluación de una cita
     async getAppointmentEvaluation(id, currentUser) {
         if (!currentUser.tenant_id) {

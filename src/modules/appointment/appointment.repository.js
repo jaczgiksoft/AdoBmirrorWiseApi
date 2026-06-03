@@ -334,6 +334,121 @@ class AppointmentRepository {
         return await this.findAllWithFilters(tenantId, { patient_id: patientId });
     }
 
+    // 🔍 Historial clínico de paciente
+    async findPatientClinicalHistory(patientId, tenantId, options = {}) {
+        const {
+            limit = 10,
+            offset = 0,
+            currentAppointmentId,
+            excludeAppointmentId,
+            excludeCurrent = false,
+            status,
+        } = options;
+
+        const where = { tenant_id: tenantId, patient_id: patientId };
+
+        if (status) {
+            where.status = status;
+        }
+
+        if (excludeAppointmentId) {
+            where.id = { [Op.ne]: excludeAppointmentId };
+        }
+
+        if (excludeCurrent && currentAppointmentId) {
+            where.id = { [Op.ne]: currentAppointmentId };
+        }
+
+        // Two-step query for accurate pagination with hasMany includes
+        const { count, rows: idRows } = await Appointment.findAndCountAll({
+            where,
+            attributes: ['id'],
+            order: [
+                ['date', 'DESC'],
+                ['start_time', 'DESC'],
+                ['id', 'DESC'],
+            ],
+            limit,
+            offset,
+        });
+
+        if (idRows.length === 0) {
+            return { rows: [], total: count };
+        }
+
+        const ids = idRows.map(r => r.id);
+
+        const appointments = await Appointment.findAll({
+            where: { id: { [Op.in]: ids } },
+            attributes: ['id', 'date', 'start_time', 'end_time', 'status', 'notes'],
+            include: [
+                {
+                    model: Employee,
+                    as: 'employee',
+                    attributes: ['id', 'first_name', 'last_name', 'second_last_name', 'profile_image'],
+                },
+                {
+                    model: AppointmentService,
+                    as: 'services',
+                    include: [
+                        { model: Service, as: 'service', attributes: ['id', 'name', 'color', 'price', 'duration_minutes'] }
+                    ],
+                    attributes: ['id', 'service_id', 'service_name', 'price', 'duration_minutes'],
+                },
+                {
+                    model: AppointmentActivity,
+                    as: 'activity_records',
+                    include: [
+                        { model: ActivityCatalog, as: 'catalog_item', attributes: ['id', 'name', 'is_custom'] }
+                    ],
+                    attributes: ['id', 'activity_catalog_id', 'activity_name'],
+                },
+                {
+                    model: AppointmentEvaluation,
+                    as: 'evaluation',
+                    attributes: ['id', 'oral_hygiene', 'appliance_care', 'elastic_usage', 'treatment_progress', 'comments', 'created_at', 'updated_at'],
+                },
+            ],
+            order: [
+                ['date', 'DESC'],
+                ['start_time', 'DESC'],
+                ['id', 'DESC'],
+            ],
+        });
+
+        // Preserve order from first query
+        const idOrder = ids.reduce((acc, id, index) => {
+            acc[id] = index;
+            return acc;
+        }, {});
+
+        const rows = appointments
+            .sort((a, b) => idOrder[a.id] - idOrder[b.id])
+            .map(appt => {
+                const plain = appt.toJSON();
+
+                if (plain.services && Array.isArray(plain.services)) {
+                    plain.services = plain.services.map(pivot => {
+                        const serviceData = pivot.service || {};
+                        return {
+                            id: pivot.service_id,
+                            appointment_service_id: pivot.id,
+                            name: pivot.service_name || serviceData.name,
+                            price: pivot.price || serviceData.price,
+                            duration_minutes: pivot.duration_minutes || serviceData.duration_minutes,
+                            color: serviceData.color || '#cccccc',
+                        };
+                    });
+                }
+
+                plain.is_current = !!(currentAppointmentId && plain.id === currentAppointmentId);
+
+                return plain;
+            });
+
+        return { rows, total: count };
+    }
+
     // 🔍 Buscar evaluación por ID de cita
     async findEvaluationByAppointmentId(appointmentId, tenantId) {
         return AppointmentEvaluation.findOne({

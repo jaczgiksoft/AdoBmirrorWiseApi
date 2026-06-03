@@ -107,6 +107,16 @@ const getByPatient = async (req, res) => {
     }
 };
 
+// 🔍 Historial clínico de paciente
+const getPatientClinicalHistory = async (req, res) => {
+    try {
+        const result = await appointmentService.getPatientClinicalHistory(req.params.patient_id, req.query, req.user, req);
+        res.json(result);
+    } catch (err) {
+        handleSequelizeError(res, err);
+    }
+};
+
 // 🔍 Obtener evaluación de una cita
 const getEvaluation = async (req, res) => {
     try {
@@ -137,6 +147,7 @@ module.exports = {
     findKioskAppointments,
     checkIn,
     getByPatient,
+    getPatientClinicalHistory,
     updateStatus,
     getEvaluation,
     upsertEvaluation

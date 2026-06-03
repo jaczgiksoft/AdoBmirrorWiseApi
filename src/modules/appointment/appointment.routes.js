@@ -9,6 +9,7 @@ const {
     updateAppointmentValidator,
     getAppointmentByIdValidator,
     getAppointmentsByPatientValidator,
+    getPatientClinicalHistoryValidator,
     getAppointmentEvaluationValidator,
     upsertAppointmentEvaluationValidator,
 } = require('./appointment.validator');
@@ -94,6 +95,17 @@ router.get(
     getAppointmentsByPatientValidator,
     validateRequest,
     appointmentController.getByPatient
+);
+
+// 🔍 Historial clínico de paciente
+router.get(
+    '/patient/:patient_id/clinical-history',
+    validateToken,
+    loadPermissions,
+    checkPermissions('read', 'appointments'),
+    getPatientClinicalHistoryValidator,
+    validateRequest,
+    appointmentController.getPatientClinicalHistory
 );
 
 // 🟢 Crear nueva cita
