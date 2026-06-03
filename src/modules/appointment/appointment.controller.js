@@ -107,6 +107,26 @@ const getByPatient = async (req, res) => {
     }
 };
 
+// 🔍 Obtener evaluación de una cita
+const getEvaluation = async (req, res) => {
+    try {
+        const evaluation = await appointmentService.getAppointmentEvaluation(req.params.id, req.user);
+        res.json(evaluation);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+// 🟡 Crear o actualizar evaluación de una cita
+const upsertEvaluation = async (req, res) => {
+    try {
+        const evaluation = await appointmentService.upsertAppointmentEvaluation(req.params.id, req.body, req.user, req);
+        res.json({ message: 'Evaluación guardada exitosamente', evaluation });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
 module.exports = {
     create,
     update,
@@ -117,5 +137,7 @@ module.exports = {
     findKioskAppointments,
     checkIn,
     getByPatient,
-    updateStatus
+    updateStatus,
+    getEvaluation,
+    upsertEvaluation
 };

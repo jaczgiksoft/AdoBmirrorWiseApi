@@ -426,6 +426,89 @@ class AppointmentService {
             throw err;
         }
     }
+
+    // 🔍 Obtener evaluación de una cita
+    async getAppointmentEvaluation(id, currentUser) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado: falta tenant en el usuario');
+        }
+
+        const appointment = await appointmentRepository.findById(id, currentUser.tenant_id);
+        if (!appointment) throw new Error('Cita no encontrada');
+
+        return appointmentRepository.findEvaluationByAppointmentId(id, currentUser.tenant_id);
+    }
+
+    // 🟡 Crear o actualizar evaluación de una cita (upsert)
+    async upsertAppointmentEvaluation(id, data, currentUser, req) {
+        if (!currentUser.tenant_id) {
+            throw new Error('No autorizado: falta tenant en el usuario');
+        }
+
+        const t = await sequelize.transaction();
+        try {
+            const appointment = await appointmentRepository.findById(id, currentUser.tenant_id);
+            if (!appointment) throw new Error('Cita no encontrada');
+
+            // Mapeo de camelCase (payload) a snake_case (DB)
+            const fieldMap = {
+                oralHygiene: 'oral_hygiene',
+                applianceCare: 'appliance_care',
+                elasticUsage: 'elastic_usage',
+                treatmentProgress: 'treatment_progress',
+                comments: 'comments',
+            };
+
+            const cleanData = {};
+            for (const [camelKey, snakeKey] of Object.entries(fieldMap)) {
+                if (data[camelKey] !== undefined) {
+                    cleanData[snakeKey] = data[camelKey];
+                }
+            }
+
+            // Rechazar payload vacío
+            if (Object.keys(cleanData).length === 0) {
+                throw new Error('No se proporcionaron campos de evaluación válidos');
+            }
+
+            cleanData.tenant_id = currentUser.tenant_id;
+            cleanData.appointment_id = appointment.id;
+            cleanData.patient_id = appointment.patient_id;
+            cleanData.employee_id = appointment.employee_id || null;
+
+            const existing = await appointmentRepository.findEvaluationByAppointmentId(id, currentUser.tenant_id);
+
+            if (existing) {
+                cleanData.updated_by = currentUser.id;
+                await appointmentRepository.updateEvaluation(existing, cleanData, t);
+            } else {
+                cleanData.created_by = currentUser.id;
+                cleanData.updated_by = currentUser.id;
+                await appointmentRepository.createEvaluation(cleanData, t);
+            }
+
+            await t.commit();
+
+            const evaluation = await appointmentRepository.findEvaluationByAppointmentId(id, currentUser.tenant_id);
+
+            await createLog({
+                user_id: currentUser.id,
+                user_name: currentUser.username,
+                action: existing ? 'update' : 'create',
+                module: 'appointments',
+                description: `Evaluación ${existing ? 'actualizada' : 'creada'} para Cita ID: ${appointment.id}`,
+                ip: req.ip,
+                user_agent: req.headers['user-agent']
+            });
+
+            return evaluation;
+        } catch (err) {
+            await t.rollback();
+            logger.error(`Error al guardar evaluación de cita: ${err.message}`);
+            await logApiError(req, err);
+            throw err;
+        }
+    }
 }
 
 module.exports = new AppointmentService();

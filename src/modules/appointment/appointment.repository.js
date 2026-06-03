@@ -12,6 +12,7 @@ const AppointmentActivity = require('../../models/mysql/appointment_activity.mod
 const PatientRepresentative = require('../../models/mysql/patient_representative.model');
 const PatientRepresentativeLink = require('../../models/mysql/patient_representative_link.model');
 const PatientAlert = require('../../models/mysql/patient_alert.model');
+const AppointmentEvaluation = require('../../models/mysql/appointment_evaluation.model');
 
 class AppointmentRepository {
     // 🟢 Crear cita
@@ -70,7 +71,8 @@ class AppointmentRepository {
                     model: AppointmentProcess,
                     as: 'process_snapshot',
                     include: [{ model: AppointmentProcessStep, as: 'steps' }]
-                }
+                },
+                { model: AppointmentEvaluation, as: 'evaluation' }
             ]
         });
     }
@@ -330,6 +332,23 @@ class AppointmentRepository {
     // 🔍 Buscar todas las citas de un paciente
     async findAppointmentsByPatient(patientId, tenantId) {
         return await this.findAllWithFilters(tenantId, { patient_id: patientId });
+    }
+
+    // 🔍 Buscar evaluación por ID de cita
+    async findEvaluationByAppointmentId(appointmentId, tenantId) {
+        return AppointmentEvaluation.findOne({
+            where: { appointment_id: appointmentId, tenant_id: tenantId }
+        });
+    }
+
+    // 🟢 Crear evaluación
+    async createEvaluation(data, transaction) {
+        return AppointmentEvaluation.create(data, { transaction });
+    }
+
+    // 🟡 Actualizar evaluación
+    async updateEvaluation(evaluation, data, transaction) {
+        return evaluation.update(data, { transaction });
     }
 }
 

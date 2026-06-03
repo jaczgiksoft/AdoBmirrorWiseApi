@@ -997,6 +997,57 @@ AppointmentActivity.belongsTo(ActivityCatalog, {
     onUpdate: 'CASCADE',
 });
 
+// Pivot: AppointmentEvaluation
+const AppointmentEvaluation = require('./appointment_evaluation.model');
+
+Appointment.hasOne(AppointmentEvaluation, {
+    foreignKey: 'appointment_id',
+    as: 'evaluation',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentEvaluation.belongsTo(Appointment, {
+    foreignKey: 'appointment_id',
+    as: 'appointment',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Patient.hasMany(AppointmentEvaluation, {
+    foreignKey: 'patient_id',
+    as: 'appointment_evaluations',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentEvaluation.belongsTo(Patient, {
+    foreignKey: 'patient_id',
+    as: 'patient',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+Employee.hasMany(AppointmentEvaluation, {
+    foreignKey: 'employee_id',
+    as: 'appointment_evaluations',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+});
+AppointmentEvaluation.belongsTo(Employee, {
+    foreignKey: 'employee_id',
+    as: 'employee',
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+});
+Tenant.hasMany(AppointmentEvaluation, {
+    foreignKey: 'tenant_id',
+    as: 'appointment_evaluations',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
+AppointmentEvaluation.belongsTo(Tenant, {
+    foreignKey: 'tenant_id',
+    as: 'tenant',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+});
 
 // =====================
 // PROCESSES & STEPS

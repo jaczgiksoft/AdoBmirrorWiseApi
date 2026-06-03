@@ -9,6 +9,8 @@ const {
     updateAppointmentValidator,
     getAppointmentByIdValidator,
     getAppointmentsByPatientValidator,
+    getAppointmentEvaluationValidator,
+    upsertAppointmentEvaluationValidator,
 } = require('./appointment.validator');
 const { validateRequest } = require('../../middlewares/validate.middleware');
 const loadPermissions = require('../../middlewares/loadPermissions.middleware');
@@ -40,6 +42,28 @@ router.get(
     checkPermissions('read', 'appointments'),
     validateRequest,
     appointmentController.getAll
+);
+
+// 🔍 Obtener evaluación de una cita
+router.get(
+    '/:id/evaluation',
+    validateToken,
+    loadPermissions,
+    checkPermissions('read', 'appointments'),
+    getAppointmentEvaluationValidator,
+    validateRequest,
+    appointmentController.getEvaluation
+);
+
+// 🟡 Crear o actualizar evaluación de una cita
+router.put(
+    '/:id/evaluation',
+    validateToken,
+    loadPermissions,
+    checkPermissions('edit', 'appointments'),
+    upsertAppointmentEvaluationValidator,
+    validateRequest,
+    appointmentController.upsertEvaluation
 );
 
 // 🔍 Obtener una cita por ID

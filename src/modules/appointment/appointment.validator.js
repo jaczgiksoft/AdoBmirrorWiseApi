@@ -73,9 +73,54 @@ const getAppointmentsByPatientValidator = [
         .isInt().withMessage('El ID del paciente debe ser un número entero'),
 ];
 
+// 🔍 Obtener evaluación de cita
+const getAppointmentEvaluationValidator = [
+    param('id')
+        .isInt().withMessage('El ID debe ser un número entero'),
+];
+
+// 🟡 Crear/Actualizar evaluación de cita
+const upsertAppointmentEvaluationValidator = [
+    param('id')
+        .isInt().withMessage('El ID debe ser un número entero'),
+
+    body('oralHygiene')
+        .optional()
+        .isInt({ min: 0, max: 3 }).withMessage('oralHygiene debe ser un entero entre 0 y 3'),
+
+    body('applianceCare')
+        .optional()
+        .isInt({ min: 0, max: 3 }).withMessage('applianceCare debe ser un entero entre 0 y 3'),
+
+    body('elasticUsage')
+        .optional()
+        .isInt({ min: 0, max: 3 }).withMessage('elasticUsage debe ser un entero entre 0 y 3'),
+
+    body('treatmentProgress')
+        .optional()
+        .isInt({ min: 0, max: 3 }).withMessage('treatmentProgress debe ser un entero entre 0 y 3'),
+
+    body('comments')
+        .optional()
+        .trim()
+        .isLength({ max: 5000 }).withMessage('comments no puede exceder 5000 caracteres'),
+
+    body()
+        .custom(body => {
+            const allowedKeys = ['oralHygiene', 'applianceCare', 'elasticUsage', 'treatmentProgress', 'comments'];
+            const hasAny = allowedKeys.some(key => body[key] !== undefined);
+            if (!hasAny) {
+                throw new Error('Debe proporcionar al menos un campo de evaluación');
+            }
+            return true;
+        }),
+];
+
 module.exports = {
     createAppointmentValidator,
     updateAppointmentValidator,
     getAppointmentByIdValidator,
     getAppointmentsByPatientValidator,
+    getAppointmentEvaluationValidator,
+    upsertAppointmentEvaluationValidator,
 };
